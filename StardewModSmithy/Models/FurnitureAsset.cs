@@ -140,7 +140,7 @@ public sealed partial class FurnitureDelimString(string Id)
     public Func<int, string> PlacementName = (place) =>
         place == -1 ? I18n.Gui_Placement_Neg1_Name() : I18n.GetByKey($"gui.placement.{place}.name");
 
-    public LocalizedString DisplayNameImpl { get; set; } = new(string.Concat(Id, "name"));
+    public TranslationString DisplayNameImpl { get; private set; } = new(string.Concat(Id, "name"));
     public string DisplayName
     {
         get => DisplayNameImpl.Value ?? "???";
@@ -205,7 +205,7 @@ public sealed partial class FurnitureDelimString(string Id)
         {
             furniDelimString.Placement = placement;
         }
-        if (LocalizedString.Deserialize(parts[7]) is LocalizedString displayName)
+        if (TranslationString.Deserialize(parts[7]) is TranslationString displayName)
         {
             furniDelimString.DisplayNameImpl = displayName;
         }
@@ -278,6 +278,7 @@ public sealed partial class FurnitureDelimString(string Id)
 
 public sealed class FurnitureAsset : IEditableAsset
 {
+    public string Desc => "furniture";
     public string Target => "Data/Furniture";
     public string IncludeName => "furniture.json";
     public Dictionary<string, FurnitureDelimString> Editing = [];
@@ -290,5 +291,16 @@ public sealed class FurnitureAsset : IEditableAsset
             output[$"{{{{ModId}}}}_{key}"] = furniDelim.Serialize();
         }
         return output;
+    }
+
+    public bool GetTranslations(ref Dictionary<string, string> translations)
+    {
+        bool requiresLoad = false;
+        foreach (FurnitureDelimString furniDelim in Editing.Values)
+        {
+            translations[furniDelim.DisplayNameImpl.Key] = furniDelim.DisplayNameImpl.Value ?? "???";
+            requiresLoad = requiresLoad || furniDelim.DisplayNameImpl.Kind == TranslationStringKind.LocalizedText;
+        }
+        return requiresLoad;
     }
 }

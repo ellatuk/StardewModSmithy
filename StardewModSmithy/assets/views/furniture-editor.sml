@@ -4,7 +4,7 @@
     drag-start=|SheetDragStart($Position)|
     drag=|SheetDrag($Position)|
     drag-end=|SheetDragEnd($Position)|>
-    <image wheel=|SheetWheel()| sprite={FurnitureSheet} margin={FurnitureSheetMargin} opacity={FurnitureSheetOpacity}/>
+    <image sprite={FurnitureSheet} margin={FurnitureSheetMargin} opacity={FurnitureSheetOpacity}/>
     <panel layout="content content" padding={SelectionBoundsPadding} *context={SelectedFurniture}>
       <image *repeat={GUI_BoundingSquares} margin={:this} sprite={@mushymato.StardewModSmithy/sprites/cursors:tileGreen} />
       <image sprite={@mushymato.StardewModSmithy/sprites/cursors:borderWhite}
@@ -17,13 +17,13 @@
   <panel layout="500px content" margin="0,0,0,0">
     <frame layout="stretch 96px" margin="0,0,0,0" padding="30,20" border={@Mods/StardewUI/Sprites/ControlBorder}>
       <lane orientation="vertical">
-        <form-row title="ID:">
+        <form-row title={#gui.label.id}>
           <dropdown options={FurnitureDataList}
             option-format={:FurnitureDataName}
             option-min-width="240"
             selected-option={<>SelectedFurniture}/>
         </form-row>
-        <form-row title="Moving:">
+        <form-row title={#gui.label.moving}>
           <enum-segments *context={:MovementMode} />
         </form-row>
       </lane>
@@ -45,6 +45,12 @@
         <form-row title={#gui.label.bounding.y}>
           <slider track-width="240" min="1" max="24" interval="1" value={<>BoundingBoxSizeY} />
         </form-row>
+        <form-row title={#gui.label.rotation}>
+          <dropdown options={Rotation_Options}
+            option-format={:RotationName}
+            option-min-width="240"
+            selected-option={<>Rotation}/>
+        </form-row>
         <form-row title={#gui.label.type}>
           <dropdown layout="stretch content"
             options={Type_Options}
@@ -63,8 +69,6 @@
             option-min-width="240"
             selected-option={<>Placement}/>
         </form-row>
-        <button text={#gui.button.create} layout="stretch content" margin="0,8,0,0" hover-background={@Mods/StardewUI/Sprites/ButtonLight} />
-        <button text={#gui.button.export} layout="stretch content" margin="0,0,0,8" hover-background={@Mods/StardewUI/Sprites/ButtonLight} />
       </lane>
     </frame>
   </panel>

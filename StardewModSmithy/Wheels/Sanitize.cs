@@ -1,3 +1,5 @@
+using StardewModdingAPI;
+
 namespace StardewModSmithy.Wheels;
 
 internal static class Sanitize
@@ -16,6 +18,11 @@ internal static class Sanitize
 
     public static string Path(string path)
     {
-        return string.Join(path, path.Split(System.IO.Path.GetInvalidFileNameChars(), '_'));
+        return SanitizeImpl(path, '_', System.IO.Path.GetInvalidFileNameChars());
+    }
+
+    public static string AssetName(IAssetName assetName)
+    {
+        return assetName.BaseName.Replace('/', '\\');
     }
 }

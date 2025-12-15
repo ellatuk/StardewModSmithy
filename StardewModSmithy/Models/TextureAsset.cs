@@ -3,8 +3,7 @@ using StardewModSmithy.Models.Interfaces;
 
 namespace StardewModSmithy.Models;
 
-public sealed class TextureAsset(string sourceDir, string group, Dictionary<IAssetName, string> gatheredTextures)
-    : ILoadableAsset
+public sealed class TextureAsset(string group, Dictionary<IAssetName, string> gatheredTextures) : ILoadableAsset
 {
     public string Group { get; set; } = group;
 
@@ -24,10 +23,9 @@ public sealed class TextureAsset(string sourceDir, string group, Dictionary<IAss
             if (!file.EndsWith(".png"))
                 continue;
             string relFile = Path.GetRelativePath(ModEntry.DirectoryPath, file);
-            ModEntry.Log(relFile);
             gatheredTextures[FormAssetNameForGroup(group, file)] = relFile;
         }
-        return new TextureAsset(sourceDir, group, gatheredTextures);
+        return new TextureAsset(group, gatheredTextures);
     }
 
     public void StageFiles(string targetPath)
@@ -37,7 +35,7 @@ public sealed class TextureAsset(string sourceDir, string group, Dictionary<IAss
         foreach ((IAssetName assetName, string sourceFile) in GatheredTextures)
         {
             File.Copy(
-                Path.Combine(sourceDir, sourceFile),
+                Path.Combine(ModEntry.DirectoryPath, sourceFile),
                 Path.Combine(targetGroupDir, Path.GetFileName(assetName.BaseName) + ".png")
             );
         }

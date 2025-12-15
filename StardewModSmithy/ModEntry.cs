@@ -1,8 +1,6 @@
 using System.Diagnostics;
-using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
-using StardewModSmithy.Content;
 using StardewModSmithy.GUI;
 using StardewModSmithy.Models;
 using StardewModSmithy.Wheels;
@@ -54,10 +52,7 @@ public sealed class ModEntry : Mod
 
     private void ConsoleTesty(string cmd, string[] args)
     {
-        // MockManifest manifest = new(Name: "Mock", Author: "debug");
-
-        // string outputPath = Path.Combine(Helper.DirectoryPath, "editing_output", Sanitize.Path(manifest.UniqueID));
-        // Directory.CreateDirectory(outputPath);
+        OutputManifest manifest = new("Mock", "debug");
 
         FurnitureAsset furnitureAsset = new();
         furnitureAsset.Editing["testyFurni1"] = FurnitureDelimString.Deserialize(
@@ -73,10 +68,10 @@ public sealed class ModEntry : Mod
 
         EditorMenuManager.ShowFurnitureEditor(textureAsset, furnitureAsset);
 
-        // OutputContentPack outputContentPatcher = new(manifest);
-        // outputContentPatcher.LoadableAssets.Add(textureAsset);
-        // outputContentPatcher.EditableAssets.Add(furnitureAsset);
-        // outputContentPatcher.Save(outputPath);
+        OutputPackContentPatcher outputContentPatcher = new(manifest);
+        outputContentPatcher.LoadableAssets.Add(textureAsset);
+        outputContentPatcher.EditableAssets.Add(furnitureAsset);
+        outputContentPatcher.Save();
     }
 
     /// <summary>SMAPI static monitor Log wrapper</summary>
