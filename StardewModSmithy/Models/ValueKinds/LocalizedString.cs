@@ -32,6 +32,14 @@ public sealed class TranslationString(string key)
         return null;
     }
 
+    internal void SetValueFrom(TranslationStore translations)
+    {
+        if (translations.Data.TryGetValue(Key, out string? value))
+        {
+            Value = value;
+        }
+    }
+
     public string GetToken()
     {
         return Kind switch

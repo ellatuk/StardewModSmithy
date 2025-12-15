@@ -167,11 +167,9 @@ internal sealed partial class FurnitureEditorContext(TextureAsset textureAsset, 
         }
     }
 
-    public void SheetWheel()
+    public void ToggleMovementMode()
     {
         MovementMode.SelectedValue =
             MovementMode.SelectedValue == DragMovementMode.Sheet ? DragMovementMode.Bounds : DragMovementMode.Sheet;
     }
-
-    public void SheetWheelNull() { }
 }

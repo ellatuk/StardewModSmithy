@@ -6,5 +6,5 @@ public interface IEditableAsset
     public string Target { get; }
     public string IncludeName { get; }
     public Dictionary<string, object> GetData();
-    public bool GetTranslations(ref Dictionary<string, string> translations);
+    public bool GetTranslations(ref TranslationStore translations);
 }

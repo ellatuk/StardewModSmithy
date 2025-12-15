@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Newtonsoft.Json;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModSmithy.GUI;
@@ -53,6 +54,7 @@ public sealed class ModEntry : Mod
     private void ConsoleTesty(string cmd, string[] args)
     {
         OutputManifest manifest = new("Mock", "debug");
+        TranslationStore? translations = TranslationStore.FromSourceDir(manifest.TranslationFolder);
 
         FurnitureAsset furnitureAsset = new();
         furnitureAsset.Editing["testyFurni1"] = FurnitureDelimString.Deserialize(
@@ -63,15 +65,37 @@ public sealed class ModEntry : Mod
             "testyFurni1",
             "testyFurni2/rug/3 3/3 1/1/520/2/[LocalizedText {{ModId}}.i18n:decor.petals_pink]/0/decor\\petals_white\\{{ModId}}/false"
         )!;
+        furnitureAsset.SetTranslations(translations);
 
-        TextureAsset textureAsset = TextureAsset.FromSourceDir("editing_input", "furniture");
+        TextureAsset textureAsset = TextureAsset.FromSourceDir(EDITING_INPUT, "furniture");
 
         EditorMenuManager.ShowFurnitureEditor(textureAsset, furnitureAsset);
 
-        OutputPackContentPatcher outputContentPatcher = new(manifest);
+        OutputPackContentPatcher outputContentPatcher = new(manifest) { Translations = translations };
         outputContentPatcher.LoadableAssets.Add(textureAsset);
         outputContentPatcher.EditableAssets.Add(furnitureAsset);
         outputContentPatcher.Save();
+    }
+
+    public static readonly JsonSerializerSettings jsonSerializerSettings = new()
+    {
+        NullValueHandling = NullValueHandling.Ignore,
+    };
+
+    internal static void WriteJson(string targetPath, string fileName, object content)
+    {
+        File.WriteAllText(
+            Path.Combine(targetPath, fileName),
+            JsonConvert.SerializeObject(content, Formatting.Indented, jsonSerializerSettings)
+        );
+    }
+
+    internal static T? ReadJson<T>(string targetPath, string fileName)
+    {
+        string targetFile = Path.Combine(targetPath, fileName);
+        if (!File.Exists(targetFile))
+            return default;
+        return JsonConvert.DeserializeObject<T>(File.ReadAllText(targetFile));
     }
 
     /// <summary>SMAPI static monitor Log wrapper</summary>

@@ -293,12 +293,22 @@ public sealed class FurnitureAsset : IEditableAsset
         return output;
     }
 
-    public bool GetTranslations(ref Dictionary<string, string> translations)
+    public void SetTranslations(TranslationStore? translations)
+    {
+        if (translations == null)
+            return;
+        foreach (FurnitureDelimString furniDelim in Editing.Values)
+        {
+            furniDelim.DisplayNameImpl.SetValueFrom(translations);
+        }
+    }
+
+    public bool GetTranslations(ref TranslationStore translations)
     {
         bool requiresLoad = false;
         foreach (FurnitureDelimString furniDelim in Editing.Values)
         {
-            translations[furniDelim.DisplayNameImpl.Key] = furniDelim.DisplayNameImpl.Value ?? "???";
+            translations.Data[furniDelim.DisplayNameImpl.Key] = furniDelim.DisplayNameImpl.Value ?? "???";
             requiresLoad = requiresLoad || furniDelim.DisplayNameImpl.Kind == TranslationStringKind.LocalizedText;
         }
         return requiresLoad;

@@ -45,13 +45,9 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
 {
     public const string PackFor = "Pathoschild.ContentPatcher";
 
-    public List<ILoadableAsset> LoadableAssets = [];
-    public List<IEditableAsset> EditableAssets = [];
-
-    public static readonly JsonSerializerSettings jsonSerializerSettings = new()
-    {
-        NullValueHandling = NullValueHandling.Ignore,
-    };
+    public readonly List<ILoadableAsset> LoadableAssets = [];
+    public readonly List<IEditableAsset> EditableAssets = [];
+    public TranslationStore? Translations = null;
 
     public void Save()
     {
@@ -62,7 +58,7 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
 
         string dataDir = Path.Combine(targetPath, "data");
         string assetsDir = Path.Combine(targetPath, "assets");
-        string translationsDir = Path.Combine(targetPath, "i18n");
+        string translationsDir = manifest.TranslationFolder;
 
         if (Directory.Exists(dataDir))
             Directory.Delete(dataDir, true);
@@ -70,31 +66,35 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
         if (Directory.Exists(assetsDir))
             Directory.Delete(assetsDir, true);
         Directory.CreateDirectory(assetsDir);
-        Directory.CreateDirectory(translationsDir);
 
         List<IMockPatch> changes = [];
         // translations
-        Dictionary<string, string> translations = [];
-        bool translationRequiresLoad = false;
-        LocalizedContentManager.LanguageCode code = Game1.content.GetCurrentLanguage();
-        foreach (IEditableAsset editable in EditableAssets)
+        if (Translations != null)
         {
-            translationRequiresLoad = translationRequiresLoad || editable.GetTranslations(ref translations);
-        }
-        if (translationRequiresLoad)
-        {
-            changes.Add(
-                new MockLoad(TranslationString.I18N_Asset, "i18n/default.json")
-                {
-                    Priority = AssetLoadPriority.Low.ToString(),
-                }
-            );
-            changes.Add(
-                new MockLoad(TranslationString.I18N_Asset, $"i18n/{code}.json")
-                {
-                    When = new() { ["HasFile:{{FromFile}}"] = true },
-                }
-            );
+            Directory.CreateDirectory(translationsDir);
+            bool translationRequiresLoad = false;
+            foreach (IEditableAsset editable in EditableAssets)
+            {
+                translationRequiresLoad = editable.GetTranslations(ref Translations) || translationRequiresLoad;
+            }
+            if (translationRequiresLoad)
+            {
+                changes.Add(
+                    new MockLoad(TranslationString.I18N_Asset, Path.Combine("i18n", TranslationStore.DefaultFilename))
+                    {
+                        Priority = AssetLoadPriority.Low.ToString(),
+                    }
+                );
+                changes.Add(
+                    new MockLoad(TranslationString.I18N_Asset, Path.Combine("i18n", Translations.LocaleFilename))
+                    {
+                        When = new() { ["HasFile:{{FromFile}}"] = true },
+                    }
+                );
+            }
+            // i18n/{langaugecode}.json and i18n/default.json
+            ModEntry.WriteJson(translationsDir, Translations.LocaleFilename, Translations.Data);
+            ModEntry.WriteJson(translationsDir, TranslationStore.DefaultFilename, Translations.Data);
         }
         // loads
         foreach (ILoadableAsset loadable in LoadableAssets)
@@ -106,7 +106,7 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
         foreach (IEditableAsset editable in EditableAssets)
         {
             changes.Add(new MockInclude(Path.Combine("data", editable.IncludeName)));
-            WriteJson(
+            ModEntry.WriteJson(
                 dataDir,
                 editable.IncludeName,
                 new MockContent([new MockEditData(editable.Target, editable.GetData())])
@@ -114,20 +114,9 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
         }
 
         // content.json
-        WriteJson(targetPath, "content.json", new MockContentMain(changes));
+        ModEntry.WriteJson(targetPath, "content.json", new MockContentMain(changes));
         // manifest.json
-        WriteJson(targetPath, "manifest.json", manifest);
-        // i18n/{langaugecode}.json and i18n/default.json
-        WriteJson(translationsDir, $"{code}.json", translations);
-        WriteJson(translationsDir, "default.json", translations);
-    }
-
-    private static void WriteJson(string targetPath, string fileName, object content)
-    {
-        File.WriteAllText(
-            Path.Combine(targetPath, fileName),
-            JsonConvert.SerializeObject(content, Formatting.Indented, jsonSerializerSettings)
-        );
+        ModEntry.WriteJson(targetPath, "manifest.json", manifest);
     }
 
     public void Load()

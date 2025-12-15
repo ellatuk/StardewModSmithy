@@ -8,6 +8,7 @@ public sealed record OutputManifest(string Name, string Author)
     internal string Desc { get; set; } = "Furniture pack";
     internal string OutputFolder =>
         Path.Combine(ModEntry.DirectoryPath, ModEntry.EDITING_OUTPUT, Sanitize.Path(UniqueID));
+    internal string TranslationFolder => Path.Combine(OutputFolder, "i18n");
 
     public string Version { get; set; } = "1.0.0";
     public string UniqueID = Sanitize.Key(string.Concat(Author, '.', Name));

@@ -11,7 +11,7 @@
         layout={GUI_TilesheetArea}
         fit="Stretch"
         opacity="0.5"/>
-      <label text={SpriteIndex} font="dialogue" color="White" padding="8,4" shadow-alpha="1" shadow-color="#4448" shadow-offset="-4, 4"/>
+      <label text={SpriteIndex} font="dialogue" color="White" padding="8,4" scale="1.5" shadow-alpha="1" shadow-color="#4448" shadow-offset="-4, 4"/>
     </panel>
   </panel>
   <panel layout="500px content" margin="0,0,0,0">
