@@ -28,7 +28,7 @@ SOFTWARE.
 using System.ComponentModel;
 using PropertyChanged.SourceGenerator;
 
-namespace StardewModSmithy.GUI;
+namespace StardewModSmithy.GUI.ViewModels;
 
 /// <summary>
 /// View model for displaying and choosing an enum value using a segmented control.

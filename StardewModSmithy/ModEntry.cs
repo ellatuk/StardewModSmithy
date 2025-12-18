@@ -4,7 +4,7 @@ using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModSmithy.GUI;
 using StardewModSmithy.Models;
-using StardewModSmithy.Wheels;
+using StardewValley;
 
 namespace StardewModSmithy;
 
@@ -71,10 +71,14 @@ public sealed class ModEntry : Mod
 
         EditorMenuManager.ShowFurnitureEditor(textureAsset, furnitureAsset);
 
-        OutputPackContentPatcher outputContentPatcher = new(manifest) { Translations = translations };
-        outputContentPatcher.LoadableAssets.Add(textureAsset);
-        outputContentPatcher.EditableAssets.Add(furnitureAsset);
-        outputContentPatcher.Save();
+        Game1.activeClickableMenu.exitFunction = () =>
+        {
+            Log("SAVE");
+            OutputPackContentPatcher outputContentPatcher = new(manifest) { Translations = translations };
+            outputContentPatcher.LoadableAssets.Add(textureAsset);
+            outputContentPatcher.EditableAssets.Add(furnitureAsset);
+            outputContentPatcher.Save();
+        };
     }
 
     public static readonly JsonSerializerSettings jsonSerializerSettings = new()

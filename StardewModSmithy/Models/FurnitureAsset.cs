@@ -3,6 +3,7 @@ using Microsoft.Xna.Framework;
 using PropertyChanged.SourceGenerator;
 using StardewModdingAPI;
 using StardewModSmithy.GUI;
+using StardewModSmithy.GUI.ViewModels;
 using StardewModSmithy.Integration;
 using StardewModSmithy.Models.Interfaces;
 using StardewModSmithy.Models.ValueKinds;
@@ -65,30 +66,18 @@ public sealed partial class FurnitureDelimString(string Id)
     [Notify]
     public Point tilesheetSize = Point.Zero;
     public string TilesheetSizeName => $"{TilesheetSize.X} {TilesheetSize.Y}";
-    public int TilesheetSizeX
-    {
-        get => TilesheetSize.X;
-        set => TilesheetSize = new(value, TilesheetSize.Y);
-    }
-    public int TilesheetSizeY
-    {
-        get => TilesheetSize.Y;
-        set => TilesheetSize = new(TilesheetSize.X, value);
-    }
+    public SpinBoxViewModel TilesheetSizeX =>
+        new(() => TilesheetSize.X, (value) => TilesheetSize = new(value, TilesheetSize.Y), 1, int.MaxValue);
+    public SpinBoxViewModel TilesheetSizeY =>
+        new(() => TilesheetSize.Y, (value) => TilesheetSize = new(TilesheetSize.X, value), 1, int.MaxValue);
 
     [Notify]
     public Point boundingBoxSize = Point.Zero;
     public string BoundingBoxSizeName => $"{BoundingBoxSize.X} {BoundingBoxSize.Y}";
-    public int BoundingBoxSizeX
-    {
-        get => BoundingBoxSize.X;
-        set => BoundingBoxSize = new(value, BoundingBoxSize.Y);
-    }
-    public int BoundingBoxSizeY
-    {
-        get => BoundingBoxSize.Y;
-        set => BoundingBoxSize = new(BoundingBoxSize.X, value);
-    }
+    public SpinBoxViewModel BoundingBoxSizeX =>
+        new(() => BoundingBoxSize.X, (value) => BoundingBoxSize = new(value, BoundingBoxSize.Y), 1, int.MaxValue);
+    public SpinBoxViewModel BoundingBoxSizeY =>
+        new(() => BoundingBoxSize.Y, (value) => BoundingBoxSize = new(BoundingBoxSize.X, value), 1, int.MaxValue);
 
     public string GUI_TilesheetArea =>
         $"{TilesheetSize.X * FurnitureEditorContext.ONE_TILE}px {TilesheetSize.Y * FurnitureEditorContext.ONE_TILE}px";
