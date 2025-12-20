@@ -1,4 +1,5 @@
-<panel layout="stretch stretch" margin="0,64,0,0"
+<panel layout="stretch stretch"
+  margin="0,64,0,0"
   draggable="true"
   drag-start=|SheetDragStart($Position)|
   drag=|SheetDrag($Position)|
@@ -10,7 +11,7 @@
       layout={GUI_TilesheetArea}
       fit="Stretch"
       opacity="0.5"/>
-    <label text={^SpriteIndex} font="dialogue" color="White" padding="8,4" scale="1.5" shadow-alpha="1" shadow-color="#4448" shadow-offset="-4, 4"/>
+    <label text={^SpriteIndex} font="dialogue" color="White" margin="12,2,0,0" scale="1.5" shadow-alpha="1" shadow-color="#4448" shadow-offset="-4, 4"/>
   </panel>
   <frame *context={:MovementMode}
       background={@Mods/StardewUI/Sprites/MenuSlotOutset}

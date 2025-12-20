@@ -1,7 +1,5 @@
 using Microsoft.Xna.Framework;
-using Microsoft.Xna.Framework.Graphics;
 using PropertyChanged.SourceGenerator;
-using StardewModdingAPI;
 using StardewModSmithy.GUI.ViewModels;
 using StardewModSmithy.Integration;
 using StardewModSmithy.Models;
@@ -15,12 +13,12 @@ public enum DragMovementMode
     Bounds = 1,
 }
 
-internal sealed partial class DraggableTextureContext(TextureAsset textureAsset)
+internal sealed partial class DraggableTextureContext(TextureAssetGroup textureAssetGroup)
 {
     internal event EventHandler<int>? Dragged;
 
     [Notify]
-    private SDUISprite sheet = GetSheet(textureAsset);
+    private SDUISprite sheet = GetSheet(textureAssetGroup);
 
     public EnumSegmentsViewModel<DragMovementMode> MovementMode = new() { SelectedValue = DragMovementMode.Bounds };
 
@@ -39,14 +37,9 @@ internal sealed partial class DraggableTextureContext(TextureAsset textureAsset)
     [Notify]
     public int spriteIndex = 0;
 
-    private static SDUISprite GetSheet(TextureAsset textureAsset)
+    private static SDUISprite GetSheet(TextureAssetGroup textureAssetGroup)
     {
-        KeyValuePair<IAssetName, string> gatheredTx = textureAsset.GatheredTextures.First();
-        Texture2D loadedTx = ModEntry.ModContent.Load<Texture2D>(gatheredTx.Value);
-        return new(loadedTx, SourceRect: loadedTx.Bounds, FixedEdges: new(0), SliceSettings: new(Scale: 4))
-        {
-            AssetName = gatheredTx.Key,
-        };
+        return textureAssetGroup.GatheredTextures.First().Value.UISprite;
     }
 
     public void UpdateSpriteIndex(SDUIEdges newSheetMargin, SDUIEdges newBoundsPadding)

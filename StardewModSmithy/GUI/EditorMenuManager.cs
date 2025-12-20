@@ -13,6 +13,7 @@ internal static class EditorMenuManager
     private static IViewEngine viewEngine = null!;
     private const string VIEW_ASSET_PREFIX = $"{ModEntry.ModId}/views";
     private const string VIEW_EDIT_FURNITURE = $"{VIEW_ASSET_PREFIX}/edit-furniture";
+    private const string VIEW_EDIT_TEXTURE_STORE = $"{VIEW_ASSET_PREFIX}/edit-texture-store";
     private static readonly PerScreen<DraggableTextureContext?> draggableTextureCtx = new();
     private static IModHelper helper = null!;
 
@@ -30,15 +31,22 @@ internal static class EditorMenuManager
 #endif
     }
 
-    internal static void ShowFurnitureEditor(TextureAsset textureAsset, FurnitureAsset furnitureAsset)
+    internal static void ShowFurnitureEditor(TextureAssetGroup textureAssetGroup, FurnitureAsset furnitureAsset)
     {
         BaseEditorContext ctx = new(
-            new DraggableTextureContext(textureAsset),
+            new DraggableTextureContext(textureAssetGroup),
             new FurnitureAssetContext(furnitureAsset)
         );
         Game1.activeClickableMenu = viewEngine.CreateMenuFromAsset(VIEW_EDIT_FURNITURE, ctx);
         draggableTextureCtx.Value = ctx.TextureContext;
         helper.Events.Input.ButtonsChanged += OnButtonsChanged_FurniEdit;
+    }
+
+    internal static void ShowTextureStore(TextureAssetGroup textureAssetGroup)
+    {
+        TextureStoreContext ctx = new(textureAssetGroup);
+        ctx.Textures.First().IsSelected = true;
+        Game1.activeClickableMenu = viewEngine.CreateMenuFromAsset(VIEW_EDIT_TEXTURE_STORE, ctx);
     }
 
     private static void OnMenuChanged(object? sender, MenuChangedEventArgs e)
