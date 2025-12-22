@@ -39,7 +39,6 @@ public sealed class ModEntry : Mod
         Directory.CreateDirectory(Path.Combine(DirectoryPath, EDITING_OUTPUT));
 
         helper.ConsoleCommands.Add("sms-testy", "testy test", ConsoleTesty);
-        helper.ConsoleCommands.Add("sms-tx", "testy tx", ConsoleTx);
         helper.Events.GameLoop.GameLaunched += OnGameLaunched;
     }
 
@@ -50,12 +49,6 @@ public sealed class ModEntry : Mod
         {
             ContentPatcherVersion = contentPatcher.Version.ToString();
         }
-    }
-
-    private void ConsoleTx(string arg1, string[] arg2)
-    {
-        TextureAssetGroup textureAssetGroup = TextureAssetGroup.FromSourceDir(EDITING_INPUT, "furniture");
-        EditorMenuManager.ShowTextureStore(textureAssetGroup);
     }
 
     private void ConsoleTesty(string cmd, string[] args)

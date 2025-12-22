@@ -138,7 +138,7 @@ public sealed partial class FurnitureDelimString(string Id) : IBoundsProvider
 
     public int SpriteIndex { get; set; } = 0;
 
-    public IAssetName TextureAssetName { get; set; } = ModEntry.ParseAssetName("TileSheets/furniture");
+    public IAssetName? TextureAssetName { get; set; }
 
     [Notify]
     public bool offLimitsForRandomSale = false;
@@ -216,6 +216,9 @@ public sealed partial class FurnitureDelimString(string Id) : IBoundsProvider
 
     public string Serialize()
     {
+        if (TextureAssetName == null)
+            return string.Empty;
+
         sb.Append($"{{{{ModId}}}}_{Name}");
         sb.Append(DELIM);
 
@@ -272,18 +275,18 @@ public sealed class FurnitureAsset : IEditableAsset
         Dictionary<string, object> output = [];
         foreach ((string key, FurnitureDelimString furniDelim) in Editing)
         {
-            output[$"{{{{ModId}}}}_{key}"] = furniDelim.Serialize();
+            if (furniDelim.TextureAssetName != null)
+                output[$"{{{{ModId}}}}_{key}"] = furniDelim.Serialize();
         }
         return output;
     }
 
-    public void SetTranslations(TranslationStore? translations)
+    public IEnumerable<IAssetName> GetRequiredAssets()
     {
-        if (translations == null)
-            return;
         foreach (FurnitureDelimString furniDelim in Editing.Values)
         {
-            furniDelim.DisplayNameImpl.SetValueFrom(translations);
+            if (furniDelim.TextureAssetName != null)
+                yield return furniDelim.TextureAssetName;
         }
     }
 
@@ -296,5 +299,15 @@ public sealed class FurnitureAsset : IEditableAsset
             requiresLoad = requiresLoad || furniDelim.DisplayNameImpl.Kind == TranslationStringKind.LocalizedText;
         }
         return requiresLoad;
+    }
+
+    public void SetTranslations(TranslationStore? translations)
+    {
+        if (translations == null)
+            return;
+        foreach (FurnitureDelimString furniDelim in Editing.Values)
+        {
+            furniDelim.DisplayNameImpl.SetValueFrom(translations);
+        }
     }
 }

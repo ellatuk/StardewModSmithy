@@ -1,9 +1,10 @@
 using PropertyChanged.SourceGenerator;
 using StardewModSmithy.GUI.ViewModels;
+using StardewModSmithy.Models;
 
 namespace StardewModSmithy.GUI.EditorContext;
 
-internal abstract partial class AbstractEditableAssetContext
+public abstract partial class AbstractEditableAssetContext
 {
     internal event EventHandler<IBoundsProvider?>? BoundsProviderChanged;
 
@@ -24,4 +25,6 @@ internal abstract partial class AbstractEditableAssetContext
     public bool HasBoundsProvider => BoundsProvider != null;
 
     public virtual void SetSpriteIndex(object? sender, int spriteIndex) { }
+
+    public virtual void SetTexture(object? sender, TextureAsset e) { }
 }

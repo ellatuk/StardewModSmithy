@@ -1,8 +1,9 @@
-using Newtonsoft.Json;
+using System.Text;
+using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModSmithy.Models.Interfaces;
 using StardewModSmithy.Models.ValueKinds;
-using StardewValley;
+using StardewValley.Extensions;
 
 namespace StardewModSmithy.Models;
 
@@ -96,13 +97,9 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
             ModEntry.WriteJson(translationsDir, Translations.LocaleFilename, Translations.Data);
             ModEntry.WriteJson(translationsDir, TranslationStore.DefaultFilename, Translations.Data);
         }
-        // loads
-        foreach (ILoadableAsset loadable in LoadableAssets)
-        {
-            changes.Add(new MockLoad(loadable.Target, loadable.FromFile));
-            loadable.StageFiles(assetsDir);
-        }
         // edits
+        List<string> descList = [];
+        HashSet<IAssetName> requiredAssets = [];
         foreach (IEditableAsset editable in EditableAssets)
         {
             changes.Add(new MockInclude(Path.Combine("data", editable.IncludeName)));
@@ -111,6 +108,20 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
                 editable.IncludeName,
                 new MockContent([new MockEditData(editable.Target, editable.GetData())])
             );
+            descList.Add(editable.Desc);
+            requiredAssets.AddRange(editable.GetRequiredAssets());
+        }
+        manifest.Desc = string.Join(" and ", descList);
+        // loads
+        foreach (ILoadableAsset loadable in LoadableAssets)
+        {
+            if (
+                loadable.StageAndGetTargetAndFromFile(assetsDir, ref requiredAssets)
+                is ValueTuple<string, string> result
+            )
+            {
+                changes.Add(new MockLoad(result.Item1, Path.Join("assets", result.Item2)));
+            }
         }
 
         // content.json

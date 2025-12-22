@@ -1,9 +1,9 @@
+using System.Text;
 using Microsoft.Xna.Framework.Graphics;
 using PropertyChanged.SourceGenerator;
 using StardewModdingAPI;
 using StardewModSmithy.Integration;
 using StardewModSmithy.Models.Interfaces;
-using StardewValley;
 
 namespace StardewModSmithy.Models;
 
@@ -27,20 +27,16 @@ public sealed partial record TextureAsset(IAssetName AssetName, string PathOnDis
             AssetName = AssetName,
         };
 
+    public TextureAsset? Front = null;
+
     public SDUISprite UISprite => GetUISprite(4);
     public SDUISprite UISpriteSmall => GetUISprite(1);
 
-    /// <summary>
-    /// Inset-style background and border, often used to hold an item or represent a slot.
-    /// </summary>
-    public static SDUISprite MenuSlotInset =>
-        new(Game1.menuTexture, SourceRect: new(0, 320, 60, 60), FixedEdges: new(4, 10, 12, 4), new(Scale: 1));
-
-    public static SDUISprite MenuSlotTransparent =>
-        new(Game1.menuTexture, SourceRect: new(128, 128, 64, 64), FixedEdges: new(4), new(Scale: 1));
-
     [Notify]
     public bool isSelected = false;
+
+    [Notify]
+    public bool isSelectedFront = false;
 }
 
 public sealed class TextureAssetGroup(string group, Dictionary<IAssetName, TextureAsset> gatheredTextures)
@@ -48,10 +44,49 @@ public sealed class TextureAssetGroup(string group, Dictionary<IAssetName, Textu
 {
     public string Group { get; set; } = group;
 
+    public bool EnableFront { get; set; } = true;
+
     public Dictionary<IAssetName, TextureAsset> GatheredTextures { get; set; } = gatheredTextures;
 
-    public string Target => string.Join(',', GatheredTextures.Keys.Select(target => target.BaseName));
-    public string FromFile => Path.Join(Group, "{{ModId}}", "{{TargetWithoutPath}}");
+    public ValueTuple<string, string>? StageAndGetTargetAndFromFile(
+        string targetPath,
+        ref HashSet<IAssetName> requiredAssets
+    )
+    {
+        string targetGroupDir = Path.Combine(targetPath, Group);
+        Directory.CreateDirectory(targetGroupDir);
+        StringBuilder targetSB = new();
+        foreach (IAssetName key in requiredAssets.Reverse())
+        {
+            if (!GatheredTextures.TryGetValue(key, out TextureAsset? txAsset))
+            {
+                continue;
+            }
+            File.Copy(
+                Path.Combine(ModEntry.DirectoryPath, txAsset.PathOnDisk),
+                Path.Combine(targetGroupDir, Path.GetFileName(key.BaseName) + ".png")
+            );
+            targetSB.Append(',');
+            targetSB.Append(key.BaseName);
+            requiredAssets.Remove(key);
+            if (txAsset.Front is TextureAsset txAssetFront)
+            {
+                File.Copy(
+                    Path.Combine(ModEntry.DirectoryPath, txAssetFront.PathOnDisk),
+                    Path.Combine(targetGroupDir, Path.GetFileName(key.BaseName) + "Front.png")
+                );
+                targetSB.Append(',');
+                targetSB.Append(key.BaseName);
+                targetSB.Append("Front");
+            }
+        }
+        if (targetSB.Length > 1)
+        {
+            targetSB.Remove(0, 1);
+            return new(targetSB.ToString(), Path.Join("", Group, "{{TargetWithoutPath}}.png"));
+        }
+        return null;
+    }
 
     public static IAssetName FormAssetNameForGroup(string group, string fileName) =>
         ModEntry.ParseAssetName(Path.Join(group, "{{ModId}}", Path.GetFileNameWithoutExtension(fileName)));
@@ -67,19 +102,10 @@ public sealed class TextureAssetGroup(string group, Dictionary<IAssetName, Textu
             IAssetName assetName = FormAssetNameForGroup(group, file);
             gatheredTextures[assetName] = new(assetName, relFile);
         }
-        return new TextureAssetGroup(group, gatheredTextures);
-    }
-
-    public void StageFiles(string targetPath)
-    {
-        string targetGroupDir = Path.Combine(targetPath, Group);
-        Directory.CreateDirectory(targetGroupDir);
-        foreach ((IAssetName assetName, TextureAsset asset) in GatheredTextures)
+        if (gatheredTextures.Any())
         {
-            File.Copy(
-                Path.Combine(ModEntry.DirectoryPath, asset.PathOnDisk),
-                Path.Combine(targetGroupDir, Path.GetFileName(assetName.BaseName) + ".png")
-            );
+            gatheredTextures.First().Value.IsSelected = true;
         }
+        return new TextureAssetGroup(group, gatheredTextures);
     }
 }

@@ -1,6 +1,6 @@
 namespace StardewModSmithy.GUI.EditorContext;
 
-internal sealed class BaseEditorContext
+public sealed class BaseEditorContext
 {
     public DraggableTextureContext TextureContext { get; private set; }
     public AbstractEditableAssetContext EditableContext { get; private set; }
@@ -11,6 +11,7 @@ internal sealed class BaseEditorContext
         EditableContext = editableContext;
 
         TextureContext.Dragged += EditableContext.SetSpriteIndex;
+        TextureContext.TextureChanged += EditableContext.SetTexture;
         EditableContext.BoundsProviderChanged += TextureContext.OnEditorBoundsProviderChanged;
     }
 }

@@ -42,13 +42,6 @@ internal static class EditorMenuManager
         helper.Events.Input.ButtonsChanged += OnButtonsChanged_FurniEdit;
     }
 
-    internal static void ShowTextureStore(TextureAssetGroup textureAssetGroup)
-    {
-        TextureStoreContext ctx = new(textureAssetGroup);
-        ctx.Textures.First().IsSelected = true;
-        Game1.activeClickableMenu = viewEngine.CreateMenuFromAsset(VIEW_EDIT_TEXTURE_STORE, ctx);
-    }
-
     private static void OnMenuChanged(object? sender, MenuChangedEventArgs e)
     {
         if (e.NewMenu is null)

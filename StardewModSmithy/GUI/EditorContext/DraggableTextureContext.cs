@@ -13,12 +13,35 @@ public enum DragMovementMode
     Bounds = 1,
 }
 
-internal sealed partial class DraggableTextureContext(TextureAssetGroup textureAssetGroup)
+public partial class DraggableTextureContext(TextureAssetGroup textureAssetGroup)
 {
-    internal event EventHandler<int>? Dragged;
+    public event EventHandler<int>? Dragged;
+    public event EventHandler<TextureAsset>? TextureChanged;
 
     [Notify]
-    private SDUISprite sheet = GetSheet(textureAssetGroup);
+    public TextureAsset selected = textureAssetGroup.GatheredTextures.First().Value;
+
+    public TextureAsset? SelectedFront
+    {
+        get => Selected.Front;
+        set
+        {
+            Selected.Front = value;
+            foreach (TextureAsset asset in textureAssetGroup.GatheredTextures.Values)
+            {
+                asset.IsSelectedFront = asset == Selected.Front;
+            }
+            OnPropertyChanged(new(nameof(SelectedFront)));
+        }
+    }
+
+    public SDUISprite Sheet => Selected.UISprite;
+
+    [DependsOn(nameof(SelectedFront))]
+    public bool HasSheetFront => SelectedFront != null;
+
+    [DependsOn(nameof(SelectedFront))]
+    public SDUISprite? SheetFront => SelectedFront?.UISprite;
 
     public EnumSegmentsViewModel<DragMovementMode> MovementMode = new() { SelectedValue = DragMovementMode.Bounds };
 
@@ -28,18 +51,48 @@ internal sealed partial class DraggableTextureContext(TextureAssetGroup textureA
     [Notify]
     public float sheetOpacity = 1f;
 
+    public float SheetOpacityFront => SheetOpacity * 0.5f;
+
     [Notify]
     public SDUIEdges boundsPadding = new(0, 0, 0, 0);
 
     [Notify]
-    public IBoundsProvider? boundsProvider = null;
+    private IBoundsProvider? boundsProvider = null;
 
     [Notify]
     public int spriteIndex = 0;
 
-    private static SDUISprite GetSheet(TextureAssetGroup textureAssetGroup)
+    [Notify]
+    private bool showingTextureSelector = false;
+
+    public IEnumerable<TextureAsset> Textures => textureAssetGroup.GatheredTextures.Values;
+
+    public void SelectTextureAsset(TextureAsset selectedAsset)
     {
-        return textureAssetGroup.GatheredTextures.First().Value.UISprite;
+        foreach (TextureAsset asset in textureAssetGroup.GatheredTextures.Values)
+        {
+            asset.IsSelected = asset == selectedAsset;
+            asset.IsSelectedFront = asset == selectedAsset.Front;
+        }
+        selectedAsset.IsSelectedFront = false;
+        Selected = selectedAsset;
+        TextureChanged?.Invoke(this, selectedAsset);
+    }
+
+    public void SelectTextureAssetFront(TextureAsset selectedAsset)
+    {
+        if (!textureAssetGroup.EnableFront)
+            return;
+        if (selectedAsset.IsSelected)
+            return;
+        if (selectedAsset == SelectedFront)
+        {
+            SelectedFront = null;
+        }
+        else
+        {
+            SelectedFront = selectedAsset;
+        }
     }
 
     public void UpdateSpriteIndex(SDUIEdges newSheetMargin, SDUIEdges newBoundsPadding)
@@ -160,9 +213,27 @@ internal sealed partial class DraggableTextureContext(TextureAssetGroup textureA
             MovementMode.SelectedValue == DragMovementMode.Sheet ? DragMovementMode.Bounds : DragMovementMode.Sheet;
     }
 
-    internal void OnEditorBoundsProviderChanged(object? sender, IBoundsProvider? e)
+    public void OnEditorBoundsProviderChanged(object? sender, IBoundsProvider? e)
     {
         BoundsProvider = e;
         UpdateSpriteIndex(SheetMargin, BoundsPadding);
+        if (e == null)
+            return;
+        if (
+            e.TextureAssetName != null
+            && textureAssetGroup.GatheredTextures.TryGetValue(e.TextureAssetName, out TextureAsset? desiredAsset)
+        )
+        {
+            SelectTextureAsset(desiredAsset);
+        }
+        else
+        {
+            e.TextureAssetName = Selected.AssetName;
+        }
+    }
+
+    public void ToggleTextureSelector()
+    {
+        ShowingTextureSelector = !ShowingTextureSelector;
     }
 }
