@@ -7,10 +7,11 @@ using StardewModSmithy.Integration;
 using StardewModSmithy.Models.Interfaces;
 using StardewModSmithy.Models.ValueKinds;
 using StardewModSmithy.Wheels;
+using StardewValley.Extensions;
 
 namespace StardewModSmithy.Models;
 
-public sealed partial class FurnitureDelimString(string Id) : IBoundsProvider
+public sealed partial class FurnitureDelimString(string id) : IBoundsProvider
 {
     public const char DELIM = '/';
     #region options
@@ -49,8 +50,8 @@ public sealed partial class FurnitureDelimString(string Id) : IBoundsProvider
     #endregion
 
     #region fields
-    [Notify]
-    private string name = Id;
+    public string Id = id;
+    public string Name = id;
 
     public OptionedValue<string> TypeImpl { get; } = new(type_Options, "decor");
     public string Type
@@ -112,6 +113,22 @@ public sealed partial class FurnitureDelimString(string Id) : IBoundsProvider
     [Notify]
     public int price = 0;
 
+    public string PriceInput
+    {
+        get => Price.ToString();
+        set
+        {
+            if (int.TryParse(value, out int newPrice))
+            {
+                Price = newPrice;
+            }
+            else
+            {
+                OnPropertyChanged(new(nameof(Price)));
+            }
+        }
+    }
+
     private readonly OptionedValue<int> PlacementImpl = new(placement_Options, 1);
     public int Placement
     {
@@ -125,7 +142,7 @@ public sealed partial class FurnitureDelimString(string Id) : IBoundsProvider
     public Func<int, string> PlacementName = (place) =>
         place == -1 ? I18n.Gui_Placement_Neg1_Name() : I18n.GetByKey($"gui.placement.{place}.name");
 
-    public TranslationString DisplayNameImpl { get; private set; } = new(string.Concat(Id, "name"));
+    public TranslationString DisplayNameImpl { get; private set; } = new(string.Concat(id, ".name"));
     public string DisplayName
     {
         get => DisplayNameImpl.Value ?? "???";
@@ -144,6 +161,9 @@ public sealed partial class FurnitureDelimString(string Id) : IBoundsProvider
     public bool offLimitsForRandomSale = false;
     public HashSet<string> ContextTags { get; set; } = [];
     #endregion
+
+    internal bool FromDeserialize = false;
+    internal int PreSerializeSeq = -1;
 
     private static Point PointFromString(string str)
     {
@@ -209,10 +229,21 @@ public sealed partial class FurnitureDelimString(string Id) : IBoundsProvider
         if (parts.Length > 11)
             furniDelimString.ContextTags = parts[11].Split(' ').ToHashSet();
 
+        furniDelimString.FromDeserialize = true;
         return furniDelimString;
     }
 
     private static readonly StringBuilder sb = new();
+
+    public void UpdateForFirstTimeSerialize()
+    {
+        if (TextureAssetName == null || FromDeserialize)
+            return;
+
+        Id = string.Concat(Sanitize.Key(Path.GetFileName(TextureAssetName.BaseName)), '_', Id);
+        Name = Id;
+        DisplayNameImpl.Key = string.Concat(Id, ".name");
+    }
 
     public string Serialize()
     {
@@ -277,7 +308,7 @@ public sealed class FurnitureAsset : IEditableAsset
         foreach ((string key, FurnitureDelimString furniDelim) in Editing)
         {
             if (furniDelim.TextureAssetName != null)
-                output[string.Concat(Sanitize.ModIdPrefixValue, key)] = furniDelim.Serialize();
+                output[string.Concat(Sanitize.ModIdPrefixValue, furniDelim.Id)] = furniDelim.Serialize();
         }
         return output;
     }
@@ -294,6 +325,36 @@ public sealed class FurnitureAsset : IEditableAsset
         }
     }
 
+    public FurnitureDelimString AddNewDefault(FurnitureDelimString? selectedFurniture)
+    {
+        int seq = 0;
+        string seqId = seq.ToString();
+        while (Editing.ContainsKey(seqId))
+        {
+            seq++;
+            seqId = seq.ToString();
+        }
+        FurnitureDelimString newDefaultFurni = new(seqId)
+        {
+            Name = seqId,
+            Type = "decor",
+            TilesheetSize = new(1, 1),
+            BoundingBoxSize = new(1, 1),
+            PreSerializeSeq = seq,
+        };
+        if (selectedFurniture != null)
+        {
+            newDefaultFurni.TextureAssetName = selectedFurniture.TextureAssetName;
+        }
+        Editing[seqId] = newDefaultFurni;
+        return newDefaultFurni;
+    }
+
+    internal bool Delete(FurnitureDelimString? selectedFurniture)
+    {
+        return Editing.RemoveWhere(kv => kv.Value == selectedFurniture) > 0;
+    }
+
     public IEnumerable<IAssetName> GetRequiredAssets()
     {
         foreach (FurnitureDelimString furniDelim in Editing.Values)
@@ -308,6 +369,7 @@ public sealed class FurnitureAsset : IEditableAsset
         bool requiresLoad = false;
         foreach (FurnitureDelimString furniDelim in Editing.Values)
         {
+            furniDelim.UpdateForFirstTimeSerialize();
             translations.Data[furniDelim.DisplayNameImpl.Key] = furniDelim.DisplayNameImpl.Value ?? "???";
             requiresLoad = requiresLoad || furniDelim.DisplayNameImpl.Kind == TranslationStringKind.LocalizedText;
         }

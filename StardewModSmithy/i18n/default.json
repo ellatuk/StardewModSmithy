@@ -18,7 +18,10 @@
   "gui.label.tilesheet": "Texture:",
   "gui.label.bounding": "Bounds:",
   "gui.label.type": "Type:",
-  "gui.label.price": "Price:",
   "gui.label.rotation": "Rotation:",
   "gui.label.placement": "Placement:",
+  "gui.label.price": "Price:",
+  "gui.label.no-random-sale": "No Random Sale:",
+  "gui.button.create": "Create",
+  "gui.button.delete": "Delete"
 }

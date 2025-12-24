@@ -66,7 +66,7 @@ public sealed class ModEntry : Mod
                 "testyFurni1/rug/4 2/4 4/1/520/2/[LocalizedText {{ModId}}.i18n:decor.testyFurni1]/0/decor\\petals_pink\\{{ModId}}/false"
             )!;
             outputContentPatcher.FurnitureAsset.Editing["testyFurni2"] = FurnitureDelimString.Deserialize(
-                "testyFurni1",
+                "testyFurni2",
                 "testyFurni2/rug/3 3/3 1/1/520/2/[LocalizedText {{ModId}}.i18n:decor.testyFurni2]/0/decor\\petals_white\\{{ModId}}/false"
             )!;
             outputContentPatcher.FurnitureAsset.SetTranslations(outputContentPatcher.Translations);

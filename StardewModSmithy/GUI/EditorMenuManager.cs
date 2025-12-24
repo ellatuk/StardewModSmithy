@@ -33,10 +33,13 @@ internal static class EditorMenuManager
 
     internal static void ShowFurnitureEditor(TextureAssetGroup textureAssetGroup, FurnitureAsset furnitureAsset)
     {
-        BaseEditorContext ctx = new(
-            new DraggableTextureContext(textureAssetGroup),
-            new FurnitureAssetContext(furnitureAsset)
-        );
+        DraggableTextureContext draggableTextureContext = new(textureAssetGroup);
+        FurnitureAssetContext furnitureAssetContext = new(furnitureAsset);
+        BaseEditorContext ctx = new(draggableTextureContext, furnitureAssetContext);
+        if (furnitureAssetContext.FurnitureDataList.Count > 0)
+        {
+            furnitureAssetContext.BoundsProvider = furnitureAssetContext.FurnitureDataList[0];
+        }
         Game1.activeClickableMenu = viewEngine.CreateMenuFromAsset(VIEW_EDIT_FURNITURE, ctx);
         draggableTextureCtx.Value = ctx.TextureContext;
         helper.Events.Input.ButtonsChanged += OnButtonsChanged_FurniEdit;
