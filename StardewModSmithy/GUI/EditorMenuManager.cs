@@ -1,6 +1,7 @@
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModdingAPI.Utilities;
+using StardewModSmithy.GUI.EditorContext;
 using StardewModSmithy.Integration;
 using StardewModSmithy.Models;
 using StardewValley;
@@ -11,11 +12,12 @@ internal static class EditorMenuManager
 {
     private static IViewEngine viewEngine = null!;
     private const string VIEW_ASSET_PREFIX = $"{ModEntry.ModId}/views";
-    private const string VIEW_FURNITURE_EDITOR = $"{VIEW_ASSET_PREFIX}/furniture-editor";
-    private static readonly PerScreen<FurnitureEditorContext?> furniEditCtx = new();
+    private const string VIEW_EDIT_FURNITURE = $"{VIEW_ASSET_PREFIX}/edit-furniture";
+    private const string VIEW_EDIT_TEXTURE_STORE = $"{VIEW_ASSET_PREFIX}/edit-texture-store";
+    private static readonly PerScreen<DraggableTextureContext?> draggableTextureCtx = new();
     private static IModHelper helper = null!;
 
-    private static KeybindList toggleMovingMode = new(SButton.MouseMiddle);
+    private static readonly KeybindList toggleMovingMode = new(SButton.MouseMiddle);
 
     internal static void Register(IModHelper helper)
     {
@@ -29,11 +31,17 @@ internal static class EditorMenuManager
 #endif
     }
 
-    internal static void ShowFurnitureEditor(TextureAsset textureAsset, FurnitureAsset furnitureAsset)
+    internal static void ShowFurnitureEditor(TextureAssetGroup textureAssetGroup, FurnitureAsset furnitureAsset)
     {
-        FurnitureEditorContext ctx = new(textureAsset, furnitureAsset);
-        Game1.activeClickableMenu = viewEngine.CreateMenuFromAsset(VIEW_FURNITURE_EDITOR, ctx);
-        furniEditCtx.Value = ctx;
+        DraggableTextureContext draggableTextureContext = new(textureAssetGroup);
+        FurnitureAssetContext furnitureAssetContext = new(furnitureAsset);
+        BaseEditorContext ctx = new(draggableTextureContext, furnitureAssetContext);
+        if (furnitureAssetContext.FurnitureDataList.Count > 0)
+        {
+            furnitureAssetContext.BoundsProvider = furnitureAssetContext.FurnitureDataList[0];
+        }
+        Game1.activeClickableMenu = viewEngine.CreateMenuFromAsset(VIEW_EDIT_FURNITURE, ctx);
+        draggableTextureCtx.Value = ctx.TextureContext;
         helper.Events.Input.ButtonsChanged += OnButtonsChanged_FurniEdit;
     }
 
@@ -41,9 +49,9 @@ internal static class EditorMenuManager
     {
         if (e.NewMenu is null)
         {
-            if (furniEditCtx.Value is not null)
+            if (draggableTextureCtx.Value is not null)
             {
-                furniEditCtx.Value = null;
+                draggableTextureCtx.Value = null;
                 helper.Events.Input.ButtonsChanged -= OnButtonsChanged_FurniEdit;
             }
         }
@@ -53,7 +61,7 @@ internal static class EditorMenuManager
     {
         if (toggleMovingMode.JustPressed())
         {
-            furniEditCtx.Value?.ToggleMovementMode();
+            draggableTextureCtx.Value?.ToggleMovementMode();
         }
     }
 }

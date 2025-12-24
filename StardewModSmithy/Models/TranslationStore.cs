@@ -22,7 +22,7 @@ public sealed class TranslationStore
     {
         if (!Directory.Exists(translationsDir))
         {
-            return null;
+            return new();
         }
         TranslationStore store = new();
         store.LoadForCurrentLanguage(translationsDir);

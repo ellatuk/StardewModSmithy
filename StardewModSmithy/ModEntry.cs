@@ -4,7 +4,7 @@ using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModSmithy.GUI;
 using StardewModSmithy.Models;
-using StardewModSmithy.Wheels;
+using StardewValley;
 
 namespace StardewModSmithy;
 
@@ -54,27 +54,47 @@ public sealed class ModEntry : Mod
     private void ConsoleTesty(string cmd, string[] args)
     {
         OutputManifest manifest = new("Mock", "debug");
-        TranslationStore? translations = TranslationStore.FromSourceDir(manifest.TranslationFolder);
+        OutputPackContentPatcher outputContentPatcher = new(manifest);
+        TextureAssetGroup textureAsset = TextureAssetGroup.FromSourceDir(EDITING_INPUT, "furniture");
+        outputContentPatcher.Load();
+        outputContentPatcher.TextureAsset = textureAsset;
+        if (outputContentPatcher.FurnitureAsset == null)
+        {
+            outputContentPatcher.FurnitureAsset = new();
+            outputContentPatcher.FurnitureAsset.Editing["testyFurni1"] = FurnitureDelimString.Deserialize(
+                "testyFurni1",
+                "testyFurni1/rug/4 2/4 4/1/520/2/[LocalizedText {{ModId}}.i18n:decor.testyFurni1]/0/decor\\petals_pink\\{{ModId}}/false"
+            )!;
+            outputContentPatcher.FurnitureAsset.Editing["testyFurni2"] = FurnitureDelimString.Deserialize(
+                "testyFurni2",
+                "testyFurni2/rug/3 3/3 1/1/520/2/[LocalizedText {{ModId}}.i18n:decor.testyFurni2]/0/decor\\petals_white\\{{ModId}}/false"
+            )!;
+            outputContentPatcher.FurnitureAsset.SetTranslations(outputContentPatcher.Translations);
+        }
+        EditorMenuManager.ShowFurnitureEditor(textureAsset, outputContentPatcher.FurnitureAsset);
+        Game1.activeClickableMenu.exitFunction = () =>
+        {
+            Log("SAVE");
+            outputContentPatcher.Save();
+        };
 
-        FurnitureAsset furnitureAsset = new();
-        furnitureAsset.Editing["testyFurni1"] = FurnitureDelimString.Deserialize(
-            "testyFurni1",
-            "testyFurni1/rug/4 2/4 4/1/520/2/[LocalizedText {{ModId}}.i18n:decor.petals_pink]/0/decor\\petals_pink\\{{ModId}}/false"
-        )!;
-        furnitureAsset.Editing["testyFurni2"] = FurnitureDelimString.Deserialize(
-            "testyFurni1",
-            "testyFurni2/rug/3 3/3 1/1/520/2/[LocalizedText {{ModId}}.i18n:decor.petals_pink]/0/decor\\petals_white\\{{ModId}}/false"
-        )!;
-        furnitureAsset.SetTranslations(translations);
+        // OutputManifest manifest = new("Mock", "debug");
+        // TranslationStore? translations = TranslationStore.FromSourceDir(manifest.TranslationFolder);
 
-        TextureAsset textureAsset = TextureAsset.FromSourceDir(EDITING_INPUT, "furniture");
+        // FurnitureAsset furnitureAsset = new();
+        // furnitureAsset.Editing["testyFurni1"] = FurnitureDelimString.Deserialize(
+        //     "testyFurni1",
+        //     "testyFurni1/rug/4 2/4 4/1/520/2/[LocalizedText {{ModId}}.i18n:decor.petals_pink]/0/decor\\petals_pink\\{{ModId}}/false"
+        // )!;
+        // furnitureAsset.Editing["testyFurni2"] = FurnitureDelimString.Deserialize(
+        //     "testyFurni1",
+        //     "testyFurni2/rug/3 3/3 1/1/520/2/[LocalizedText {{ModId}}.i18n:decor.petals_pink]/0/decor\\petals_white\\{{ModId}}/false"
+        // )!;
+        // furnitureAsset.SetTranslations(translations);
 
-        EditorMenuManager.ShowFurnitureEditor(textureAsset, furnitureAsset);
+        // TextureAssetGroup textureAsset = TextureAssetGroup.FromSourceDir(EDITING_INPUT, "furniture");
 
-        OutputPackContentPatcher outputContentPatcher = new(manifest) { Translations = translations };
-        outputContentPatcher.LoadableAssets.Add(textureAsset);
-        outputContentPatcher.EditableAssets.Add(furnitureAsset);
-        outputContentPatcher.Save();
+        // EditorMenuManager.ShowFurnitureEditor(textureAsset, furnitureAsset);
     }
 
     public static readonly JsonSerializerSettings jsonSerializerSettings = new()

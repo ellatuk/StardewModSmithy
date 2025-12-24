@@ -2,14 +2,16 @@ using System.Text;
 using Microsoft.Xna.Framework;
 using PropertyChanged.SourceGenerator;
 using StardewModdingAPI;
-using StardewModSmithy.GUI;
+using StardewModSmithy.GUI.ViewModels;
 using StardewModSmithy.Integration;
 using StardewModSmithy.Models.Interfaces;
 using StardewModSmithy.Models.ValueKinds;
+using StardewModSmithy.Wheels;
+using StardewValley.Extensions;
 
 namespace StardewModSmithy.Models;
 
-public sealed partial class FurnitureDelimString(string Id)
+public sealed partial class FurnitureDelimString(string id) : IBoundsProvider
 {
     public const char DELIM = '/';
     #region options
@@ -48,8 +50,8 @@ public sealed partial class FurnitureDelimString(string Id)
     #endregion
 
     #region fields
-    [Notify]
-    private string name = Id;
+    public string Id = id;
+    public string Name = id;
 
     public OptionedValue<string> TypeImpl { get; } = new(type_Options, "decor");
     public string Type
@@ -65,33 +67,20 @@ public sealed partial class FurnitureDelimString(string Id)
     [Notify]
     public Point tilesheetSize = Point.Zero;
     public string TilesheetSizeName => $"{TilesheetSize.X} {TilesheetSize.Y}";
-    public int TilesheetSizeX
-    {
-        get => TilesheetSize.X;
-        set => TilesheetSize = new(value, TilesheetSize.Y);
-    }
-    public int TilesheetSizeY
-    {
-        get => TilesheetSize.Y;
-        set => TilesheetSize = new(TilesheetSize.X, value);
-    }
+    public SpinBoxViewModel TilesheetSizeX =>
+        new(() => TilesheetSize.X, (value) => TilesheetSize = new(value, TilesheetSize.Y), 1, int.MaxValue);
+    public SpinBoxViewModel TilesheetSizeY =>
+        new(() => TilesheetSize.Y, (value) => TilesheetSize = new(TilesheetSize.X, value), 1, int.MaxValue);
 
     [Notify]
     public Point boundingBoxSize = Point.Zero;
     public string BoundingBoxSizeName => $"{BoundingBoxSize.X} {BoundingBoxSize.Y}";
-    public int BoundingBoxSizeX
-    {
-        get => BoundingBoxSize.X;
-        set => BoundingBoxSize = new(value, BoundingBoxSize.Y);
-    }
-    public int BoundingBoxSizeY
-    {
-        get => BoundingBoxSize.Y;
-        set => BoundingBoxSize = new(BoundingBoxSize.X, value);
-    }
+    public SpinBoxViewModel BoundingBoxSizeX =>
+        new(() => BoundingBoxSize.X, (value) => BoundingBoxSize = new(value, BoundingBoxSize.Y), 1, int.MaxValue);
+    public SpinBoxViewModel BoundingBoxSizeY =>
+        new(() => BoundingBoxSize.Y, (value) => BoundingBoxSize = new(BoundingBoxSize.X, value), 1, int.MaxValue);
 
-    public string GUI_TilesheetArea =>
-        $"{TilesheetSize.X * FurnitureEditorContext.ONE_TILE}px {TilesheetSize.Y * FurnitureEditorContext.ONE_TILE}px";
+    public string GUI_TilesheetArea => $"{TilesheetSize.X * Consts.ONE_TILE}px {TilesheetSize.Y * Consts.ONE_TILE}px";
 
     public IEnumerable<SDUIEdges> GUI_BoundingSquares
     {
@@ -103,10 +92,7 @@ public sealed partial class FurnitureDelimString(string Id)
             {
                 for (int y = 0; y < boundingBox.Y; y++)
                 {
-                    yield return new(
-                        x * FurnitureEditorContext.ONE_TILE,
-                        (tilesheetSize.Y - 1 - y) * FurnitureEditorContext.ONE_TILE
-                    );
+                    yield return new(x * Consts.ONE_TILE, (tilesheetSize.Y - 1 - y) * Consts.ONE_TILE);
                 }
             }
         }
@@ -127,6 +113,22 @@ public sealed partial class FurnitureDelimString(string Id)
     [Notify]
     public int price = 0;
 
+    public string PriceInput
+    {
+        get => Price.ToString();
+        set
+        {
+            if (int.TryParse(value, out int newPrice))
+            {
+                Price = newPrice;
+            }
+            else
+            {
+                OnPropertyChanged(new(nameof(Price)));
+            }
+        }
+    }
+
     private readonly OptionedValue<int> PlacementImpl = new(placement_Options, 1);
     public int Placement
     {
@@ -140,7 +142,7 @@ public sealed partial class FurnitureDelimString(string Id)
     public Func<int, string> PlacementName = (place) =>
         place == -1 ? I18n.Gui_Placement_Neg1_Name() : I18n.GetByKey($"gui.placement.{place}.name");
 
-    public TranslationString DisplayNameImpl { get; private set; } = new(string.Concat(Id, "name"));
+    public TranslationString DisplayNameImpl { get; private set; } = new(string.Concat(id, ".name"));
     public string DisplayName
     {
         get => DisplayNameImpl.Value ?? "???";
@@ -151,15 +153,17 @@ public sealed partial class FurnitureDelimString(string Id)
         }
     }
 
-    [Notify]
-    public int spriteIndex = 0;
+    public int SpriteIndex { get; set; } = 0;
 
-    public IAssetName TextureAssetName { get; set; } = ModEntry.ParseAssetName("TileSheets/furniture");
+    public IAssetName? TextureAssetName { get; set; }
 
     [Notify]
     public bool offLimitsForRandomSale = false;
     public HashSet<string> ContextTags { get; set; } = [];
     #endregion
+
+    internal bool FromDeserialize = false;
+    internal int PreSerializeSeq = -1;
 
     private static Point PointFromString(string str)
     {
@@ -187,12 +191,12 @@ public sealed partial class FurnitureDelimString(string Id)
 
         FurnitureDelimString furniDelimString = new(id)
         {
-            Name = parts[0],
+            Name = Sanitize.ModIdPrefix(parts[0]),
+            Type = parts[1],
             TilesheetSize = PointFromString(parts[2]),
             BoundingBoxSize = PointFromString(parts[3]),
         };
 
-        furniDelimString.Type = parts[1];
         if (int.TryParse(parts[4], out int rotation))
         {
             furniDelimString.Rotation = rotation;
@@ -225,14 +229,28 @@ public sealed partial class FurnitureDelimString(string Id)
         if (parts.Length > 11)
             furniDelimString.ContextTags = parts[11].Split(' ').ToHashSet();
 
+        furniDelimString.FromDeserialize = true;
         return furniDelimString;
     }
 
     private static readonly StringBuilder sb = new();
 
+    public void UpdateForFirstTimeSerialize()
+    {
+        if (TextureAssetName == null || FromDeserialize)
+            return;
+
+        Id = string.Concat(Sanitize.Key(Path.GetFileName(TextureAssetName.BaseName)), '_', Id);
+        Name = Id;
+        DisplayNameImpl.Key = string.Concat(Id, ".name");
+    }
+
     public string Serialize()
     {
-        sb.Append($"{{{{ModId}}}}_{Name}");
+        if (TextureAssetName == null)
+            return string.Empty;
+
+        sb.Append(string.Concat(Sanitize.ModIdPrefixValue, Name));
         sb.Append(DELIM);
 
         sb.Append(Type);
@@ -278,9 +296,10 @@ public sealed partial class FurnitureDelimString(string Id)
 
 public sealed class FurnitureAsset : IEditableAsset
 {
+    public const string DefaultIncludeName = "furniture.json";
     public string Desc => "furniture";
     public string Target => "Data/Furniture";
-    public string IncludeName => "furniture.json";
+    public string IncludeName => DefaultIncludeName;
     public Dictionary<string, FurnitureDelimString> Editing = [];
 
     public Dictionary<string, object> GetData()
@@ -288,9 +307,73 @@ public sealed class FurnitureAsset : IEditableAsset
         Dictionary<string, object> output = [];
         foreach ((string key, FurnitureDelimString furniDelim) in Editing)
         {
-            output[$"{{{{ModId}}}}_{key}"] = furniDelim.Serialize();
+            if (furniDelim.TextureAssetName != null)
+                output[string.Concat(Sanitize.ModIdPrefixValue, furniDelim.Id)] = furniDelim.Serialize();
         }
         return output;
+    }
+
+    public void SetData(Dictionary<string, object> data)
+    {
+        foreach ((string key, object value) in data)
+        {
+            if (value is not string strV)
+                return;
+            string baseKey = Sanitize.ModIdPrefix(key);
+            if (FurnitureDelimString.Deserialize(baseKey, strV) is FurnitureDelimString furniDelim)
+                Editing[baseKey] = furniDelim;
+        }
+    }
+
+    public FurnitureDelimString AddNewDefault(FurnitureDelimString? selectedFurniture)
+    {
+        int seq = 0;
+        string seqId = seq.ToString();
+        while (Editing.ContainsKey(seqId))
+        {
+            seq++;
+            seqId = seq.ToString();
+        }
+        FurnitureDelimString newDefaultFurni = new(seqId)
+        {
+            Name = seqId,
+            Type = "decor",
+            TilesheetSize = new(1, 1),
+            BoundingBoxSize = new(1, 1),
+            PreSerializeSeq = seq,
+        };
+        if (selectedFurniture != null)
+        {
+            newDefaultFurni.TextureAssetName = selectedFurniture.TextureAssetName;
+        }
+        Editing[seqId] = newDefaultFurni;
+        return newDefaultFurni;
+    }
+
+    internal bool Delete(FurnitureDelimString? selectedFurniture)
+    {
+        return Editing.RemoveWhere(kv => kv.Value == selectedFurniture) > 0;
+    }
+
+    public IEnumerable<IAssetName> GetRequiredAssets()
+    {
+        foreach (FurnitureDelimString furniDelim in Editing.Values)
+        {
+            if (furniDelim.TextureAssetName != null)
+                yield return furniDelim.TextureAssetName;
+        }
+    }
+
+    public bool GetTranslations(ref TranslationStore translations)
+    {
+        bool requiresLoad = false;
+        foreach (FurnitureDelimString furniDelim in Editing.Values)
+        {
+            furniDelim.UpdateForFirstTimeSerialize();
+            translations.Data[furniDelim.DisplayNameImpl.Key] = furniDelim.DisplayNameImpl.Value ?? "???";
+            requiresLoad = requiresLoad || furniDelim.DisplayNameImpl.Kind == TranslationStringKind.LocalizedText;
+        }
+        return requiresLoad;
     }
 
     public void SetTranslations(TranslationStore? translations)
@@ -301,16 +384,5 @@ public sealed class FurnitureAsset : IEditableAsset
         {
             furniDelim.DisplayNameImpl.SetValueFrom(translations);
         }
-    }
-
-    public bool GetTranslations(ref TranslationStore translations)
-    {
-        bool requiresLoad = false;
-        foreach (FurnitureDelimString furniDelim in Editing.Values)
-        {
-            translations.Data[furniDelim.DisplayNameImpl.Key] = furniDelim.DisplayNameImpl.Value ?? "???";
-            requiresLoad = requiresLoad || furniDelim.DisplayNameImpl.Kind == TranslationStringKind.LocalizedText;
-        }
-        return requiresLoad;
     }
 }
