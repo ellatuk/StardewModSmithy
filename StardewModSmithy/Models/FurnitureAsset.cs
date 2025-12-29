@@ -129,7 +129,7 @@ public sealed partial class FurnitureDelimString(string id) : IBoundsProvider
         }
     }
 
-    private readonly OptionedValue<int> PlacementImpl = new(placement_Options, 1);
+    private readonly OptionedValue<int> PlacementImpl = new(placement_Options, 2);
     public int Placement
     {
         get => (int)PlacementImpl.Value;
@@ -296,21 +296,26 @@ public sealed partial class FurnitureDelimString(string id) : IBoundsProvider
 
 public sealed class FurnitureAsset : IEditableAsset
 {
-    public const string DefaultIncludeName = "furniture.json";
+    public const string DEFAULT_INCLUDE_NAME = "furniture.json";
+    public const string TARGET_ASSET = "Data/Furniture";
     public string Desc => "furniture";
-    public string Target => "Data/Furniture";
-    public string IncludeName => DefaultIncludeName;
+    public string IncludeName => DEFAULT_INCLUDE_NAME;
     public Dictionary<string, FurnitureDelimString> Editing = [];
 
     public Dictionary<string, object> GetData()
     {
         Dictionary<string, object> output = [];
-        foreach ((string key, FurnitureDelimString furniDelim) in Editing)
+        foreach (FurnitureDelimString furniDelim in Editing.Values)
         {
             if (furniDelim.TextureAssetName != null)
                 output[string.Concat(Sanitize.ModIdPrefixValue, furniDelim.Id)] = furniDelim.Serialize();
         }
         return output;
+    }
+
+    public IEnumerable<(string, Dictionary<string, object>)> GetChanges()
+    {
+        yield return new(TARGET_ASSET, GetData());
     }
 
     public void SetData(Dictionary<string, object> data)

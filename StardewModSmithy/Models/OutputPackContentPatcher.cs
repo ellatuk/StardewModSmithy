@@ -126,7 +126,9 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
             ModEntry.WriteJson(
                 dataDir,
                 editable.IncludeName,
-                new MockContent([new MockEditData(editable.Target, editable.GetData())])
+                new MockContent(
+                    editable.GetChanges().Select(res => new MockEditData(res.Item1, res.Item2)).ToList<IMockPatch>()
+                )
             );
             descList.Add(editable.Desc);
             requiredAssets.AddRange(editable.GetRequiredAssets());
@@ -165,7 +167,7 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
                 continue;
             }
             string fileName = Path.GetFileName(file);
-            if (Path.GetFileName(file) != FurnitureAsset.DefaultIncludeName)
+            if (Path.GetFileName(file) != FurnitureAsset.DEFAULT_INCLUDE_NAME)
             {
                 continue;
             }
