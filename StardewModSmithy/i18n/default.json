@@ -1,6 +1,5 @@
 {
   "$schema": "https://smapi.io/schemas/i18n.json",
-  "gui.title.furniture": "Furniture Editor",
   "gui.DragMovementMode.Sheet.name": "Sheet",
   "gui.DragMovementMode.Sheet.desc": "Move the sprite sheet by dragging",
   "gui.DragMovementMode.Bounds.name": "Bounds",
@@ -22,6 +21,10 @@
   "gui.label.placement": "Placement:",
   "gui.label.price": "Price:",
   "gui.label.no-random-sale": "No Random Sale:",
+  "gui.label.new-pack": "New Pack:",
+  "gui.label.editable-content-packs": "Editable Content Packs:",
   "gui.button.create": "Create",
-  "gui.button.delete": "Delete"
+  "gui.button.delete": "Delete",
+  "gui.placeholder": "NEW#{{seq}}",
+  "hud.put-texture": "Put textures (PNG) in directory at '{{path}}'!"
 }

@@ -1,8 +1,8 @@
-using System.Text;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModSmithy.Models.Interfaces;
 using StardewModSmithy.Models.ValueKinds;
+using StardewModSmithy.Wheels;
 using StardewValley.Extensions;
 
 namespace StardewModSmithy.Models;
@@ -23,7 +23,6 @@ public record MockLoad(string Target, string FromFile) : IMockPatch
 {
     public string Action => "Load";
     public Dictionary<string, object>? When { get; set; }
-
     public string Priority { get; set; } = AssetLoadPriority.Medium.ToString();
 }
 
@@ -47,24 +46,25 @@ internal sealed record MockContentMain(List<IMockPatch> Changes) : MockContent(C
 public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputPack
 {
     public const string PackFor = "Pathoschild.ContentPatcher";
+    public OutputManifest Manifest => manifest;
 
-    public TextureAssetGroup? TextureAsset { get; set; } = null;
-    public FurnitureAsset? FurnitureAsset { get; set; } = null;
+    public TextureAssetGroup? TextureAssetGroup { get; set; } = null;
+    public FurnitureAsset? FurniAsset { get; set; } = null;
 
     public IEnumerable<ILoadableAsset> LoadableAssets
     {
         get
         {
-            if (TextureAsset is not null)
-                yield return TextureAsset;
+            if (TextureAssetGroup is not null)
+                yield return TextureAssetGroup;
         }
     }
     public IEnumerable<IEditableAsset> EditableAssets
     {
         get
         {
-            if (FurnitureAsset is not null)
-                yield return FurnitureAsset;
+            if (FurniAsset is not null)
+                yield return FurniAsset;
         }
     }
 
@@ -147,7 +147,7 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
         // content.json
         ModEntry.WriteJson(targetPath, "content.json", new MockContentMain(changes));
         // manifest.json
-        ModEntry.WriteJson(targetPath, "manifest.json", manifest);
+        ModEntry.WriteJson(targetPath, Consts.MANIFEST_FILE, manifest);
     }
 
     public void Load()
@@ -176,10 +176,15 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
             {
                 continue;
             }
-            FurnitureAsset = new();
-            FurnitureAsset.SetData(editData.Entries);
-            FurnitureAsset.SetTranslations(Translations);
+            InitializeFurnitureAsset().SetData(editData.Entries);
             break;
         }
+    }
+
+    public FurnitureAsset InitializeFurnitureAsset()
+    {
+        FurniAsset = new();
+        FurniAsset.SetTranslations(Translations);
+        return FurniAsset;
     }
 }

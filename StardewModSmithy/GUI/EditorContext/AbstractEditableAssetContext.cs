@@ -21,6 +21,7 @@ public abstract partial class AbstractEditableAssetContext
 
     [Notify]
     private IBoundsProvider? boundsProvider;
+    internal Action? saveChangesDelegate;
 
     public bool HasBoundsProvider => BoundsProvider != null;
 

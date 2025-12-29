@@ -31,6 +31,7 @@
   <image
     sprite={@mushymato.StardewModSmithy/sprites/cursors2:paintButton}
     layout="64px 64px"
+    margin="8,-4,8,8"
     focusable="true"
     +hover:scale="1.1"
     left-click=|ToggleTextureSelector()|/>

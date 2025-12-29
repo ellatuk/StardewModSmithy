@@ -1,7 +1,8 @@
-namespace StardewModSmithy.Models;
+namespace StardewModSmithy.Models.Interfaces;
 
-internal interface IOutputPack
+public interface IOutputPack
 {
     public void Save();
     public void Load();
+    public OutputManifest Manifest { get; }
 }

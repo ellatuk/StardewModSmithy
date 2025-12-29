@@ -1,6 +1,5 @@
 {
   "$schema": "https://smapi.io/schemas/i18n.json",
-  "gui.title.furniture": "家具编辑",
   "gui.DragMovementMode.Sheet.name": "贴图",
   "gui.DragMovementMode.Sheet.desc": "鼠标拖动贴图",
   "gui.DragMovementMode.Bounds.name": "边界",
@@ -18,7 +17,14 @@
   "gui.label.tilesheet": "贴图范围：",
   "gui.label.bounding": "碰撞范围：",
   "gui.label.type": "类型：",
-  "gui.label.price": "价格：",
   "gui.label.rotation": "旋转：",
   "gui.label.placement": "放置：",
+  "gui.label.price": "价格：",
+  "gui.label.no-random-sale": "禁止随机出售：",
+  "gui.label.new-pack": "新内容包：",
+  "gui.label.editable-content-packs": "可编辑内容包：",
+  "gui.button.create": "创建",
+  "gui.button.delete": "删除",
+  "gui.placeholder": "新#{{seq}}",
+  "hud.put-texture": "把贴图（PNG）放到‘{{path}}’文件夹里！",
 }

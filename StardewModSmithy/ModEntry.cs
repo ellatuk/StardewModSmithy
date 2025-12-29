@@ -3,7 +3,9 @@ using Newtonsoft.Json;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModSmithy.GUI;
+using StardewModSmithy.GUI.EditorContext;
 using StardewModSmithy.Models;
+using StardewModSmithy.Wheels;
 using StardewValley;
 
 namespace StardewModSmithy;
@@ -22,10 +24,7 @@ public sealed class ModEntry : Mod
     internal static string DirectoryPath = null!;
     internal static IModContentHelper ModContent = null!;
 
-    public static string ContentPatcherVersion { get; internal set; } = "2.8.0";
-
-    internal const string EDITING_INPUT = "editing_input";
-    internal const string EDITING_OUTPUT = "editing_output";
+    public static string ContentPatcherVersion { get; internal set; } = "2.1.0";
 
     public override void Entry(IModHelper helper)
     {
@@ -35,10 +34,10 @@ public sealed class ModEntry : Mod
         DirectoryPath = helper.DirectoryPath;
         ModContent = helper.ModContent;
 
-        Directory.CreateDirectory(Path.Combine(DirectoryPath, EDITING_INPUT));
-        Directory.CreateDirectory(Path.Combine(DirectoryPath, EDITING_OUTPUT));
+        Directory.CreateDirectory(Path.Combine(DirectoryPath, Consts.EDITING_INPUT));
+        Directory.CreateDirectory(Path.Combine(DirectoryPath, Consts.EDITING_OUTPUT));
 
-        helper.ConsoleCommands.Add("sms-testy", "testy test", ConsoleTesty);
+        helper.ConsoleCommands.Add("sms-show", "show smithy menu to edit your mods.", ConsoleShowSmithy);
         helper.Events.GameLoop.GameLaunched += OnGameLaunched;
     }
 
@@ -51,50 +50,9 @@ public sealed class ModEntry : Mod
         }
     }
 
-    private void ConsoleTesty(string cmd, string[] args)
+    private void ConsoleShowSmithy(string cmd, string[] args)
     {
-        OutputManifest manifest = new("Mock", "debug");
-        OutputPackContentPatcher outputContentPatcher = new(manifest);
-        TextureAssetGroup textureAsset = TextureAssetGroup.FromSourceDir(EDITING_INPUT, "furniture");
-        outputContentPatcher.Load();
-        outputContentPatcher.TextureAsset = textureAsset;
-        if (outputContentPatcher.FurnitureAsset == null)
-        {
-            outputContentPatcher.FurnitureAsset = new();
-            outputContentPatcher.FurnitureAsset.Editing["testyFurni1"] = FurnitureDelimString.Deserialize(
-                "testyFurni1",
-                "testyFurni1/rug/4 2/4 4/1/520/2/[LocalizedText {{ModId}}.i18n:decor.testyFurni1]/0/decor\\petals_pink\\{{ModId}}/false"
-            )!;
-            outputContentPatcher.FurnitureAsset.Editing["testyFurni2"] = FurnitureDelimString.Deserialize(
-                "testyFurni2",
-                "testyFurni2/rug/3 3/3 1/1/520/2/[LocalizedText {{ModId}}.i18n:decor.testyFurni2]/0/decor\\petals_white\\{{ModId}}/false"
-            )!;
-            outputContentPatcher.FurnitureAsset.SetTranslations(outputContentPatcher.Translations);
-        }
-        EditorMenuManager.ShowFurnitureEditor(textureAsset, outputContentPatcher.FurnitureAsset);
-        Game1.activeClickableMenu.exitFunction = () =>
-        {
-            Log("SAVE");
-            outputContentPatcher.Save();
-        };
-
-        // OutputManifest manifest = new("Mock", "debug");
-        // TranslationStore? translations = TranslationStore.FromSourceDir(manifest.TranslationFolder);
-
-        // FurnitureAsset furnitureAsset = new();
-        // furnitureAsset.Editing["testyFurni1"] = FurnitureDelimString.Deserialize(
-        //     "testyFurni1",
-        //     "testyFurni1/rug/4 2/4 4/1/520/2/[LocalizedText {{ModId}}.i18n:decor.petals_pink]/0/decor\\petals_pink\\{{ModId}}/false"
-        // )!;
-        // furnitureAsset.Editing["testyFurni2"] = FurnitureDelimString.Deserialize(
-        //     "testyFurni1",
-        //     "testyFurni2/rug/3 3/3 1/1/520/2/[LocalizedText {{ModId}}.i18n:decor.petals_pink]/0/decor\\petals_white\\{{ModId}}/false"
-        // )!;
-        // furnitureAsset.SetTranslations(translations);
-
-        // TextureAssetGroup textureAsset = TextureAssetGroup.FromSourceDir(EDITING_INPUT, "furniture");
-
-        // EditorMenuManager.ShowFurnitureEditor(textureAsset, furnitureAsset);
+        EditorMenuManager.ShowPackListing();
     }
 
     public static readonly JsonSerializerSettings jsonSerializerSettings = new()

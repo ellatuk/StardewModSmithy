@@ -1,7 +1,7 @@
 <panel layout="100% 100%" horizontal-content-alignment="end">
   <include name="mushymato.StardewModSmithy/views/includes/draggable-texture-sheet" *context={:TextureContext}/>
   <panel layout="500px content" *context={:EditableContext}>
-    <frame layout="stretch 116px" padding="30,20" border={@Mods/StardewUI/Sprites/ControlBorder}>
+    <frame layout="stretch 116px" padding="30,20,0,0" border={@Mods/StardewUI/Sprites/ControlBorder}>
       <lane orientation="vertical">
         <lane layout="content content"
             vertical-content-alignment="middle">
