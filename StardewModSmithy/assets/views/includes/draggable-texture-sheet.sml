@@ -2,7 +2,8 @@
   <frame *if={ShowingTextureSelector}
       layout="content 100%" 
       background={@Mods/StardewUI/Sprites/ControlBorder}
-      padding="16">
+      padding="16"
+      z-index="2">
     <scrollable peeking="128" scrollbar-margin="8,0,0,0">
       <lane orientation="vertical">
         <frame *repeat={Textures}
@@ -34,7 +35,8 @@
     margin="8,-4,8,8"
     focusable="true"
     +hover:scale="1.1"
-    left-click=|ToggleTextureSelector()|/>
+    left-click=|ToggleTextureSelector()|
+    z-index="2"/>
 
   <panel layout="stretch stretch"
     margin="0,64,0,0"

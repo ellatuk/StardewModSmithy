@@ -32,7 +32,6 @@ public sealed partial record TextureAsset(IAssetName AssetName, string PathOnDis
             Path.GetDirectoryName(PathOnDisk) ?? "",
             string.Concat(Path.GetFileNameWithoutExtension(PathOnDisk), Consts.ATLAS_SUFFIX)
         );
-        ModEntry.Log(atlasPath);
         if (!File.Exists(atlasPath))
             return null;
         return ModEntry.ReadJson<List<TxAtlasEntry>>(atlasPath);

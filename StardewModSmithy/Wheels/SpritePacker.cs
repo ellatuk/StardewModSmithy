@@ -11,11 +11,13 @@ namespace StardewModSmithy.Wheels;
 public record TxToPack(string RelPath, Texture2D Texture)
 {
     public Rectangle Bounds = new(
-        Texture.Bounds.X / Consts.TX_TILE * Consts.TX_TILE,
-        Texture.Bounds.Y / Consts.TX_TILE * Consts.TX_TILE,
-        Texture.Bounds.Width / Consts.TX_TILE * Consts.TX_TILE,
-        Texture.Bounds.Height / Consts.TX_TILE * Consts.TX_TILE
+        CeilingByTile(Texture.Bounds.X),
+        CeilingByTile(Texture.Bounds.Y),
+        CeilingByTile(Texture.Bounds.Width),
+        CeilingByTile(Texture.Bounds.Height)
     );
+
+    private static int CeilingByTile(int value) => (int)(MathF.Ceiling(value / (float)Consts.TX_TILE) * Consts.TX_TILE);
 
     public Point TargetPos { get; set; }
 
@@ -114,14 +116,20 @@ internal static class SpritePacker
         foreach (TxToPack txToPack in txToPackList)
         {
             Color[] txToPackData = ArrayPool<Color>.Shared.Rent(txToPack.Texture.GetElementCount());
+            Array.Fill(txToPackData, Color.Transparent);
             txToPack.Texture.GetData(txToPackData, 0, txToPack.Texture.GetElementCount());
             CopySourceSpriteToTarget(
                 ref txToPackData,
                 txToPack.Texture.Width,
-                txToPack.Bounds,
+                txToPack.Texture.Bounds,
                 ref packedData,
                 packedTx.Width,
-                new Rectangle(txToPack.TargetPos.X, txToPack.TargetPos.Y, txToPack.Bounds.Width, txToPack.Bounds.Height)
+                new Rectangle(
+                    txToPack.TargetPos.X,
+                    txToPack.TargetPos.Y,
+                    txToPack.Texture.Bounds.Width,
+                    txToPack.Texture.Bounds.Height
+                )
             );
             ArrayPool<Color>.Shared.Return(txToPackData);
             txAtlasEntries.Add(txToPack.GetTxAtlasEntry());
