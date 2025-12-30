@@ -96,7 +96,7 @@ internal record PackListingContext(TextureAssetGroup TextureAssetGroup, List<IOu
             TextureAssetGroup = TextureAssetGroup,
             FurniAsset = new FurnitureAsset(),
         };
-        outputPackContentPatcher.InitializeFurnitureAsset();
+        outputPackContentPatcher.InitializeFurnitureAsset([]);
         PackDisplayContext packDisplay = new(outputPackContentPatcher);
         packDisplayList.Add(packDisplay);
         PropertyChanged?.Invoke(this, new(nameof(PackDisplayList)));

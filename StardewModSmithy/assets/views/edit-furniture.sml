@@ -1,7 +1,7 @@
 <panel layout="100% 100%" horizontal-content-alignment="end">
   <include name="mushymato.StardewModSmithy/views/includes/draggable-texture-sheet" *context={:TextureContext}/>
-  <panel layout="500px content" *context={:EditableContext}>
-    <frame layout="stretch 116px" padding="30,20,0,0" border={@Mods/StardewUI/Sprites/ControlBorder}>
+  <lane layout="500px content" orientation="vertical" *context={:EditableContext}>
+    <frame layout="stretch content" padding="30,20,0,20" border={@Mods/StardewUI/Sprites/ControlBorder}>
       <lane orientation="vertical">
         <lane layout="content content"
             vertical-content-alignment="middle">
@@ -34,9 +34,20 @@
             left-click=|Delete()|
           />
         </lane>
+        <lane layout="stretch content"
+          vertical-content-alignment="middle"
+          horizontal-content-alignment="end"
+          *if={TextureHasAtlas}>
+          <button
+            layout="content[270..] content"
+            margin="0,4,30,0"
+            text={#gui.button.populate}
+            left-click=|PopulateFromAtlas()|
+          />
+        </lane>
       </lane>
     </frame>
-    <frame layout="stretch stretch" margin="0,128,0,0" padding="32,8" border={@Mods/StardewUI/Sprites/ControlBorder} *if={HasBoundsProvider}>
+    <frame layout="stretch stretch" padding="32,8" border={@Mods/StardewUI/Sprites/ControlBorder} *if={HasBoundsProvider}>
       <lane orientation="vertical" *context={SelectedFurniture}>
         <form-row title={#gui.label.name}>
           <textinput layout="content 54px" margin="-8,12" text={<>DisplayName} />
@@ -75,7 +86,7 @@
         </form-row>
       </lane>
     </frame>
-  </panel>
+  </lane>
 </panel>
 
 <template name="form-row">

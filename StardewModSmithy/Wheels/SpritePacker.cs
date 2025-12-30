@@ -2,39 +2,53 @@ using System.Buffers;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI;
+using StardewModSmithy.Models;
 using StardewValley;
 using StardewValley.Extensions;
 
 namespace StardewModSmithy.Wheels;
 
-internal record TxToPack(string RelPath, Texture2D Texture)
+public record TxToPack(string RelPath, Texture2D Texture)
 {
-    internal const int TILE_WIDTH = 16;
     public Rectangle Bounds = new(
-        Texture.Bounds.X / TILE_WIDTH * TILE_WIDTH,
-        Texture.Bounds.Y / TILE_WIDTH * TILE_WIDTH,
-        Texture.Bounds.Width / TILE_WIDTH * TILE_WIDTH,
-        Texture.Bounds.Height / TILE_WIDTH * TILE_WIDTH
+        Texture.Bounds.X / Consts.TX_TILE * Consts.TX_TILE,
+        Texture.Bounds.Y / Consts.TX_TILE * Consts.TX_TILE,
+        Texture.Bounds.Width / Consts.TX_TILE * Consts.TX_TILE,
+        Texture.Bounds.Height / Consts.TX_TILE * Consts.TX_TILE
     );
 
     public Point TargetPos { get; set; }
+
+    public TxAtlasEntry GetTxAtlasEntry()
+    {
+        return new TxAtlasEntry(RelPath, new(TargetPos.X, TargetPos.Y, Bounds.Width, Bounds.Height));
+    }
 }
 
 internal static class SpritePacker
 {
-    internal static void GatherTexturesToPack(DirectoryInfo directoryInfo, ref List<TxToPack> txToPackList)
+    internal static void GatherTexturesToPack(
+        DirectoryInfo topDir,
+        DirectoryInfo directoryInfo,
+        ref List<TxToPack> txToPackList
+    )
     {
         foreach (FileInfo info in directoryInfo.EnumerateFiles())
         {
             if (!info.Extension.EqualsIgnoreCase(".png"))
                 continue;
             string relPath = Path.GetRelativePath(ModEntry.DirectoryPath, info.FullName);
-            txToPackList.Add(new(relPath, ModEntry.ModContent.Load<Texture2D>(relPath)));
+            txToPackList.Add(
+                new(
+                    Path.GetRelativePath(topDir.FullName, info.FullName),
+                    ModEntry.ModContent.Load<Texture2D>(Path.GetRelativePath(ModEntry.DirectoryPath, info.FullName))
+                )
+            );
         }
 
         foreach (DirectoryInfo info in directoryInfo.EnumerateDirectories())
         {
-            GatherTexturesToPack(info, ref txToPackList);
+            GatherTexturesToPack(topDir, info, ref txToPackList);
         }
     }
 
@@ -44,7 +58,7 @@ internal static class SpritePacker
         List<TxToPack> txToPackList = [];
         DirectoryInfo subdirTop = new(fullSubdir);
 
-        GatherTexturesToPack(subdirTop, ref txToPackList);
+        GatherTexturesToPack(subdirTop, subdirTop, ref txToPackList);
         if (txToPackList.Count == 0)
         {
             return;
@@ -73,29 +87,29 @@ internal static class SpritePacker
             }
             txToPack.TargetPos = new(pickedRect.X, pickedRect.Y);
             packRects.Remove(pickedRect);
-            packRects.Insert(
-                0,
-                new Rectangle(
-                    pickedRect.X + txToPack.Bounds.Width,
-                    pickedRect.Y,
-                    pickedRect.Width - txToPack.Bounds.Width,
-                    txToPack.Bounds.Height
-                )
+            Rectangle hRect = new(
+                pickedRect.X + txToPack.Bounds.Width,
+                pickedRect.Y,
+                pickedRect.Width - txToPack.Bounds.Width,
+                txToPack.Bounds.Height
             );
-            packRects.Add(
-                new Rectangle(
-                    pickedRect.X,
-                    pickedRect.Y + txToPack.Bounds.Height,
-                    pickedRect.Width,
-                    pickedRect.Height - txToPack.Bounds.Height
-                )
+            Rectangle vRect = new(
+                pickedRect.X,
+                pickedRect.Y + txToPack.Bounds.Height,
+                pickedRect.Width,
+                pickedRect.Height - txToPack.Bounds.Height
             );
+
+            if (hRect.Width > 0)
+                packRects.Insert(0, hRect);
+            if (vRect.Height > 0)
+                packRects.Add(vRect);
         }
-        int maxWidth = packRects.Max(rect => rect.X);
         int maxHeight = packRects.Max(rect => rect.Y);
 
-        Texture2D packedTx = new(Game1.graphics.GraphicsDevice, maxWidth, maxHeight);
+        Texture2D packedTx = new(Game1.graphics.GraphicsDevice, maxPackedWidth, maxHeight);
         Color[] packedData = ArrayPool<Color>.Shared.Rent(packedTx.GetElementCount());
+        List<TxAtlasEntry> txAtlasEntries = [];
         Array.Fill(packedData, Color.Transparent);
         foreach (TxToPack txToPack in txToPackList)
         {
@@ -110,6 +124,7 @@ internal static class SpritePacker
                 new Rectangle(txToPack.TargetPos.X, txToPack.TargetPos.Y, txToPack.Bounds.Width, txToPack.Bounds.Height)
             );
             ArrayPool<Color>.Shared.Return(txToPackData);
+            txAtlasEntries.Add(txToPack.GetTxAtlasEntry());
         }
         packedTx.SetData(packedData, 0, packedTx.GetElementCount());
         ArrayPool<Color>.Shared.Return(packedData);
@@ -120,7 +135,13 @@ internal static class SpritePacker
         );
         forExport.SaveAsPng(stream, forExport.Width, forExport.Height);
 
-        ModEntry.Log($"Packed textures in '{Consts.EDITING_INPUT}/{subdir}' to '{Consts.EDITING_INPUT}/{subdir}.png'");
+        ModEntry.WriteJson(
+            Path.Combine(ModEntry.DirectoryPath, Consts.EDITING_INPUT),
+            string.Concat(subdir, Consts.ATLAS_SUFFIX),
+            txAtlasEntries
+        );
+
+        ModEntry.Log($"Packed textures from '{subdir}'");
         return;
     }
 

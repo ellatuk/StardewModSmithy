@@ -1,5 +1,3 @@
-using StardewValley;
-
 namespace StardewModSmithy.GUI.EditorContext;
 
 public sealed class BaseEditorContext
@@ -23,6 +21,8 @@ public sealed class BaseEditorContext
         TextureContext.Dragged += EditableContext.SetSpriteIndex;
         TextureContext.TextureChanged += EditableContext.SetTexture;
         EditableContext.BoundsProviderChanged += TextureContext.OnEditorBoundsProviderChanged;
+
+        EditableContext.SetTexture(TextureContext, TextureContext.Selected);
     }
 
     public void SaveChanges()

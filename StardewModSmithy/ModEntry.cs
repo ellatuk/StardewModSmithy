@@ -43,9 +43,10 @@ public sealed class ModEntry : Mod
     private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
     {
         EditorMenuManager.Register(Helper);
-        if (Helper.ModRegistry.Get("Pathoschild.ContentPatcher") is IManifest contentPatcher)
+        if (Helper.ModRegistry.Get("Pathoschild.ContentPatcher") is IModInfo contentPatcher)
         {
-            ContentPatcherVersion = contentPatcher.Version.ToString();
+            ContentPatcherVersion = contentPatcher.Manifest.Version.ToString();
+            Log($"ContentPatcherVersion {ContentPatcherVersion}");
         }
     }
 
@@ -77,9 +78,24 @@ public sealed class ModEntry : Mod
         );
     }
 
+    internal static void WriteJson(string targetFile, object content)
+    {
+        File.WriteAllText(
+            targetFile,
+            JsonConvert.SerializeObject(content, Formatting.Indented, jsonSerializerSettings)
+        );
+    }
+
     internal static T? ReadJson<T>(string targetPath, string fileName)
     {
         string targetFile = Path.Combine(targetPath, fileName);
+        if (!File.Exists(targetFile))
+            return default;
+        return JsonConvert.DeserializeObject<T>(File.ReadAllText(targetFile));
+    }
+
+    internal static T? ReadJson<T>(string targetFile)
+    {
         if (!File.Exists(targetFile))
             return default;
         return JsonConvert.DeserializeObject<T>(File.ReadAllText(targetFile));

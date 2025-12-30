@@ -80,7 +80,7 @@ public sealed partial class FurnitureDelimString(string id) : IBoundsProvider
     public SpinBoxViewModel BoundingBoxSizeY =>
         new(() => BoundingBoxSize.Y, (value) => BoundingBoxSize = new(BoundingBoxSize.X, value), 1, int.MaxValue);
 
-    public string GUI_TilesheetArea => $"{TilesheetSize.X * Consts.ONE_TILE}px {TilesheetSize.Y * Consts.ONE_TILE}px";
+    public string GUI_TilesheetArea => $"{TilesheetSize.X * Consts.DRAW_TILE}px {TilesheetSize.Y * Consts.DRAW_TILE}px";
 
     public IEnumerable<SDUIEdges> GUI_BoundingSquares
     {
@@ -92,7 +92,7 @@ public sealed partial class FurnitureDelimString(string id) : IBoundsProvider
             {
                 for (int y = 0; y < boundingBox.Y; y++)
                 {
-                    yield return new(x * Consts.ONE_TILE, (tilesheetSize.Y - 1 - y) * Consts.ONE_TILE);
+                    yield return new(x * Consts.DRAW_TILE, (tilesheetSize.Y - 1 - y) * Consts.DRAW_TILE);
                 }
             }
         }
@@ -330,7 +330,7 @@ public sealed class FurnitureAsset : IEditableAsset
         }
     }
 
-    public FurnitureDelimString AddNewDefault(FurnitureDelimString? selectedFurniture)
+    public FurnitureDelimString AddNewDefault()
     {
         int seq = 0;
         string seqId = seq.ToString();
@@ -347,10 +347,6 @@ public sealed class FurnitureAsset : IEditableAsset
             BoundingBoxSize = new(1, 1),
             PreSerializeSeq = seq,
         };
-        if (selectedFurniture != null)
-        {
-            newDefaultFurni.TextureAssetName = selectedFurniture.TextureAssetName;
-        }
         Editing[seqId] = newDefaultFurni;
         return newDefaultFurni;
     }
@@ -383,6 +379,7 @@ public sealed class FurnitureAsset : IEditableAsset
 
     public void SetTranslations(TranslationStore? translations)
     {
+        ModEntry.Log($"SetTranslations {translations}");
         if (translations == null)
             return;
         foreach (FurnitureDelimString furniDelim in Editing.Values)

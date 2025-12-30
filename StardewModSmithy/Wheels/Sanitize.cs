@@ -25,9 +25,9 @@ internal static class Sanitize
         return SanitizeImpl(path, '_', System.IO.Path.GetInvalidFileNameChars());
     }
 
-    public static string UniqueID(string key)
+    public static string UniqueID(string id)
     {
-        return SanitizeImpl(key, null, IllegalKeyChars);
+        return SanitizeImpl(id, null, IllegalKeyChars);
     }
 
     public static string AssetName(IAssetName assetName)

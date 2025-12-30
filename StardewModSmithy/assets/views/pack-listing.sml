@@ -1,6 +1,7 @@
 <frame background={@Mods/StardewUI/Sprites/MenuBackground}
        border={@Mods/StardewUI/Sprites/MenuBorder}
-       border-thickness="36, 36, 40, 36">
+       border-thickness="36, 36, 40, 36"
+       layout="70% 80%">
   <lane orientation="vertical">
     <banner margin="8" text={#gui.label.editable-content-packs} layout="content content"/>
     <scrollable peeking="128" scrollbar-margin="8,0,0,0">

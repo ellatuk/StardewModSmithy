@@ -30,7 +30,7 @@ public sealed class OutputManifest()
             string manifestPath = Path.Combine(subdir, Consts.MANIFEST_FILE);
             if (!File.Exists(manifestPath))
                 continue;
-            OutputManifest? manifest = JsonConvert.DeserializeObject<OutputManifest>(File.ReadAllText(manifestPath));
+            OutputManifest? manifest = ModEntry.ReadJson<OutputManifest>(manifestPath);
             if (manifest == null)
                 continue;
             yield return manifest;

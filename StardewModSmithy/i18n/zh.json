@@ -25,6 +25,7 @@
   "gui.label.editable-content-packs": "可编辑内容包：",
   "gui.button.create": "创建",
   "gui.button.delete": "删除",
+  "gui.button.populate": "从贴图集导入",
   "gui.placeholder": "新#{{seq}}",
   "hud.put-texture": "把贴图（PNG）放到‘{{path}}’文件夹里！",
 }

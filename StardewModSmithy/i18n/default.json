@@ -25,6 +25,7 @@
   "gui.label.editable-content-packs": "Editable Content Packs:",
   "gui.button.create": "Create",
   "gui.button.delete": "Delete",
+  "gui.button.populate": "Populate From Atlas",
   "gui.placeholder": "NEW#{{seq}}",
   "hud.put-texture": "Put textures (PNG) in directory at '{{path}}'!"
 }

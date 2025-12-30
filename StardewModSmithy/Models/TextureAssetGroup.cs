@@ -1,4 +1,5 @@
 using System.Text;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using PropertyChanged.SourceGenerator;
 using StardewModdingAPI;
@@ -7,6 +8,8 @@ using StardewModSmithy.Models.Interfaces;
 using StardewModSmithy.Wheels;
 
 namespace StardewModSmithy.Models;
+
+public record TxAtlasEntry(string RelPath, Rectangle Area);
 
 public sealed partial record TextureAsset(IAssetName AssetName, string PathOnDisk)
 {
@@ -18,6 +21,21 @@ public sealed partial record TextureAsset(IAssetName AssetName, string PathOnDis
             texture ??= ModEntry.ModContent.Load<Texture2D>(PathOnDisk);
             return texture;
         }
+    }
+
+    public List<TxAtlasEntry>? TextureAtlas = TryGetTextureAtlas(PathOnDisk);
+
+    private static List<TxAtlasEntry>? TryGetTextureAtlas(string PathOnDisk)
+    {
+        string atlasPath = Path.Combine(
+            ModEntry.DirectoryPath,
+            Path.GetDirectoryName(PathOnDisk) ?? "",
+            string.Concat(Path.GetFileNameWithoutExtension(PathOnDisk), Consts.ATLAS_SUFFIX)
+        );
+        ModEntry.Log(atlasPath);
+        if (!File.Exists(atlasPath))
+            return null;
+        return ModEntry.ReadJson<List<TxAtlasEntry>>(atlasPath);
     }
 
     public void Reload() => texture = null;
@@ -98,9 +116,6 @@ public sealed class TextureAssetGroup(string group, Dictionary<IAssetName, Textu
         string fullSourceDir = Path.Combine(ModEntry.DirectoryPath, Consts.EDITING_INPUT);
         foreach (string dir in Directory.GetDirectories(fullSourceDir))
         {
-            string willPackTo = Path.Combine(ModEntry.DirectoryPath, Consts.EDITING_INPUT, string.Concat(dir, ".png"));
-            if (File.Exists(willPackTo))
-                continue;
             SpritePacker.Pack(dir);
         }
         foreach (string file in Directory.GetFiles(fullSourceDir))

@@ -178,14 +178,15 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
             {
                 continue;
             }
-            InitializeFurnitureAsset().SetData(editData.Entries);
+            InitializeFurnitureAsset(editData.Entries);
             break;
         }
     }
 
-    public FurnitureAsset InitializeFurnitureAsset()
+    public FurnitureAsset InitializeFurnitureAsset(Dictionary<string, object> entries)
     {
         FurniAsset = new();
+        FurniAsset.SetData(entries);
         FurniAsset.SetTranslations(Translations);
         return FurniAsset;
     }
