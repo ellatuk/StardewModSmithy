@@ -3,8 +3,6 @@ using Newtonsoft.Json;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModSmithy.GUI;
-using StardewModSmithy.GUI.EditorContext;
-using StardewModSmithy.Models;
 using StardewModSmithy.Wheels;
 using StardewValley;
 
@@ -38,6 +36,7 @@ public sealed class ModEntry : Mod
         Directory.CreateDirectory(Path.Combine(DirectoryPath, Consts.EDITING_OUTPUT));
 
         helper.ConsoleCommands.Add("sms-show", "show smithy menu to edit your mods.", ConsoleShowSmithy);
+        helper.ConsoleCommands.Add("sms-pack", "pack a folder of loose textures", ConsolePackTexture);
         helper.Events.GameLoop.GameLaunched += OnGameLaunched;
     }
 
@@ -53,6 +52,16 @@ public sealed class ModEntry : Mod
     private void ConsoleShowSmithy(string cmd, string[] args)
     {
         EditorMenuManager.ShowPackListing();
+    }
+
+    private void ConsolePackTexture(string cmd, string[] args)
+    {
+        if (!ArgUtility.TryGet(args, 0, out string subdir, out string error))
+        {
+            Log(error, LogLevel.Error);
+            return;
+        }
+        SpritePacker.Pack(subdir);
     }
 
     public static readonly JsonSerializerSettings jsonSerializerSettings = new()

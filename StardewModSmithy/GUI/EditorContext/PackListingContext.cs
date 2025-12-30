@@ -58,7 +58,7 @@ internal record PackListingContext(TextureAssetGroup TextureAssetGroup, List<IOu
 
     internal static PackListingContext? Initialize()
     {
-        TextureAssetGroup textureAssetGroup = TextureAssetGroup.FromSourceDir(Consts.EDITING_INPUT, "furniture");
+        TextureAssetGroup textureAssetGroup = TextureAssetGroup.FromSourceDir("furniture");
         if (textureAssetGroup.GatheredTextures.Count == 0)
         {
             Game1.addHUDMessage(HUDMessage.ForCornerTextbox(I18n.Hud_PutTexture(Consts.EDITING_INPUT)));

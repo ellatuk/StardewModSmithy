@@ -4,6 +4,7 @@ using PropertyChanged.SourceGenerator;
 using StardewModdingAPI;
 using StardewModSmithy.Integration;
 using StardewModSmithy.Models.Interfaces;
+using StardewModSmithy.Wheels;
 
 namespace StardewModSmithy.Models;
 
@@ -91,10 +92,18 @@ public sealed class TextureAssetGroup(string group, Dictionary<IAssetName, Textu
     public static IAssetName FormAssetNameForGroup(string group, string fileName) =>
         ModEntry.ParseAssetName(Path.Join(group, "{{ModId}}", Path.GetFileNameWithoutExtension(fileName)));
 
-    public static TextureAssetGroup FromSourceDir(string sourceDir, string group)
+    public static TextureAssetGroup FromSourceDir(string group)
     {
         Dictionary<IAssetName, TextureAsset> gatheredTextures = [];
-        foreach (string file in Directory.GetFiles(Path.Combine(ModEntry.DirectoryPath, sourceDir)))
+        string fullSourceDir = Path.Combine(ModEntry.DirectoryPath, Consts.EDITING_INPUT);
+        foreach (string dir in Directory.GetDirectories(fullSourceDir))
+        {
+            string willPackTo = Path.Combine(ModEntry.DirectoryPath, Consts.EDITING_INPUT, string.Concat(dir, ".png"));
+            if (File.Exists(willPackTo))
+                continue;
+            SpritePacker.Pack(dir);
+        }
+        foreach (string file in Directory.GetFiles(fullSourceDir))
         {
             if (!file.EndsWith(".png"))
                 continue;
