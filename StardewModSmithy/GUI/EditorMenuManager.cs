@@ -2,6 +2,7 @@ using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModdingAPI.Utilities;
 using StardewModSmithy.GUI.EditorContext;
+using StardewModSmithy.GUI.ViewModels;
 using StardewModSmithy.Integration;
 using StardewModSmithy.Models;
 using StardewValley;
@@ -48,10 +49,6 @@ internal static class EditorMenuManager
         DraggableTextureContext draggableTextureContext = new(textureAssetGroup);
         FurnitureAssetContext furnitureAssetContext = new(furnitureAsset);
         BaseEditorContext ctx = new(draggableTextureContext, furnitureAssetContext, saveChanges);
-        if (furnitureAssetContext.FurnitureDataList.Count > 0)
-        {
-            furnitureAssetContext.BoundsProvider = furnitureAssetContext.FurnitureDataList[0];
-        }
         IMenuController ctrl = viewEngine.CreateMenuControllerFromAsset(VIEW_EDIT_FURNITURE, ctx);
         editorContext.Value = ctx;
         helper.Events.Input.ButtonsChanged += OnButtonsChanged_DragSheet;

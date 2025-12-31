@@ -67,17 +67,17 @@ public sealed partial class FurnitureDelimString(string id) : IBoundsProvider
     [Notify]
     public Point tilesheetSize = Point.Zero;
     public string TilesheetSizeName => $"{TilesheetSize.X} {TilesheetSize.Y}";
-    public SpinBoxViewModel TilesheetSizeX =>
+    public IntSpinBoxViewModel TilesheetSizeX =>
         new(() => TilesheetSize.X, (value) => TilesheetSize = new(value, TilesheetSize.Y), 1, int.MaxValue);
-    public SpinBoxViewModel TilesheetSizeY =>
+    public IntSpinBoxViewModel TilesheetSizeY =>
         new(() => TilesheetSize.Y, (value) => TilesheetSize = new(TilesheetSize.X, value), 1, int.MaxValue);
 
     [Notify]
     public Point boundingBoxSize = Point.Zero;
     public string BoundingBoxSizeName => $"{BoundingBoxSize.X} {BoundingBoxSize.Y}";
-    public SpinBoxViewModel BoundingBoxSizeX =>
+    public IntSpinBoxViewModel BoundingBoxSizeX =>
         new(() => BoundingBoxSize.X, (value) => BoundingBoxSize = new(value, BoundingBoxSize.Y), 1, int.MaxValue);
-    public SpinBoxViewModel BoundingBoxSizeY =>
+    public IntSpinBoxViewModel BoundingBoxSizeY =>
         new(() => BoundingBoxSize.Y, (value) => BoundingBoxSize = new(BoundingBoxSize.X, value), 1, int.MaxValue);
 
     public string GUI_TilesheetArea => $"{TilesheetSize.X * Consts.DRAW_TILE}px {TilesheetSize.Y * Consts.DRAW_TILE}px";
@@ -160,7 +160,9 @@ public sealed partial class FurnitureDelimString(string id) : IBoundsProvider
     [Notify]
     public bool offLimitsForRandomSale = false;
     public HashSet<string> ContextTags { get; set; } = [];
+
     #endregion
+    public string UILabel => $"{Id}:{DisplayName}";
 
     internal bool FromDeserialize = false;
     internal int PreSerializeSeq = -1;
@@ -243,6 +245,7 @@ public sealed partial class FurnitureDelimString(string id) : IBoundsProvider
         Id = string.Concat(Sanitize.Key(Path.GetFileName(TextureAssetName.BaseName)), '_', Id);
         Name = Id;
         DisplayNameImpl.Key = string.Concat(Id, ".name");
+        FromDeserialize = true;
     }
 
     public string Serialize()
