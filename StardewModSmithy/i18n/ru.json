@@ -1,6 +1,5 @@
 {
   "$schema": "https://smapi.io/schemas/i18n.json",
-  "gui.title.furniture": "Редактор мебели",
   "gui.DragMovementMode.Sheet.name": "Лист",
   "gui.DragMovementMode.Sheet.desc": "Перетаскивайте лист спрайтов",
   "gui.DragMovementMode.Bounds.name": "Границы",
@@ -22,6 +21,11 @@
   "gui.label.placement": "Размещение:",
   "gui.label.price": "Цена:",
   "gui.label.no-random-sale": "Не продавать случайно:",
+  "gui.label.new-pack": "Новый набор:",
+  "gui.label.editable-content-packs": "Редактируемые наборы контента:",
   "gui.button.create": "Создать",
-  "gui.button.delete": "Удалить"
+  "gui.button.delete": "Удалить",
+  "gui.button.populate": "Заполнить из атласа текстур",
+  "gui.placeholder": "NEW#{{seq}}",
+  "hud.put-texture": "Поместите текстуры (PNG) в папку: '{{path}}'!"
 }
