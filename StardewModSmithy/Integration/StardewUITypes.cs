@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using StardewModdingAPI;
+using StardewModSmithy.Wheels;
 
 namespace StardewModSmithy.Integration;
 
@@ -51,8 +52,8 @@ public record SDUISprite(
 
     public IAssetName? AssetName { get; internal set; }
 
-    public readonly int IndexColCnt = SourceRect.Width / 16;
-    public readonly int IndexRowCnt = SourceRect.Height / 16;
+    public readonly int IndexColCnt = SourceRect.Width / Consts.TX_TILE;
+    public readonly int IndexRowCnt = SourceRect.Height / Consts.TX_TILE;
 };
 
 /// <summary>

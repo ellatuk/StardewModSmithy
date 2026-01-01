@@ -21,10 +21,15 @@ public abstract partial class AbstractEditableAssetContext
 
     [Notify]
     private IBoundsProvider? boundsProvider;
+    internal Action? saveChangesDelegate;
+    internal TextureAsset SelectedTextureAsset = null!;
 
     public bool HasBoundsProvider => BoundsProvider != null;
 
     public virtual void SetSpriteIndex(object? sender, int spriteIndex) { }
 
-    public virtual void SetTexture(object? sender, TextureAsset e) { }
+    public virtual void SetTexture(object? sender, TextureAsset textureAsset)
+    {
+        SelectedTextureAsset = textureAsset;
+    }
 }

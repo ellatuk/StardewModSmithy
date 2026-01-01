@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using StardewModdingAPI;
 using StardewModSmithy.Wheels;
 
 namespace StardewModSmithy.Models.ValueKinds;

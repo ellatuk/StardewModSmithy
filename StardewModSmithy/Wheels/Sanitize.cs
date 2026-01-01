@@ -6,9 +6,11 @@ internal static class Sanitize
 {
     public const string ModIdPrefixValue = "{{ModId}}_";
 
-    public static string SanitizeImpl(string value, char replacement, char[] illegal)
+    public static string SanitizeImpl(string value, char? replacement, char[] illegal)
     {
-        return string.Join(replacement, value.Split(illegal));
+        if (replacement == null)
+            return string.Join("", value.Split(illegal));
+        return string.Join(replacement.Value, value.Split(illegal));
     }
 
     public static readonly char[] IllegalKeyChars = ['{', '}', '[', ']', '(', ')', ':', '/', ',', ' '];
@@ -21,6 +23,11 @@ internal static class Sanitize
     public static string Path(string path)
     {
         return SanitizeImpl(path, '_', System.IO.Path.GetInvalidFileNameChars());
+    }
+
+    public static string UniqueID(string id)
+    {
+        return SanitizeImpl(id, null, IllegalKeyChars);
     }
 
     public static string AssetName(IAssetName assetName)

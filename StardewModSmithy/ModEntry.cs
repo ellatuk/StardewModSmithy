@@ -3,7 +3,7 @@ using Newtonsoft.Json;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModSmithy.GUI;
-using StardewModSmithy.Models;
+using StardewModSmithy.Wheels;
 using StardewValley;
 
 namespace StardewModSmithy;
@@ -22,10 +22,7 @@ public sealed class ModEntry : Mod
     internal static string DirectoryPath = null!;
     internal static IModContentHelper ModContent = null!;
 
-    public static string ContentPatcherVersion { get; internal set; } = "2.8.0";
-
-    internal const string EDITING_INPUT = "editing_input";
-    internal const string EDITING_OUTPUT = "editing_output";
+    public static string ContentPatcherVersion { get; internal set; } = "2.1.0";
 
     public override void Entry(IModHelper helper)
     {
@@ -35,66 +32,37 @@ public sealed class ModEntry : Mod
         DirectoryPath = helper.DirectoryPath;
         ModContent = helper.ModContent;
 
-        Directory.CreateDirectory(Path.Combine(DirectoryPath, EDITING_INPUT));
-        Directory.CreateDirectory(Path.Combine(DirectoryPath, EDITING_OUTPUT));
+        Directory.CreateDirectory(Path.Combine(DirectoryPath, Consts.EDITING_INPUT));
+        Directory.CreateDirectory(Path.Combine(DirectoryPath, Consts.EDITING_OUTPUT));
 
-        helper.ConsoleCommands.Add("sms-testy", "testy test", ConsoleTesty);
+        helper.ConsoleCommands.Add("sms-show", "show smithy menu to edit your mods.", ConsoleShowSmithy);
+        helper.ConsoleCommands.Add("sms-pack", "pack a folder of loose textures", ConsolePackTexture);
         helper.Events.GameLoop.GameLaunched += OnGameLaunched;
     }
 
     private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
     {
         EditorMenuManager.Register(Helper);
-        if (Helper.ModRegistry.Get("Pathoschild.ContentPatcher") is IManifest contentPatcher)
+        if (Helper.ModRegistry.Get("Pathoschild.ContentPatcher") is IModInfo contentPatcher)
         {
-            ContentPatcherVersion = contentPatcher.Version.ToString();
+            ContentPatcherVersion = contentPatcher.Manifest.Version.ToString();
+            Log($"ContentPatcherVersion {ContentPatcherVersion}");
         }
     }
 
-    private void ConsoleTesty(string cmd, string[] args)
+    private void ConsoleShowSmithy(string cmd, string[] args)
     {
-        OutputManifest manifest = new("Mock", "debug");
-        OutputPackContentPatcher outputContentPatcher = new(manifest);
-        TextureAssetGroup textureAsset = TextureAssetGroup.FromSourceDir(EDITING_INPUT, "furniture");
-        outputContentPatcher.Load();
-        outputContentPatcher.TextureAsset = textureAsset;
-        if (outputContentPatcher.FurnitureAsset == null)
+        EditorMenuManager.ShowPackListing();
+    }
+
+    private void ConsolePackTexture(string cmd, string[] args)
+    {
+        if (!ArgUtility.TryGet(args, 0, out string subdir, out string error))
         {
-            outputContentPatcher.FurnitureAsset = new();
-            outputContentPatcher.FurnitureAsset.Editing["testyFurni1"] = FurnitureDelimString.Deserialize(
-                "testyFurni1",
-                "testyFurni1/rug/4 2/4 4/1/520/2/[LocalizedText {{ModId}}.i18n:decor.testyFurni1]/0/decor\\petals_pink\\{{ModId}}/false"
-            )!;
-            outputContentPatcher.FurnitureAsset.Editing["testyFurni2"] = FurnitureDelimString.Deserialize(
-                "testyFurni2",
-                "testyFurni2/rug/3 3/3 1/1/520/2/[LocalizedText {{ModId}}.i18n:decor.testyFurni2]/0/decor\\petals_white\\{{ModId}}/false"
-            )!;
-            outputContentPatcher.FurnitureAsset.SetTranslations(outputContentPatcher.Translations);
+            Log(error, LogLevel.Error);
+            return;
         }
-        EditorMenuManager.ShowFurnitureEditor(textureAsset, outputContentPatcher.FurnitureAsset);
-        Game1.activeClickableMenu.exitFunction = () =>
-        {
-            Log("SAVE");
-            outputContentPatcher.Save();
-        };
-
-        // OutputManifest manifest = new("Mock", "debug");
-        // TranslationStore? translations = TranslationStore.FromSourceDir(manifest.TranslationFolder);
-
-        // FurnitureAsset furnitureAsset = new();
-        // furnitureAsset.Editing["testyFurni1"] = FurnitureDelimString.Deserialize(
-        //     "testyFurni1",
-        //     "testyFurni1/rug/4 2/4 4/1/520/2/[LocalizedText {{ModId}}.i18n:decor.petals_pink]/0/decor\\petals_pink\\{{ModId}}/false"
-        // )!;
-        // furnitureAsset.Editing["testyFurni2"] = FurnitureDelimString.Deserialize(
-        //     "testyFurni1",
-        //     "testyFurni2/rug/3 3/3 1/1/520/2/[LocalizedText {{ModId}}.i18n:decor.petals_pink]/0/decor\\petals_white\\{{ModId}}/false"
-        // )!;
-        // furnitureAsset.SetTranslations(translations);
-
-        // TextureAssetGroup textureAsset = TextureAssetGroup.FromSourceDir(EDITING_INPUT, "furniture");
-
-        // EditorMenuManager.ShowFurnitureEditor(textureAsset, furnitureAsset);
+        SpritePacker.Pack(subdir);
     }
 
     public static readonly JsonSerializerSettings jsonSerializerSettings = new()
@@ -110,9 +78,24 @@ public sealed class ModEntry : Mod
         );
     }
 
+    internal static void WriteJson(string targetFile, object content)
+    {
+        File.WriteAllText(
+            targetFile,
+            JsonConvert.SerializeObject(content, Formatting.Indented, jsonSerializerSettings)
+        );
+    }
+
     internal static T? ReadJson<T>(string targetPath, string fileName)
     {
         string targetFile = Path.Combine(targetPath, fileName);
+        if (!File.Exists(targetFile))
+            return default;
+        return JsonConvert.DeserializeObject<T>(File.ReadAllText(targetFile));
+    }
+
+    internal static T? ReadJson<T>(string targetFile)
+    {
         if (!File.Exists(targetFile))
             return default;
         return JsonConvert.DeserializeObject<T>(File.ReadAllText(targetFile));
