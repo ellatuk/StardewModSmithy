@@ -7,7 +7,7 @@ using StardewValley;
 
 namespace StardewModSmithy.GUI.EditorContext;
 
-internal record PackDisplayContext(IOutputPack Pack)
+internal record PackDisplayEntry(IOutputPack Pack)
 {
     public string PackTitle => $"{Pack.Manifest.Name} ({Pack.Manifest.UniqueID})";
     public string PackDesc => Pack.Manifest.Desc;
@@ -37,13 +37,13 @@ internal record PackDisplayContext(IOutputPack Pack)
 internal record PackListingContext(TextureAssetGroup TextureAssetGroup, List<IOutputPack> EditablePacks)
     : INotifyPropertyChanged
 {
-    private readonly List<PackDisplayContext> packDisplayList = EditablePacks
-        .Select(pack => new PackDisplayContext(pack))
+    private readonly List<PackDisplayEntry> packDisplayList = EditablePacks
+        .Select(pack => new PackDisplayEntry(pack))
         .ToList();
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    public IEnumerable<PackDisplayContext> PackDisplayList => packDisplayList;
+    public IEnumerable<PackDisplayEntry> PackDisplayList => packDisplayList;
 
     private string newModName = "";
     public string NewModName
@@ -85,11 +85,7 @@ internal record PackListingContext(TextureAssetGroup TextureAssetGroup, List<IOu
 
     public void CreateAndEdit()
     {
-        string authorName = "Smithy";
-        if (Context.IsWorldReady)
-        {
-            authorName = Game1.player.displayName;
-        }
+        string authorName = ModEntry.Config.AuthorName;
         OutputManifest manifest = new() { Author = authorName, Name = NewModName };
         OutputPackContentPatcher outputPackContentPatcher = new(manifest)
         {
@@ -97,7 +93,7 @@ internal record PackListingContext(TextureAssetGroup TextureAssetGroup, List<IOu
             FurniAsset = new FurnitureAsset(),
         };
         outputPackContentPatcher.InitializeFurnitureAsset([]);
-        PackDisplayContext packDisplay = new(outputPackContentPatcher);
+        PackDisplayEntry packDisplay = new(outputPackContentPatcher);
         packDisplayList.Add(packDisplay);
         PropertyChanged?.Invoke(this, new(nameof(PackDisplayList)));
         packDisplay.ShowEditingMenu();

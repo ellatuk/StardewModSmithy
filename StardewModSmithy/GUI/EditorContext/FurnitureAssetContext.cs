@@ -41,7 +41,6 @@ public partial class FurnitureAssetContext : AbstractEditableAssetContext
     {
         this.FurnitureDataList = furnitureAsset.Editing.Values.ToList();
         this.BoundsProviderSelector.furnitureDataList = this.FurnitureDataList;
-        this.BoundsProviderSelector.Value = BoundsProvider;
     }
 
     public override void SetSpriteIndex(object? sender, int spriteIndex)
@@ -57,7 +56,6 @@ public partial class FurnitureAssetContext : AbstractEditableAssetContext
     {
         base.SetTexture(sender, textureAsset);
         SelectedFurniture?.TextureAssetName = textureAsset.AssetName;
-        UpdateFurnitureDataList();
         TextureHasAtlas = textureAsset?.TextureAtlas != null;
     }
 
@@ -66,18 +64,21 @@ public partial class FurnitureAssetContext : AbstractEditableAssetContext
         FurnitureDelimString furni = furnitureAsset.AddNewDefault();
         furni.TextureAssetName = SelectedTextureAsset.AssetName;
         UpdateFurnitureDataList();
-        BoundsProvider = furni;
+        this.BoundsProviderSelector.Value = furni;
+        this.BoundsProviderSelector.SeekIndex();
+        SaveChanges(AutosaveFrequencyMode.OnAddOrRemove);
     }
 
     public void Delete()
     {
+        if (SelectedFurniture == null)
+            return;
         if (furnitureAsset.Delete(SelectedFurniture))
         {
-            if (FurnitureDataList.Count > 0)
-                BoundsProvider = FurnitureDataList[FurnitureDataList.Count - 1];
-            else
-                BoundsProvider = null;
             UpdateFurnitureDataList();
+            this.BoundsProviderSelector.ClampIndex();
+            BoundsProvider = this.BoundsProviderSelector.Value;
+            SaveChanges(AutosaveFrequencyMode.OnAddOrRemove);
         }
     }
 
@@ -86,6 +87,7 @@ public partial class FurnitureAssetContext : AbstractEditableAssetContext
         if (SelectedTextureAsset.TextureAtlas == null)
             return;
         int indexColCnt = SelectedTextureAsset.Texture.Bounds.Width / Consts.TX_TILE;
+        FurnitureDelimString? firstFurni = null;
         foreach (TxAtlasEntry entry in SelectedTextureAsset.TextureAtlas)
         {
             FurnitureDelimString furni = furnitureAsset.AddNewDefault();
@@ -95,8 +97,11 @@ public partial class FurnitureAssetContext : AbstractEditableAssetContext
             furni.BoundingBoxSize = new(furni.TilesheetSize.X, 1);
             furni.TextureAssetName = SelectedTextureAsset.AssetName;
             furni.UpdateForFirstTimeSerialize();
+            firstFurni ??= furni;
         }
         UpdateFurnitureDataList();
-        BoundsProvider = FurnitureDataList[0];
+        this.BoundsProviderSelector.Value = firstFurni;
+        this.BoundsProviderSelector.SeekIndex();
+        SaveChanges(AutosaveFrequencyMode.OnAddOrRemove);
     }
 }

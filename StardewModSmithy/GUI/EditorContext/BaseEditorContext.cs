@@ -4,7 +4,6 @@ public sealed class BaseEditorContext
 {
     public DraggableTextureContext TextureContext { get; private set; }
     public AbstractEditableAssetContext EditableContext { get; private set; }
-    private readonly Action? saveChangesDelegate;
 
     public BaseEditorContext(
         DraggableTextureContext textureContext,
@@ -14,19 +13,13 @@ public sealed class BaseEditorContext
     {
         TextureContext = textureContext;
         EditableContext = editableContext;
-        saveChangesDelegate = saveChanges;
 
-        EditableContext.saveChangesDelegate = saveChangesDelegate;
+        EditableContext.saveChangesDelegate = saveChanges;
 
         TextureContext.Dragged += EditableContext.SetSpriteIndex;
         TextureContext.TextureChanged += EditableContext.SetTexture;
         EditableContext.BoundsProviderChanged += TextureContext.OnEditorBoundsProviderChanged;
 
         EditableContext.SetTexture(TextureContext, TextureContext.Selected);
-    }
-
-    public void SaveChanges()
-    {
-        saveChangesDelegate?.Invoke();
     }
 }

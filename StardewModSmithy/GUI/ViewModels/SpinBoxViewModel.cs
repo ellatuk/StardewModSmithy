@@ -4,8 +4,7 @@ using StardewModSmithy.Integration;
 
 namespace StardewModSmithy.GUI.ViewModels;
 
-public partial class AbstractSpinBoxViewModel<T>(Func<T> backingGetter, Action<T> backingSetter)
-    : INotifyPropertyChanged
+public class AbstractSpinBoxViewModel<T>(Func<T> backingGetter, Action<T> backingSetter) : INotifyPropertyChanged
 {
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -20,7 +19,6 @@ public partial class AbstractSpinBoxViewModel<T>(Func<T> backingGetter, Action<T
 
     public virtual void ValueSetter(T newValue)
     {
-        T prevValue = backingGetter();
         backingSetter(newValue);
         PropertyChanged?.Invoke(this, new(nameof(Value)));
         PropertyChanged?.Invoke(this, new(nameof(ValueLabel)));
@@ -46,7 +44,7 @@ public partial class AbstractSpinBoxViewModel<T>(Func<T> backingGetter, Action<T
     }
 }
 
-public partial class IntSpinBoxViewModel(Func<int> backingGetter, Action<int> backingSetter, int minimum, int maximum)
+public class IntSpinBoxViewModel(Func<int> backingGetter, Action<int> backingSetter, int minimum, int maximum)
     : AbstractSpinBoxViewModel<int>(backingGetter, backingSetter)
 {
     public override void ValueSetter(int newValue)
@@ -61,26 +59,70 @@ public partial class IntSpinBoxViewModel(Func<int> backingGetter, Action<int> ba
     public override void Increase() => Value += 1;
 }
 
-public partial class IBoundsProviderSpinBoxViewModel(
+public class IBoundsProviderSpinBoxViewModel(
     Func<IBoundsProvider?> backingGetter,
     Action<IBoundsProvider?> backingSetter
 ) : AbstractSpinBoxViewModel<IBoundsProvider?>(backingGetter, backingSetter)
 {
     internal IReadOnlyList<IBoundsProvider?> furnitureDataList = [];
-    private int currentIdx = 0;
+    private int currentIdx = -1;
     private int MaxIdx => furnitureDataList.Count - 1;
+
+    private void SetValueToCurrentIndex()
+    {
+        if (currentIdx >= 0 && currentIdx <= MaxIdx)
+            Value = furnitureDataList[currentIdx];
+        else
+            Value = null;
+    }
+
+    public void SeekIndex()
+    {
+        if (Value == null)
+        {
+            currentIdx = -1;
+        }
+        else
+        {
+            currentIdx = -1;
+            foreach (IBoundsProvider? prov in furnitureDataList)
+            {
+                currentIdx++;
+                if (prov == Value)
+                    break;
+            }
+        }
+        SetValueToCurrentIndex();
+    }
+
+    public void ClampIndex()
+    {
+        if (MaxIdx == -1)
+        {
+            currentIdx = -1;
+        }
+        else if (currentIdx < 0)
+        {
+            currentIdx = 0;
+        }
+        else if (currentIdx > MaxIdx)
+        {
+            currentIdx = MaxIdx;
+        }
+        SetValueToCurrentIndex();
+    }
 
     public override void Decrease()
     {
         currentIdx = currentIdx <= 0 ? MaxIdx : currentIdx - 1;
-        Value = furnitureDataList[currentIdx];
+        SetValueToCurrentIndex();
     }
 
     public override void Increase()
     {
         currentIdx = currentIdx >= MaxIdx ? 0 : currentIdx + 1;
-        Value = furnitureDataList[currentIdx];
+        SetValueToCurrentIndex();
     }
 
-    public override string ValueLabelGetter() => Value?.UILabel ?? string.Empty;
+    public override string ValueLabelGetter() => Value?.UILabel ?? "NULL";
 }

@@ -1,4 +1,3 @@
-using Newtonsoft.Json;
 using StardewModSmithy.Wheels;
 
 namespace StardewModSmithy.Models;
@@ -14,7 +13,16 @@ public sealed class OutputManifest()
     public string Author { get; set; } = "";
     public string Name { get; set; } = "";
     public string Version { get; set; } = "1.0.0";
-    public string UniqueID => string.Concat(Sanitize.UniqueID(Author), '.', Sanitize.UniqueID(Name));
+    public string UniqueID
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(field))
+                field = string.Concat(Sanitize.UniqueID(Author), '.', Sanitize.UniqueID(Name));
+            return field;
+        }
+        set => field = value;
+    } = string.Empty;
     public string Description
     {
         get => string.IsNullOrEmpty(field) ? $"{Desc}, exported by {ModEntry.ModId}" : field;

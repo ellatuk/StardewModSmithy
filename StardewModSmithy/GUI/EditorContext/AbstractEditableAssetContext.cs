@@ -1,6 +1,7 @@
 using PropertyChanged.SourceGenerator;
 using StardewModSmithy.GUI.ViewModels;
 using StardewModSmithy.Models;
+using StardewModSmithy.Wheels;
 
 namespace StardewModSmithy.GUI.EditorContext;
 
@@ -31,5 +32,16 @@ public abstract partial class AbstractEditableAssetContext
     public virtual void SetTexture(object? sender, TextureAsset textureAsset)
     {
         SelectedTextureAsset = textureAsset;
+    }
+
+    public void SaveChanges(AutosaveFrequencyMode saveReason)
+    {
+        if (ModEntry.Config.AutosaveFrequency == saveReason)
+            saveChangesDelegate?.Invoke();
+    }
+
+    public void Save()
+    {
+        saveChangesDelegate?.Invoke();
     }
 }

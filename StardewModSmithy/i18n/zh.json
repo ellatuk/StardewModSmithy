@@ -1,5 +1,6 @@
 {
   "$schema": "https://smapi.io/schemas/i18n.json",
+  "hud.put-texture": "把贴图（PNG）放到‘{{path}}’文件夹里！",
   "gui.DragMovementMode.Sheet.name": "贴图",
   "gui.DragMovementMode.Sheet.desc": "鼠标拖动贴图",
   "gui.DragMovementMode.Bounds.name": "边界",
@@ -27,5 +28,4 @@
   "gui.button.delete": "删除",
   "gui.button.populate": "从贴图集导入",
   "gui.placeholder": "新#{{seq}}",
-  "hud.put-texture": "把贴图（PNG）放到‘{{path}}’文件夹里！",
 }

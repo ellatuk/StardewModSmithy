@@ -21,6 +21,7 @@ public sealed class ModEntry : Mod
     internal static Func<string, IAssetName> ParseAssetName = null!;
     internal static string DirectoryPath = null!;
     internal static IModContentHelper ModContent = null!;
+    internal static ModConfig Config = null!;
 
     public static string ContentPatcherVersion { get; internal set; } = "2.1.0";
 
@@ -28,6 +29,9 @@ public sealed class ModEntry : Mod
     {
         I18n.Init(helper.Translation);
         mon = Monitor;
+        Config = helper.ReadConfig<ModConfig>();
+        Config.doWriteConfig = helper.WriteConfig;
+
         ParseAssetName = helper.GameContent.ParseAssetName;
         DirectoryPath = helper.DirectoryPath;
         ModContent = helper.ModContent;
@@ -35,7 +39,7 @@ public sealed class ModEntry : Mod
         Directory.CreateDirectory(Path.Combine(DirectoryPath, Consts.EDITING_INPUT));
         Directory.CreateDirectory(Path.Combine(DirectoryPath, Consts.EDITING_OUTPUT));
 
-        helper.ConsoleCommands.Add("sms-show", "show smithy menu to edit your mods.", ConsoleShowSmithy);
+        helper.ConsoleCommands.Add("sms-show", "show smithy menu to edit your mods.", ConsoleShowWorkspace);
         helper.ConsoleCommands.Add("sms-pack", "pack a folder of loose textures", ConsolePackTexture);
         helper.Events.GameLoop.GameLaunched += OnGameLaunched;
     }
@@ -46,13 +50,12 @@ public sealed class ModEntry : Mod
         if (Helper.ModRegistry.Get("Pathoschild.ContentPatcher") is IModInfo contentPatcher)
         {
             ContentPatcherVersion = contentPatcher.Manifest.Version.ToString();
-            Log($"ContentPatcherVersion {ContentPatcherVersion}");
         }
     }
 
-    private void ConsoleShowSmithy(string cmd, string[] args)
+    private void ConsoleShowWorkspace(string cmd, string[] args)
     {
-        EditorMenuManager.ShowPackListing();
+        EditorMenuManager.ShowWorkspace();
     }
 
     private void ConsolePackTexture(string cmd, string[] args)

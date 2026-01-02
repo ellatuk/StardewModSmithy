@@ -354,9 +354,9 @@ public sealed class FurnitureAsset : IEditableAsset
         return newDefaultFurni;
     }
 
-    internal bool Delete(FurnitureDelimString? selectedFurniture)
+    internal bool Delete(FurnitureDelimString selectedFurniture)
     {
-        return Editing.RemoveWhere(kv => kv.Value == selectedFurniture) > 0;
+        return Editing.RemoveWhere(kv => kv.Value.Id == selectedFurniture.Id) > 0;
     }
 
     public IEnumerable<IAssetName> GetRequiredAssets()

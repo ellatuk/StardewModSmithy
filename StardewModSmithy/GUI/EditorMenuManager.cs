@@ -2,7 +2,6 @@ using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModdingAPI.Utilities;
 using StardewModSmithy.GUI.EditorContext;
-using StardewModSmithy.GUI.ViewModels;
 using StardewModSmithy.Integration;
 using StardewModSmithy.Models;
 using StardewValley;
@@ -14,7 +13,7 @@ internal static class EditorMenuManager
 {
     private static IViewEngine viewEngine = null!;
     private const string VIEW_ASSET_PREFIX = $"{ModEntry.ModId}/views";
-    private const string VIEW_PACK_LISTING = $"{VIEW_ASSET_PREFIX}/pack-listing";
+    private const string VIEW_WORKSPACE = $"{VIEW_ASSET_PREFIX}/workspace";
     private const string VIEW_EDIT_FURNITURE = $"{VIEW_ASSET_PREFIX}/edit-furniture";
     private static readonly PerScreen<BaseEditorContext?> editorContext = new();
     private static IModHelper helper = null!;
@@ -32,11 +31,12 @@ internal static class EditorMenuManager
 #endif
     }
 
-    internal static void ShowPackListing()
+    internal static void ShowWorkspace()
     {
-        if (PackListingContext.Initialize() is not PackListingContext ctx)
+        if (PackListingContext.Initialize() is not PackListingContext packListing)
             return;
-        Game1.activeClickableMenu = viewEngine.CreateMenuFromAsset(VIEW_PACK_LISTING, ctx);
+        BaseWorkspaceContext ctx = new(packListing, new(ModEntry.Config));
+        Game1.activeClickableMenu = viewEngine.CreateMenuFromAsset(VIEW_WORKSPACE, ctx);
     }
 
     internal static void ShowFurnitureEditor(
@@ -64,7 +64,7 @@ internal static class EditorMenuManager
     {
         if (editorContext.Value is not null)
         {
-            editorContext.Value.SaveChanges();
+            editorContext.Value.EditableContext.SaveChanges(Wheels.AutosaveFrequencyMode.OnExit);
             editorContext.Value = null;
             helper.Events.Input.ButtonsChanged -= OnButtonsChanged_DragSheet;
         }

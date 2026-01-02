@@ -3,8 +3,15 @@
   <lane layout="500px content" orientation="vertical" *context={:EditableContext}>
     <frame layout="stretch content" padding="30,20,0,20" border={@Mods/StardewUI/Sprites/ControlBorder}>
       <lane orientation="vertical">
-        <lane layout="content content"
-            vertical-content-alignment="middle">
+        <panel *if={TextureHasAtlas} layout="stretch content" horizontal-content-alignment="start" margin="92,0,0,0">
+          <button hover-background={@Mods/StardewUI/Sprites/ButtonLight}
+            layout="content[320..] 56px"
+            margin="0,4,0,0"
+            text={#gui.button.populate}
+            left-click=|PopulateFromAtlas()|
+          />
+        </panel>
+        <lane layout="content content" vertical-content-alignment="middle">
           <label layout="60px content"
             margin="0,8"
             font="small"
@@ -20,13 +27,14 @@
               left-click=|Decrease()|/>
             <label wheel=|Wheel($Direction)| text={ValueLabel}
               font="dialogue"
-              layout="320px content"
-              padding="4,0,2,0"
+              layout="280px content"
+              padding="24,0,22,0"
               focusable="true"
               horizontal-alignment="middle"
               shadow-alpha="0.8"
               shadow-color="#4448"
-              shadow-offset="-2, 2"/>
+              shadow-offset="-2, 2"
+              max-lines="1"/>
             <image sprite={@Mods/StardewUI/Sprites/CaretRight} focusable="true"
               left-click=|Increase()|/>
           </lane>
@@ -44,17 +52,17 @@
             left-click=|Delete()|
           />
         </lane>
-        <lane *if={TextureHasAtlas} layout="stretch content" horizontal-content-alignment="start" margin="92,0,0,0">
+        <panel layout="stretch content" horizontal-content-alignment="start" margin="92,0,0,0">
           <button hover-background={@Mods/StardewUI/Sprites/ButtonLight}
             layout="content[320..] 56px"
             margin="0,4,0,0"
-            text={#gui.button.populate}
-            left-click=|PopulateFromAtlas()|
+            text={#gui.button.save}
+            left-click=|Save()|
           />
-        </lane>
+        </panel>
       </lane>
     </frame>
-    <frame layout="stretch stretch" padding="32,8" border={@Mods/StardewUI/Sprites/ControlBorder} *if={HasBoundsProvider}>
+    <frame layout="stretch content" padding="32,16,32,32" border={@Mods/StardewUI/Sprites/ControlBorder} *if={HasBoundsProvider}>
       <lane orientation="vertical" *context={SelectedFurniture}>
         <form-row title={#gui.label.name}>
           <textinput layout="content 54px" margin="-8,12" text={<>DisplayName} />
