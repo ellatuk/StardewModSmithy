@@ -22,6 +22,7 @@ public sealed class ModEntry : Mod
     internal static string DirectoryPath = null!;
     internal static IModContentHelper ModContent = null!;
     internal static ModConfig Config = null!;
+    internal static IModRegistry ModRegistry = null!;
 
     public static string ContentPatcherVersion { get; internal set; } = "2.1.0";
 
@@ -31,6 +32,7 @@ public sealed class ModEntry : Mod
         mon = Monitor;
         Config = helper.ReadConfig<ModConfig>();
         Config.doWriteConfig = helper.WriteConfig;
+        ModRegistry = helper.ModRegistry;
 
         ParseAssetName = helper.GameContent.ParseAssetName;
         DirectoryPath = helper.DirectoryPath;

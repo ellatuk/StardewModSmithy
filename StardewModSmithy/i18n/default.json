@@ -1,6 +1,8 @@
 {
   "$schema": "https://smapi.io/schemas/i18n.json",
-  "hud.put-texture": "Put textures (PNG) in directory at '{{path}}'!",
+  "message.put-texture": "Put textures (PNG) in directory at '{{path}}'!",
+  "message.create-mod.need-name": "Must provide a mod name.",
+  "message.create-mod.id-not-unique": "New mod ID '{{modId}}' must be unique.",
   "gui.DragMovementMode.Sheet.name": "Sheet",
   "gui.DragMovementMode.Sheet.desc": "Move the sprite sheet by dragging",
   "gui.DragMovementMode.Bounds.name": "Bounds",
@@ -39,7 +41,7 @@
   "gui.AutosaveFrequencyMode.Never.name": "Never",
   "gui.AutosaveFrequencyMode.Never.desc": "Never automatically save changes.",
   "gui.AutosaveFrequencyMode.OnExit.name": "On Exit",
-  "gui.AutosaveFrequencyMode.OnExit.desc": "Automatically save changs on exiting the editor.",
-  "gui.AutosaveFrequencyMode.OnAddOrRemove.name": "On Add/Remove",
-  "gui.AutosaveFrequencyMode.OnAddOrRemove.desc": "Automatically save changes when new editable entry is created or deleted.",
+  "gui.AutosaveFrequencyMode.OnExit.desc": "Automatically save changes on exiting the editor.",
+  "gui.AutosaveFrequencyMode.OnAdd.name": "On Add/Remove",
+  "gui.AutosaveFrequencyMode.OnAdd.desc": "Automatically save changes when new editable entry is created or deleted.",
 }

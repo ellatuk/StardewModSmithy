@@ -13,7 +13,7 @@ public enum DragMovementMode
     Bounds = 1,
 }
 
-public partial class DraggableTextureContext(TextureAssetGroup textureAssetGroup)
+public partial class DraggableTextureContext(TextureAssetGroup textureAssetGroup, int dragStep = Consts.DRAW_TILE)
 {
     public event EventHandler<int>? Dragged;
     public event EventHandler<TextureAsset>? TextureChanged;
@@ -54,7 +54,7 @@ public partial class DraggableTextureContext(TextureAssetGroup textureAssetGroup
     public float SheetOpacityFront => SheetOpacity * 0.5f;
 
     [Notify]
-    public SDUIEdges boundsPadding = new(2 * Consts.DRAW_TILE, 2 * Consts.DRAW_TILE, 0, 0);
+    public SDUIEdges boundsPadding = new(2 * dragStep, 2 * dragStep, 0, 0);
 
     [Notify]
     private IBoundsProvider? boundsProvider = null;
@@ -108,14 +108,14 @@ public partial class DraggableTextureContext(TextureAssetGroup textureAssetGroup
         int xDelta = Math.Max(
             0,
             Math.Min(
-                (newBoundsPadding.Left - newSheetMargin.Left) / Consts.DRAW_TILE,
+                (newBoundsPadding.Left - newSheetMargin.Left) / dragStep,
                 Sheet.IndexColCnt - boundsProvider.TilesheetSize.X
             )
         );
         int yDelta = Math.Max(
             0,
             Math.Min(
-                (newBoundsPadding.Top - newSheetMargin.Top) / Consts.DRAW_TILE,
+                (newBoundsPadding.Top - newSheetMargin.Top) / dragStep,
                 Sheet.IndexRowCnt - boundsProvider.TilesheetSize.Y
             )
         );
@@ -123,18 +123,13 @@ public partial class DraggableTextureContext(TextureAssetGroup textureAssetGroup
 
         if (MovementMode.SelectedValue == DragMovementMode.Bounds)
         {
-            BoundsPadding = new(
-                newSheetMargin.Left + xDelta * Consts.DRAW_TILE,
-                newSheetMargin.Top + yDelta * Consts.DRAW_TILE,
-                0,
-                0
-            );
+            BoundsPadding = new(newSheetMargin.Left + xDelta * dragStep, newSheetMargin.Top + yDelta * dragStep, 0, 0);
         }
         else
         {
             SheetMargin = new(
-                newBoundsPadding.Left - xDelta * Consts.DRAW_TILE,
-                newBoundsPadding.Top - yDelta * Consts.DRAW_TILE,
+                newBoundsPadding.Left - xDelta * dragStep,
+                newBoundsPadding.Top - yDelta * dragStep,
                 0,
                 0
             );
@@ -149,12 +144,7 @@ public partial class DraggableTextureContext(TextureAssetGroup textureAssetGroup
         int xPos = SpriteIndex % Sheet.IndexColCnt;
         int yPos = SpriteIndex / Sheet.IndexColCnt;
 
-        SheetMargin = new(
-            BoundsPadding.Left - xPos * Consts.DRAW_TILE,
-            BoundsPadding.Top - yPos * Consts.DRAW_TILE,
-            0,
-            0
-        );
+        SheetMargin = new(BoundsPadding.Left - xPos * dragStep, BoundsPadding.Top - yPos * dragStep, 0, 0);
     }
 
     private Vector2 lastDragPos = new(-1, -1);
@@ -183,14 +173,14 @@ public partial class DraggableTextureContext(TextureAssetGroup textureAssetGroup
         Vector2 dragChange = position - lastDragPos;
         int dragTileCnt;
         bool changed = false;
-        if ((dragTileCnt = (int)(MathF.Abs(dragChange.X) / Consts.DRAW_TILE) * Consts.DRAW_TILE) > 0)
+        if ((dragTileCnt = (int)(MathF.Abs(dragChange.X) / dragStep) * dragStep) > 0)
         {
             dragTileCnt *= Math.Sign(dragChange.X);
             newOffsetX += dragTileCnt;
             lastDragPos.X += dragTileCnt;
             changed = true;
         }
-        if ((dragTileCnt = (int)(MathF.Abs(dragChange.Y) / Consts.DRAW_TILE) * Consts.DRAW_TILE) > 0)
+        if ((dragTileCnt = (int)(MathF.Abs(dragChange.Y) / dragStep) * dragStep) > 0)
         {
             dragTileCnt *= Math.Sign(dragChange.Y);
             newOffsetY += dragTileCnt;

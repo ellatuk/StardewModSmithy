@@ -66,7 +66,7 @@ public partial class FurnitureAssetContext : AbstractEditableAssetContext
         UpdateFurnitureDataList();
         this.BoundsProviderSelector.Value = furni;
         this.BoundsProviderSelector.SeekIndex();
-        SaveChanges(AutosaveFrequencyMode.OnAddOrRemove);
+        SaveChanges(AutosaveFrequencyMode.OnAdd);
     }
 
     public void Delete()
@@ -78,7 +78,7 @@ public partial class FurnitureAssetContext : AbstractEditableAssetContext
             UpdateFurnitureDataList();
             this.BoundsProviderSelector.ClampIndex();
             BoundsProvider = this.BoundsProviderSelector.Value;
-            SaveChanges(AutosaveFrequencyMode.OnAddOrRemove);
+            SaveChanges(AutosaveFrequencyMode.OnAdd);
         }
     }
 
@@ -102,6 +102,6 @@ public partial class FurnitureAssetContext : AbstractEditableAssetContext
         UpdateFurnitureDataList();
         this.BoundsProviderSelector.Value = firstFurni;
         this.BoundsProviderSelector.SeekIndex();
-        SaveChanges(AutosaveFrequencyMode.OnAddOrRemove);
+        SaveChanges(AutosaveFrequencyMode.OnAdd);
     }
 }

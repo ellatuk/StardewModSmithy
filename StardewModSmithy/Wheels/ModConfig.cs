@@ -7,13 +7,13 @@ public enum AutosaveFrequencyMode
 {
     Never = 0,
     OnExit = 1,
-    OnAddOrRemove = 2,
+    OnAdd = 2,
 }
 
 public sealed class ModConfig
 {
     public string AuthorName { get; set; } = "";
-    public AutosaveFrequencyMode AutosaveFrequency { get; set; } = AutosaveFrequencyMode.OnAddOrRemove;
+    public AutosaveFrequencyMode AutosaveFrequency { get; set; } = AutosaveFrequencyMode.OnAdd;
 
     internal Action<ModConfig>? doWriteConfig = null;
 

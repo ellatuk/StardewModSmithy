@@ -45,15 +45,19 @@
             background={@Mods/StardewUI/Sprites/MenuSlotInset}
             layout="content[500..] 96px"
             margin="8"
+            padding="0,4"
             vertical-content-alignment="middle">
             <lane orientation="horizontal" horizontal-content-alignment="end" vertical-content-alignment="middle">
               <label font="dialogue" text={#gui.label.new-pack} margin="32,0,0,0" />
-              <textinput layout="stretch 54px" margin="16,4,32,0" text={<>NewModName} />
+              <textinput font="dialogue" layout="stretch 70px" margin="16,4,32,0" text={<>NewModName} />
               <button hover-background={@Mods/StardewUI/Sprites/ButtonLight}
-                  layout="content[130..] content"
+                  layout="content[150..] content"
+                  font="dialogue"
                   margin="0,0,36,0"
                   text={#gui.button.create}
                   left-click=|CreateAndEdit()|
+                  opacity={NewModErrorOpacity}
+                  tooltip={NewModErrorMessage}
                 />
             </lane>
           </frame>

@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using PropertyChanged.SourceGenerator;
 using StardewModdingAPI;
 using StardewModSmithy.Models;
 using StardewModSmithy.Models.Interfaces;
@@ -34,36 +35,44 @@ internal record PackDisplayEntry(IOutputPack Pack)
     }
 }
 
-internal record PackListingContext(TextureAssetGroup TextureAssetGroup, List<IOutputPack> EditablePacks)
-    : INotifyPropertyChanged
+internal partial record PackListingContext(TextureAssetGroup TextureAssetGroup, List<IOutputPack> EditablePacks)
 {
     private readonly List<PackDisplayEntry> packDisplayList = EditablePacks
         .Select(pack => new PackDisplayEntry(pack))
         .ToList();
 
-    public event PropertyChangedEventHandler? PropertyChanged;
-
     public IEnumerable<PackDisplayEntry> PackDisplayList => packDisplayList;
 
-    private string newModName = "";
-    public string NewModName
+    [Notify]
+    private string newModName = string.Empty;
+
+    public string NewModErrorMessage
     {
-        get => newModName;
-        set
+        get
         {
-            newModName = value;
-            PropertyChanged?.Invoke(this, new(nameof(NewModName)));
+            if (string.IsNullOrEmpty(NewModName))
+            {
+                return I18n.Message_CreateMod_NeedName();
+            }
+            string uniqueID = MakeUniqueID(ModEntry.Config.AuthorName);
+            if (!IsValidUniqueID(uniqueID))
+            {
+                return I18n.Message_CreateMod_IdNotUnique(uniqueID);
+            }
+            return string.Empty;
         }
     }
+
+    public float NewModErrorOpacity => string.IsNullOrEmpty(NewModErrorMessage) ? 1f : 0.5f;
 
     internal static PackListingContext? Initialize()
     {
         TextureAssetGroup textureAssetGroup = TextureAssetGroup.FromSourceDir("furniture");
         if (textureAssetGroup.GatheredTextures.Count == 0)
         {
-            Game1.addHUDMessage(HUDMessage.ForCornerTextbox(I18n.Hud_PutTexture(Consts.EDITING_INPUT)));
+            Game1.addHUDMessage(HUDMessage.ForCornerTextbox(I18n.Message_PutTexture(Consts.EDITING_INPUT)));
             ModEntry.Log(
-                I18n.Hud_PutTexture(Path.Combine(ModEntry.DirectoryPath, Consts.EDITING_INPUT)),
+                I18n.Message_PutTexture(Path.Combine(ModEntry.DirectoryPath, Consts.EDITING_INPUT)),
                 LogLevel.Warn
             );
             return null;
@@ -86,7 +95,17 @@ internal record PackListingContext(TextureAssetGroup TextureAssetGroup, List<IOu
     public void CreateAndEdit()
     {
         string authorName = ModEntry.Config.AuthorName;
-        OutputManifest manifest = new() { Author = authorName, Name = NewModName };
+        string uniqueID = MakeUniqueID(authorName);
+        if (!IsValidUniqueID(uniqueID))
+        {
+            return;
+        }
+        OutputManifest manifest = new()
+        {
+            Author = authorName,
+            Name = NewModName,
+            UniqueID = uniqueID,
+        };
         OutputPackContentPatcher outputPackContentPatcher = new(manifest)
         {
             TextureAssetGroup = TextureAssetGroup,
@@ -97,5 +116,21 @@ internal record PackListingContext(TextureAssetGroup TextureAssetGroup, List<IOu
         packDisplayList.Add(packDisplay);
         PropertyChanged?.Invoke(this, new(nameof(PackDisplayList)));
         packDisplay.ShowEditingMenu();
+    }
+
+    private string MakeUniqueID(string authorName) =>
+        string.Concat(Sanitize.UniqueID(authorName), '.', Sanitize.UniqueID(NewModName));
+
+    private bool IsValidUniqueID(string uniqueID)
+    {
+        if (
+            ModEntry.ModRegistry.IsLoaded(uniqueID)
+            || EditablePacks.Any(output => output.Manifest.UniqueID.Equals(uniqueID))
+        )
+        {
+            return false;
+        }
+
+        return true;
     }
 }
