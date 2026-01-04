@@ -78,7 +78,6 @@ public partial class FurnitureAssetContext : AbstractEditableAssetContext
             UpdateFurnitureDataList();
             this.BoundsProviderSelector.ClampIndex();
             BoundsProvider = this.BoundsProviderSelector.Value;
-            SaveChanges(AutosaveFrequencyMode.OnAdd);
         }
     }
 
