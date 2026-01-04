@@ -80,23 +80,10 @@ public sealed partial class FurnitureDelimString(string id) : IBoundsProvider
     public IntSpinBoxViewModel BoundingBoxSizeY =>
         new(() => BoundingBoxSize.Y, (value) => BoundingBoxSize = new(BoundingBoxSize.X, value), 1, int.MaxValue);
 
-    public string GUI_TilesheetArea => $"{TilesheetSize.X * Consts.DRAW_TILE}px {TilesheetSize.Y * Consts.DRAW_TILE}px";
+    public string GUI_TilesheetArea => Consts.Basic_GUI_TilesheetSize(TilesheetSize);
 
-    public IEnumerable<SDUIEdges> GUI_BoundingSquares
-    {
-        get
-        {
-            Point boundingBox = BoundingBoxSize;
-            Point tilesheetSize = TilesheetSize;
-            for (int x = 0; x < boundingBox.X; x++)
-            {
-                for (int y = 0; y < boundingBox.Y; y++)
-                {
-                    yield return new(x * Consts.DRAW_TILE, (tilesheetSize.Y - 1 - y) * Consts.DRAW_TILE);
-                }
-            }
-        }
-    }
+    public IEnumerable<SDUIEdges> GUI_BoundingSquares =>
+        Consts.Basic_GUI_BoundingSquares(TilesheetSize, BoundingBoxSize);
 
     private readonly OptionedValue<int> RotationImpl = new(rotation_Options, 1);
     public int Rotation
@@ -305,7 +292,7 @@ public sealed class FurnitureAsset : IEditableAsset
     public string IncludeName => DEFAULT_INCLUDE_NAME;
     public Dictionary<string, FurnitureDelimString> Editing = [];
 
-    public Dictionary<string, object> GetData()
+    public IEnumerable<(string, Dictionary<string, object>)> GetChanges()
     {
         Dictionary<string, object> output = [];
         foreach (FurnitureDelimString furniDelim in Editing.Values)
@@ -313,12 +300,7 @@ public sealed class FurnitureAsset : IEditableAsset
             if (furniDelim.TextureAssetName != null)
                 output[string.Concat(Sanitize.ModIdPrefixValue, furniDelim.Id)] = furniDelim.Serialize();
         }
-        return output;
-    }
-
-    public IEnumerable<(string, Dictionary<string, object>)> GetChanges()
-    {
-        yield return new(TARGET_ASSET, GetData());
+        yield return new(TARGET_ASSET, output);
     }
 
     public void SetData(Dictionary<string, object> data)
@@ -359,14 +341,7 @@ public sealed class FurnitureAsset : IEditableAsset
         return Editing.RemoveWhere(kv => kv.Value.Id == selectedFurniture.Id) > 0;
     }
 
-    public IEnumerable<IAssetName> GetRequiredAssets()
-    {
-        foreach (FurnitureDelimString furniDelim in Editing.Values)
-        {
-            if (furniDelim.TextureAssetName != null)
-                yield return furniDelim.TextureAssetName;
-        }
-    }
+    public IEnumerable<IAssetName> GetRequiredAssets() => Editing.Values.GetRequiredAssetsFromIBoundsProvider();
 
     public bool GetTranslations(ref TranslationStore translations)
     {

@@ -1,8 +1,10 @@
 using System.Diagnostics;
+using Force.DeepCloner;
 using Newtonsoft.Json;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModSmithy.GUI;
+using StardewModSmithy.Models;
 using StardewModSmithy.Wheels;
 using StardewValley;
 
@@ -43,6 +45,9 @@ public sealed class ModEntry : Mod
 
         helper.ConsoleCommands.Add("sms-show", "show smithy menu to edit your mods.", ConsoleShowWorkspace);
         helper.ConsoleCommands.Add("sms-pack", "pack a folder of loose textures", ConsolePackTexture);
+#if DEBUG
+        helper.ConsoleCommands.Add("sms-testy", "show smithy menu to edit your mods.", ConsoleShowTesty);
+#endif
         helper.Events.GameLoop.GameLaunched += OnGameLaunched;
     }
 
@@ -54,6 +59,47 @@ public sealed class ModEntry : Mod
             ContentPatcherVersion = contentPatcher.Manifest.Version.ToString();
         }
     }
+
+#if DEBUG
+    private void ConsoleShowTesty(string arg1, string[] arg2)
+    {
+        // string authorName = ModEntry.Config.AuthorName;
+        // string uniqueID = MakeUniqueID(authorName);
+        // if (!IsValidUniqueID(uniqueID))
+        // {
+        //     return;
+        // }
+        // OutputManifest manifest = new()
+        // {
+        //     Author = authorName,
+        //     Name = NewModName,
+        //     UniqueID = uniqueID,
+        // };
+        // OutputPackContentPatcher outputPackContentPatcher = new(manifest)
+        // {
+        //     TextureAssetGroup = TextureAssetGroup,
+        //     FurniAsset = new FurnitureAsset(),
+        // };
+        // outputPackContentPatcher.InitializeFurnitureAsset([]);
+        // PackDisplayEntry packDisplay = new(outputPackContentPatcher);
+        // packDisplayList.Add(packDisplay);
+        // PropertyChanged?.Invoke(this, new(nameof(PackDisplayList)));
+        // packDisplay.ShowEditingMenu();
+
+        TextureAssetGroup textureAssetGroup = TextureAssetGroup.FromSourceDir("wallpaper");
+        WallpaperFlooringAsset wallpaperFlooringAsset = new();
+        wallpaperFlooringAsset.SetData(
+            DataLoader.AdditionalWallpaperFlooring(Game1.content).DeepClone().ToDictionary(v => v.Id, v => (object)v)
+        );
+
+        EditorMenuManager.ShowWallpaperAndFlooring(
+            textureAssetGroup,
+            wallpaperFlooringAsset,
+            () => { },
+            Context.IsWorldReady
+        );
+    }
+#endif
 
     private void ConsoleShowWorkspace(string cmd, string[] args)
     {

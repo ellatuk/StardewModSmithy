@@ -24,7 +24,8 @@
             margin="4,12"
             clip-size="content 64px">
             <image sprite={@Mods/StardewUI/Sprites/CaretLeft} focusable="true"
-              left-click=|Decrease()|/>
+              left-click=|Decrease()|
+              +hover:scale="1.1"/>
             <label wheel=|Wheel($Direction)| text={ValueLabel}
               font="dialogue"
               layout="280px content"
@@ -36,7 +37,8 @@
               shadow-offset="-2, 2"
               max-lines="1"/>
             <image sprite={@Mods/StardewUI/Sprites/CaretRight} focusable="true"
-              left-click=|Increase()|/>
+              left-click=|Increase()|
+              +hover:scale="1.1"/>
           </lane>
         </lane>
         <lane layout="stretch content" horizontal-content-alignment="start" margin="92,0,0,0">
@@ -121,7 +123,8 @@
 <template name="spin-box">
   <lane orientation="horizontal" vertical-content-alignment="middle" margin="4,0">
     <image sprite={@Mods/StardewUI/Sprites/CaretLeft} focusable="true"
-      left-click=|Decrease()|/>
+      left-click=|Decrease()|
+       +hover:scale="1.1"/>
     <label wheel=|Wheel($Direction)| text={ValueLabel}
       font="dialogue"
       layout="content[64..] content"
@@ -132,6 +135,7 @@
       shadow-color="#4448"
       shadow-offset="-2, 2"/>
     <image sprite={@Mods/StardewUI/Sprites/CaretRight} focusable="true"
-      left-click=|Increase()|/>
+      left-click=|Increase()|
+       +hover:scale="1.1"/>
   </lane>
 </template>

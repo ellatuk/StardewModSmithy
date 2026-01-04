@@ -15,6 +15,7 @@ internal static class EditorMenuManager
     private const string VIEW_ASSET_PREFIX = $"{ModEntry.ModId}/views";
     private const string VIEW_WORKSPACE = $"{VIEW_ASSET_PREFIX}/workspace";
     private const string VIEW_EDIT_FURNITURE = $"{VIEW_ASSET_PREFIX}/edit-furniture";
+    private const string VIEW_EDIT_WALLFLOOR = $"{VIEW_ASSET_PREFIX}/edit-wallfloor";
     private static readonly PerScreen<BaseEditorContext?> editorContext = new();
     private static IModHelper helper = null!;
 
@@ -31,6 +32,14 @@ internal static class EditorMenuManager
 #endif
     }
 
+    private static void OnButtonsChanged_DragSheet(object? sender, ButtonsChangedEventArgs e)
+    {
+        if (toggleMovingMode.JustPressed())
+        {
+            editorContext.Value?.TextureContext.ToggleMovementMode();
+        }
+    }
+
     internal static void ShowWorkspace()
     {
         if (PackListingContext.Initialize() is not PackListingContext packListing)
@@ -39,28 +48,38 @@ internal static class EditorMenuManager
         Game1.activeClickableMenu = viewEngine.CreateMenuFromAsset(VIEW_WORKSPACE, ctx);
     }
 
-    internal static void ShowFurnitureEditor(
-        TextureAssetGroup textureAssetGroup,
-        FurnitureAsset furnitureAsset,
+    private static void ShowEditor(
         Action? saveChanges,
-        bool asFollowingMenu
+        bool asFollowingMenu,
+        DraggableTextureContext draggableTextureContext,
+        AbstractEditableAssetContext editableContext,
+        string editorViewName
     )
     {
-        DraggableTextureContext draggableTextureContext = new(textureAssetGroup);
-        FurnitureAssetContext furnitureAssetContext = new(furnitureAsset);
-        BaseEditorContext ctx = new(draggableTextureContext, furnitureAssetContext, saveChanges);
-        IMenuController ctrl = viewEngine.CreateMenuControllerFromAsset(VIEW_EDIT_FURNITURE, ctx);
-        editorContext.Value = ctx;
-        helper.Events.Input.ButtonsChanged += OnButtonsChanged_DragSheet;
-        ctrl.Closing += CloseFurnitureEditor;
+        BaseEditorContext ctx = new(draggableTextureContext, editableContext, saveChanges);
+
+        IClickableMenu menu;
+        if (draggableTextureContext.CanDrag)
+        {
+            IMenuController ctrl = viewEngine.CreateMenuControllerFromAsset(editorViewName, ctx);
+            editorContext.Value = ctx;
+            helper.Events.Input.ButtonsChanged += OnButtonsChanged_DragSheet;
+            ctrl.Closing += CloseEditor;
+            menu = ctrl.Menu;
+        }
+        else
+        {
+            menu = viewEngine.CreateMenuFromAsset(editorViewName, ctx);
+        }
+
         if (asFollowingMenu && Game1.activeClickableMenu is IClickableMenu priorMenu)
         {
             Game1.nextClickableMenu.Add(priorMenu);
         }
-        Game1.activeClickableMenu = ctrl.Menu;
+        Game1.activeClickableMenu = menu;
     }
 
-    private static void CloseFurnitureEditor()
+    private static void CloseEditor()
     {
         if (editorContext.Value is not null)
         {
@@ -70,11 +89,37 @@ internal static class EditorMenuManager
         }
     }
 
-    private static void OnButtonsChanged_DragSheet(object? sender, ButtonsChangedEventArgs e)
+    #region furniture
+    internal static void ShowFurnitureEditor(
+        TextureAssetGroup textureAssetGroup,
+        FurnitureAsset furnitureAsset,
+        Action? saveChanges,
+        bool asFollowingMenu
+    )
     {
-        if (toggleMovingMode.JustPressed())
-        {
-            editorContext.Value?.TextureContext.ToggleMovementMode();
-        }
+        DraggableTextureContext draggableTextureContext = new(textureAssetGroup);
+        FurnitureAssetContext furnitureAssetContext = new(furnitureAsset);
+        ShowEditor(saveChanges, asFollowingMenu, draggableTextureContext, furnitureAssetContext, VIEW_EDIT_FURNITURE);
     }
+    #endregion
+
+    #region wallpaper and flooring
+    internal static void ShowWallpaperAndFlooring(
+        TextureAssetGroup textureAssetGroup,
+        WallpaperFlooringAsset wallpaperFlooringAsset,
+        Action? saveChanges,
+        bool asFollowingMenu
+    )
+    {
+        DraggableTextureContext draggableTextureContext = new(textureAssetGroup, canDrag: false);
+        WallpaperFlooringAssetContext wallpaperFlooringAssetContext = new(wallpaperFlooringAsset);
+        ShowEditor(
+            saveChanges,
+            asFollowingMenu,
+            draggableTextureContext,
+            wallpaperFlooringAssetContext,
+            VIEW_EDIT_WALLFLOOR
+        );
+    }
+    #endregion
 }
