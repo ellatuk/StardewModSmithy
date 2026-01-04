@@ -6,7 +6,7 @@ public interface IEditableAsset
 {
     public string Desc { get; }
     public string IncludeName { get; }
-    public IEnumerable<(string, Dictionary<string, object>)> GetChanges();
+    public IEnumerable<IMockPatch> GetPatches();
     public void SetData(Dictionary<string, object> data);
     public IEnumerable<IAssetName> GetRequiredAssets();
     public bool GetTranslations(ref TranslationStore translations);

@@ -22,7 +22,7 @@ public partial class WallpaperFlooringAssetContext : AbstractEditableAssetContex
         }
         this.BoundsProviderSelector = new(() => BoundsProvider, (value) => BoundsProvider = value)
         {
-            furnitureDataList = this.WallpaperFlooringDataList,
+            BoundsProviderList = this.WallpaperFlooringDataList,
         };
     }
 }

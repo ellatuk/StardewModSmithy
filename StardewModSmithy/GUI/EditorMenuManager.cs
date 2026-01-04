@@ -17,6 +17,7 @@ internal static class EditorMenuManager
     private const string VIEW_EDIT_FURNITURE = $"{VIEW_ASSET_PREFIX}/edit-furniture";
     private const string VIEW_EDIT_WALLFLOOR = $"{VIEW_ASSET_PREFIX}/edit-wallfloor";
     private static readonly PerScreen<BaseEditorContext?> editorContext = new();
+    private static readonly PerScreen<IClickableMenu?> priorMenu = new();
     private static IModHelper helper = null!;
 
     private static readonly KeybindList toggleMovingMode = new(SButton.MouseMiddle);
@@ -58,25 +59,28 @@ internal static class EditorMenuManager
     {
         BaseEditorContext ctx = new(draggableTextureContext, editableContext, saveChanges);
 
-        IClickableMenu menu;
+        IMenuController ctrl = viewEngine.CreateMenuControllerFromAsset(editorViewName, ctx);
+        ctrl.Closing += CloseEditor;
+
         if (draggableTextureContext.CanDrag)
         {
-            IMenuController ctrl = viewEngine.CreateMenuControllerFromAsset(editorViewName, ctx);
             editorContext.Value = ctx;
             helper.Events.Input.ButtonsChanged += OnButtonsChanged_DragSheet;
-            ctrl.Closing += CloseEditor;
-            menu = ctrl.Menu;
+        }
+
+        if (asFollowingMenu && Game1.activeClickableMenu is IClickableMenu priorMenuV)
+        {
+            // priorMenu.SetChildMenu(ctrl.Menu);
+            Game1.nextClickableMenu.Add(ctrl.Menu);
+            Game1.nextClickableMenu.Add(priorMenuV);
+            priorMenuV.AddDependency();
+            priorMenu.Value = priorMenuV;
+            Game1.activeClickableMenu = null;
         }
         else
         {
-            menu = viewEngine.CreateMenuFromAsset(editorViewName, ctx);
+            Game1.activeClickableMenu = ctrl.Menu;
         }
-
-        if (asFollowingMenu && Game1.activeClickableMenu is IClickableMenu priorMenu)
-        {
-            Game1.nextClickableMenu.Add(priorMenu);
-        }
-        Game1.activeClickableMenu = menu;
     }
 
     private static void CloseEditor()
@@ -87,6 +91,9 @@ internal static class EditorMenuManager
             editorContext.Value = null;
             helper.Events.Input.ButtonsChanged -= OnButtonsChanged_DragSheet;
         }
+        priorMenu.Value?.RemoveDependency();
+        priorMenu.Value = null;
+        DelayedAction.functionAfterDelay(ShowWorkspace, 0);
     }
 
     #region furniture

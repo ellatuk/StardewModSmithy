@@ -33,14 +33,14 @@ public partial class FurnitureAssetContext : AbstractEditableAssetContext
         }
         this.BoundsProviderSelector = new(() => BoundsProvider, (value) => BoundsProvider = value)
         {
-            furnitureDataList = this.FurnitureDataList,
+            BoundsProviderList = this.FurnitureDataList,
         };
     }
 
     private void UpdateFurnitureDataList()
     {
         this.FurnitureDataList = furnitureAsset.Editing.Values.ToList();
-        this.BoundsProviderSelector.furnitureDataList = this.FurnitureDataList;
+        this.BoundsProviderSelector.BoundsProviderList = this.FurnitureDataList;
     }
 
     public override void SetSpriteIndex(object? sender, int spriteIndex)

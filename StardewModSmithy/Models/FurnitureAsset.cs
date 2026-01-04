@@ -8,12 +8,16 @@ using StardewModSmithy.Models.Interfaces;
 using StardewModSmithy.Models.ValueKinds;
 using StardewModSmithy.Wheels;
 using StardewValley.Extensions;
+using StardewValley.GameData.Buildings;
+using StardewValley.GameData.Shops;
+using xTile.Layers;
 
 namespace StardewModSmithy.Models;
 
 public sealed partial class FurnitureDelimString(string id) : IBoundsProvider
 {
     public const char DELIM = '/';
+    public const string CATALOGUE_CTAG = "stardew_mod_smithy_catalogue";
     #region options
     private static readonly string[] type_Options =
     [
@@ -148,7 +152,11 @@ public sealed partial class FurnitureDelimString(string id) : IBoundsProvider
     public bool offLimitsForRandomSale = false;
     public HashSet<string> ContextTags { get; set; } = [];
 
+    [Notify]
+    private bool isCatalogue = false;
+
     #endregion
+
     public string UILabel => $"{Id}:{DisplayName}";
 
     internal bool FromDeserialize = false;
@@ -216,7 +224,10 @@ public sealed partial class FurnitureDelimString(string id) : IBoundsProvider
         if (parts.Length > 10 && bool.TryParse(parts[10], out bool offlim))
             furniDelimString.OffLimitsForRandomSale = offlim;
         if (parts.Length > 11)
+        {
             furniDelimString.ContextTags = parts[11].Split(' ').ToHashSet();
+            furniDelimString.IsCatalogue = furniDelimString.ContextTags.Contains(CATALOGUE_CTAG);
+        }
 
         furniDelimString.FromDeserialize = true;
         return furniDelimString;
@@ -273,6 +284,16 @@ public sealed partial class FurnitureDelimString(string id) : IBoundsProvider
         sb.Append(OffLimitsForRandomSale);
         sb.Append(DELIM);
 
+        if (IsCatalogue)
+        {
+            ContextTags ??= [];
+            ContextTags.Add(CATALOGUE_CTAG);
+        }
+        else
+        {
+            ContextTags?.Remove(CATALOGUE_CTAG);
+        }
+
         if (ContextTags != null)
         {
             sb.AppendJoin(' ', ContextTags.OrderBy(value => value));
@@ -287,20 +308,98 @@ public sealed partial class FurnitureDelimString(string id) : IBoundsProvider
 public sealed class FurnitureAsset : IEditableAsset
 {
     public const string DEFAULT_INCLUDE_NAME = "furniture.json";
-    public const string TARGET_ASSET = "Data/Furniture";
     public string Desc => "furniture";
     public string IncludeName => DEFAULT_INCLUDE_NAME;
     public Dictionary<string, FurnitureDelimString> Editing = [];
 
-    public IEnumerable<(string, Dictionary<string, object>)> GetChanges()
+    public IEnumerable<IMockPatch> GetPatches()
     {
         Dictionary<string, object> output = [];
+        Dictionary<string, FurnitureDelimString> catalogue = [];
         foreach (FurnitureDelimString furniDelim in Editing.Values)
         {
             if (furniDelim.TextureAssetName != null)
-                output[string.Concat(Sanitize.ModIdPrefixValue, furniDelim.Id)] = furniDelim.Serialize();
+            {
+                string fullId = string.Concat(Sanitize.ModIdPrefixValue, furniDelim.Id);
+                output[fullId] = furniDelim.Serialize();
+                if (furniDelim.IsCatalogue)
+                {
+                    catalogue[fullId] = furniDelim;
+                }
+            }
         }
-        yield return new(TARGET_ASSET, output);
+        yield return new MockEditData("Data/Furniture", output);
+        if (catalogue.Any())
+        {
+            Dictionary<string, object> hasMMAP = new() { ["HasMod"] = "mushymato.MMAP" };
+            yield return new MockEditData(
+                "Data/Shops",
+                new Dictionary<string, object>()
+                {
+                    ["{{ModId}}_furniture_catalogue"] = new
+                    {
+                        Items = new List<object>
+                        {
+                            new
+                            {
+                                Id = "{{ModId}}_catalogue_all_furniture",
+                                ItemId = "ALL_ITEMS (F)",
+                                PerItemCondition = "ITEM_ID_PREFIX Target {{ModId}}_",
+                            },
+                        },
+                        CustomFields = new Dictionary<string, string>()
+                        {
+                            ["HappyHomeDesigner/Catalogue"] = true.ToString(),
+                        },
+                    },
+                }
+            )
+            {
+                When = hasMMAP,
+            };
+            List<object> catalogueShopItems = [];
+            Dictionary<string, object> catalogueTileProp = [];
+            foreach ((string itemId, FurnitureDelimString furni) in catalogue)
+            {
+                string qId = string.Concat("(F)", itemId);
+                catalogueShopItems.Add(new { Id = qId, ItemId = qId });
+                catalogueTileProp[itemId] = new
+                {
+                    TileProperties = new List<object>
+                    {
+                        new
+                        {
+                            Id = "OpenShop {{ModId}}_furniture_catalogue",
+                            Name = "Action",
+                            Value = "OpenShop {{ModId}}_furniture_catalogue",
+                            Layer = "Buildings",
+                            TileArea = new Rectangle(Point.Zero, furni.boundingBoxSize),
+                        },
+                    },
+                };
+            }
+
+            yield return new MockEditData(
+                "Data/Shops",
+                new Dictionary<string, object>()
+                {
+                    ["{{ModId}}_furniture_catalogue"] = new
+                    {
+                        Items = catalogueShopItems,
+                        CustomFields = new Dictionary<string, string>()
+                        {
+                            ["HappyHomeDesigner/Catalogue"] = true.ToString(),
+                        },
+                    },
+                }
+            )
+            {
+                TargetField = ["Carpenter", "Items"],
+                When = hasMMAP,
+            };
+
+            yield return new MockEditData("mushymato.MMAP/FurnitureProperties", catalogueTileProp) { When = hasMMAP };
+        }
     }
 
     public void SetData(Dictionary<string, object> data)

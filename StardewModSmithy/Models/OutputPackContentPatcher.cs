@@ -17,6 +17,7 @@ public sealed record MockEditData(string Target, Dictionary<string, object> Entr
 {
     public string Action => "EditData";
     public Dictionary<string, object>? When { get; set; }
+    public string[]? TargetField { get; set; }
 }
 
 public record MockLoad(string Target, string FromFile) : IMockPatch
@@ -123,13 +124,7 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
         foreach (IEditableAsset editable in EditableAssets)
         {
             changes.Add(new MockInclude(Path.Combine("data", editable.IncludeName)));
-            ModEntry.WriteJson(
-                dataDir,
-                editable.IncludeName,
-                new MockContent(
-                    editable.GetChanges().Select(res => new MockEditData(res.Item1, res.Item2)).ToList<IMockPatch>()
-                )
-            );
+            ModEntry.WriteJson(dataDir, editable.IncludeName, new MockContent(editable.GetPatches().ToList()));
             descList.Add(editable.Desc);
             requiredAssets.AddRange(editable.GetRequiredAssets());
         }
@@ -143,6 +138,14 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
             )
             {
                 changes.Add(new MockLoad(result.Item1, Path.Join("assets", result.Item2)));
+            }
+        }
+
+        foreach (IMockPatch mockPatch in changes)
+        {
+            if ((mockPatch.When?.TryGetValue("HasMod", out object? maybeModId) ?? false) && maybeModId is string modId)
+            {
+                manifest.OptionalDependencies.Add(modId);
             }
         }
 

@@ -1,7 +1,9 @@
+using System.Globalization;
 using PropertyChanged.SourceGenerator;
 using StardewModSmithy.GUI.ViewModels;
 using StardewModSmithy.Models;
 using StardewModSmithy.Wheels;
+using StardewValley;
 
 namespace StardewModSmithy.GUI.EditorContext;
 
@@ -22,6 +24,10 @@ public abstract partial class AbstractEditableAssetContext
 
     [Notify]
     private IBoundsProvider? boundsProvider;
+
+    [Notify]
+    private string lastSavedMessage = string.Empty;
+
     internal Action? saveChangesDelegate;
     internal TextureAsset SelectedTextureAsset = null!;
 
@@ -37,11 +43,15 @@ public abstract partial class AbstractEditableAssetContext
     public void SaveChanges(AutosaveFrequencyMode saveReason)
     {
         if (ModEntry.Config.AutosaveFrequency == saveReason)
-            saveChangesDelegate?.Invoke();
+        {
+            Save();
+        }
     }
 
     public void Save()
     {
+        string now = DateTime.Now.ToString(Game1.content.CurrentCulture);
+        LastSavedMessage = I18n.Message_LastSavedAt(time: now);
         saveChangesDelegate?.Invoke();
     }
 }

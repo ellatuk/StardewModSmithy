@@ -84,7 +84,7 @@ public sealed class WallpaperFlooringAsset : IEditableAsset
 
     public Dictionary<string, EditableWallpaperOrFlooring> Editing = [];
 
-    public IEnumerable<(string, Dictionary<string, object>)> GetChanges()
+    public IEnumerable<IMockPatch> GetPatches()
     {
         Dictionary<string, object> output = [];
         foreach (EditableWallpaperOrFlooring wallfloor in Editing.Values)
@@ -92,7 +92,7 @@ public sealed class WallpaperFlooringAsset : IEditableAsset
             if (wallfloor.TextureAssetName != null)
                 output[string.Concat(Sanitize.ModIdPrefixValue, wallfloor.BaseData.Id)] = wallfloor.BaseData;
         }
-        yield return new(TARGET_ASSET, output);
+        yield return new MockEditData(TARGET_ASSET, output);
     }
 
     public IEnumerable<IAssetName> GetRequiredAssets() => Editing.Values.GetRequiredAssetsFromIBoundsProvider();

@@ -1,4 +1,5 @@
 using StardewModSmithy.Wheels;
+using StardewValley;
 
 namespace StardewModSmithy.Models;
 
@@ -9,6 +10,7 @@ public sealed class OutputManifest()
     internal string OutputFolder =>
         Path.Combine(ModEntry.DirectoryPath, Consts.EDITING_OUTPUT, Sanitize.Path(UniqueID));
     internal string TranslationFolder => Path.Combine(OutputFolder, "i18n");
+    internal HashSet<string> OptionalDependencies = [];
 
     public string Author { get; set; } = "";
     public string Name { get; set; } = "";
@@ -20,7 +22,21 @@ public sealed class OutputManifest()
         set => field = value;
     } = string.Empty;
     public object ContentPackFor => new { UniqueID = PackFor };
+    public List<object>? Dependencies
+    {
+        get
+        {
+            List<object>? deps = null;
+            if (OptionalDependencies.Any())
+            {
+                deps ??= [];
+                deps.AddRange(OptionalDependencies.Select(dep => new { UniqueID = dep, IsRequired = false }));
+            }
+            return deps;
+        }
+    }
     public List<string> UpdateKeys = [];
+    public string StardewModSmithy_ExportedAt => DateTime.Now.ToString(Game1.content.CurrentCulture);
 
     public static IEnumerable<OutputManifest> LoadAllFromOutputFolder()
     {
