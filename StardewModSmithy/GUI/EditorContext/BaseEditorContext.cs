@@ -21,5 +21,6 @@ public sealed class BaseEditorContext
         EditableContext.BoundsProviderChanged += TextureContext.OnEditorBoundsProviderChanged;
 
         EditableContext.SetTexture(TextureContext, TextureContext.Selected);
+        TextureContext.OnEditorBoundsProviderChanged(null, EditableContext.BoundsProvider);
     }
 }
