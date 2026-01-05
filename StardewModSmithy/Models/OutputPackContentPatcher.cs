@@ -153,6 +153,8 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
         ModEntry.WriteJson(targetPath, "content.json", new MockContentMain(changes));
         // manifest.json
         ModEntry.WriteJson(targetPath, Consts.MANIFEST_FILE, manifest);
+
+        ModEntry.PatchReload(targetPath, manifest.UniqueID);
     }
 
     public void Load()

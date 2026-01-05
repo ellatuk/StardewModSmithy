@@ -15,7 +15,6 @@
   "gui.placement.0.name": "Indoor",
   "gui.placement.1.name": "Outdoor",
   "gui.placement.2.name": "Any",
-  "gui.label.id": "ID:",
   "gui.label.dragging": "Dragging:",
   "gui.label.name": "Name:",
   "gui.label.tilesheet": "Texture:",

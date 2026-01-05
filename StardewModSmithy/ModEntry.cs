@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.Reflection;
+using System.Reflection.Emit;
 using Force.DeepCloner;
 using Newtonsoft.Json;
 using StardewModdingAPI;
@@ -22,10 +24,39 @@ public sealed class ModEntry : Mod
     private static IMonitor? mon;
     internal static Func<string, IAssetName> ParseAssetName = null!;
     internal static string DirectoryPath = null!;
+    internal static string StagingDirectoryPath = null!;
     internal static IModContentHelper ModContent = null!;
     internal static ModConfig Config = null!;
     internal static IModRegistry ModRegistry = null!;
 
+    // https://gist.github.com/Shockah/ec111245868ee9b7dbf2ca2928dd2896
+    #region execute command
+    private static Action<string>? AddToRawCommandQueue = null;
+
+    private static Action<string>? Make_AddToDrawCommandQueue()
+    {
+        var scoreType = Type.GetType("StardewModdingAPI.Framework.SCore, StardewModdingAPI")!;
+        var commandQueueType = Type.GetType("StardewModdingAPI.Framework.CommandQueue, StardewModdingAPI")!;
+        var scoreGetter = scoreType
+            .GetProperty("Instance", BindingFlags.NonPublic | BindingFlags.Static)!
+            .GetGetMethod(true)!;
+        var rawCommandQueueField = scoreType.GetField(
+            "RawCommandQueue",
+            BindingFlags.NonPublic | BindingFlags.Instance
+        )!;
+        var commandQueueAddMethod = commandQueueType.GetMethod("Add")!;
+        var dynamicMethod = new DynamicMethod("AddToRawCommandQueue", null, [typeof(string)]);
+        var il = dynamicMethod.GetILGenerator();
+        il.Emit(OpCodes.Call, scoreGetter);
+        il.Emit(OpCodes.Ldfld, rawCommandQueueField);
+        il.Emit(OpCodes.Ldarg_0);
+        il.Emit(OpCodes.Call, commandQueueAddMethod);
+        il.Emit(OpCodes.Ret);
+        return dynamicMethod.CreateDelegate<Action<string>>();
+    }
+    #endregion
+
+    public static bool IsContentPatcherLoaded { get; private set; } = false;
     public static string ContentPatcherVersion { get; internal set; } = "2.1.0";
 
     public override void Entry(IModHelper helper)
@@ -38,10 +69,12 @@ public sealed class ModEntry : Mod
 
         ParseAssetName = helper.GameContent.ParseAssetName;
         DirectoryPath = helper.DirectoryPath;
+        StagingDirectoryPath = string.Concat(DirectoryPath, ".Staging");
         ModContent = helper.ModContent;
 
         Directory.CreateDirectory(Path.Combine(DirectoryPath, Consts.EDITING_INPUT));
         Directory.CreateDirectory(Path.Combine(DirectoryPath, Consts.EDITING_OUTPUT));
+        Directory.CreateDirectory(StagingDirectoryPath);
 
         helper.ConsoleCommands.Add("sms-show", "show smithy menu to edit your mods.", ConsoleShowWorkspace);
         helper.ConsoleCommands.Add("sms-pack", "pack a folder of loose textures", ConsolePackTexture);
@@ -57,47 +90,55 @@ public sealed class ModEntry : Mod
         if (Helper.ModRegistry.Get("Pathoschild.ContentPatcher") is IModInfo contentPatcher)
         {
             ContentPatcherVersion = contentPatcher.Manifest.Version.ToString();
+            IsContentPatcherLoaded = true;
+        }
+        AddToRawCommandQueue = Make_AddToDrawCommandQueue();
+    }
+
+    private static void ExecuteCommand(string command)
+    {
+        AddToRawCommandQueue?.Invoke(command);
+    }
+
+    internal static void PatchReload(string targetPath, string uniqueId)
+    {
+        if (!IsContentPatcherLoaded)
+            return;
+
+        if (ModRegistry.IsLoaded(uniqueId))
+        {
+            string cmd = string.Concat("patch reload ", uniqueId);
+            Log($"Trying '{cmd}'", LogLevel.Info);
+            ExecuteCommand(cmd);
+        }
+        else
+        {
+            string symlinkPath = Path.Combine(StagingDirectoryPath, Path.GetFileName(targetPath));
+            if (!Directory.Exists(symlinkPath))
+            {
+                Directory.CreateSymbolicLink(symlinkPath, targetPath);
+                LogOnce($"Restart the game to enable automatic patch reload on '{uniqueId}'", LogLevel.Info);
+            }
+            else
+            {
+                LogOnce(
+                    $"'{symlinkPath}' exists yet '{uniqueId}' is not loaded, please remove the folder to allow automatic patch reload",
+                    LogLevel.Error
+                );
+            }
         }
     }
 
 #if DEBUG
     private void ConsoleShowTesty(string arg1, string[] arg2)
     {
-        // string authorName = ModEntry.Config.AuthorName;
-        // string uniqueID = MakeUniqueID(authorName);
-        // if (!IsValidUniqueID(uniqueID))
-        // {
-        //     return;
-        // }
-        // OutputManifest manifest = new()
-        // {
-        //     Author = authorName,
-        //     Name = NewModName,
-        //     UniqueID = uniqueID,
-        // };
-        // OutputPackContentPatcher outputPackContentPatcher = new(manifest)
-        // {
-        //     TextureAssetGroup = TextureAssetGroup,
-        //     FurniAsset = new FurnitureAsset(),
-        // };
-        // outputPackContentPatcher.InitializeFurnitureAsset([]);
-        // PackDisplayEntry packDisplay = new(outputPackContentPatcher);
-        // packDisplayList.Add(packDisplay);
-        // PropertyChanged?.Invoke(this, new(nameof(PackDisplayList)));
-        // packDisplay.ShowEditingMenu();
-
         TextureAssetGroup textureAssetGroup = TextureAssetGroup.FromSourceDir("wallpaper");
         WallpaperFlooringAsset wallpaperFlooringAsset = new();
         wallpaperFlooringAsset.SetData(
             DataLoader.AdditionalWallpaperFlooring(Game1.content).DeepClone().ToDictionary(v => v.Id, v => (object)v)
         );
 
-        EditorMenuManager.ShowWallpaperAndFlooring(
-            textureAssetGroup,
-            wallpaperFlooringAsset,
-            () => { },
-            Context.IsWorldReady
-        );
+        EditorMenuManager.ShowWallpaperAndFlooring(textureAssetGroup, wallpaperFlooringAsset, () => { });
     }
 #endif
 

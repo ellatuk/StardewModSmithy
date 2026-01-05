@@ -16,8 +16,9 @@ internal static class EditorMenuManager
     private const string VIEW_WORKSPACE = $"{VIEW_ASSET_PREFIX}/workspace";
     private const string VIEW_EDIT_FURNITURE = $"{VIEW_ASSET_PREFIX}/edit-furniture";
     private const string VIEW_EDIT_WALLFLOOR = $"{VIEW_ASSET_PREFIX}/edit-wallfloor";
+    private static readonly PerScreen<PackListingContext?> packListingContext = new();
     private static readonly PerScreen<BaseEditorContext?> editorContext = new();
-    private static readonly PerScreen<IClickableMenu?> priorMenu = new();
+    private static readonly PerScreen<bool> justClosedEditor = new();
     private static IModHelper helper = null!;
 
     private static readonly KeybindList toggleMovingMode = new(SButton.MouseMiddle);
@@ -31,6 +32,18 @@ internal static class EditorMenuManager
 #if DEBUG
         viewEngine.EnableHotReloadingWithSourceSync();
 #endif
+        helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
+    }
+
+    private static void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
+    {
+        if (Context.IsWorldReady)
+            return;
+        if (justClosedEditor.Value && TitleMenu.subMenu == null)
+        {
+            justClosedEditor.Value = false;
+            ShowWorkspace();
+        }
     }
 
     private static void OnButtonsChanged_DragSheet(object? sender, ButtonsChangedEventArgs e)
@@ -43,47 +56,50 @@ internal static class EditorMenuManager
 
     internal static void ShowWorkspace()
     {
-        if (PackListingContext.Initialize() is not PackListingContext packListing)
+        if (Context.IsWorldReady)
+            Game1.exitActiveMenu();
+
+        if ((packListingContext.Value ??= PackListingContext.Initialize()) is not PackListingContext packListing)
             return;
+
         BaseWorkspaceContext ctx = new(packListing, new(ModEntry.Config));
-        Game1.activeClickableMenu = viewEngine.CreateMenuFromAsset(VIEW_WORKSPACE, ctx);
+
+        IClickableMenu menu = viewEngine.CreateMenuFromAsset(VIEW_WORKSPACE, ctx);
+        if (Context.IsWorldReady)
+        {
+            Game1.activeClickableMenu = menu;
+        }
+        else
+        {
+            TitleMenu.subMenu = menu;
+        }
     }
 
     private static void ShowEditor(
         Action? saveChanges,
-        bool asFollowingMenu,
         DraggableTextureContext draggableTextureContext,
         AbstractEditableAssetContext editableContext,
         string editorViewName
     )
     {
+        if (Context.IsWorldReady)
+            Game1.exitActiveMenu();
+
         BaseEditorContext ctx = new(draggableTextureContext, editableContext, saveChanges);
 
         IMenuController ctrl = viewEngine.CreateMenuControllerFromAsset(editorViewName, ctx);
-        ctrl.Closing += CloseEditor;
 
+        ctrl.Closing += EditorClosing;
         if (draggableTextureContext.CanDrag)
         {
             editorContext.Value = ctx;
             helper.Events.Input.ButtonsChanged += OnButtonsChanged_DragSheet;
         }
 
-        if (asFollowingMenu && Game1.activeClickableMenu is IClickableMenu priorMenuV)
-        {
-            // priorMenu.SetChildMenu(ctrl.Menu);
-            Game1.nextClickableMenu.Add(ctrl.Menu);
-            Game1.nextClickableMenu.Add(priorMenuV);
-            priorMenuV.AddDependency();
-            priorMenu.Value = priorMenuV;
-            Game1.activeClickableMenu = null;
-        }
-        else
-        {
-            Game1.activeClickableMenu = ctrl.Menu;
-        }
+        Game1.activeClickableMenu = ctrl.Menu;
     }
 
-    private static void CloseEditor()
+    private static void EditorClosing()
     {
         if (editorContext.Value is not null)
         {
@@ -91,22 +107,26 @@ internal static class EditorMenuManager
             editorContext.Value = null;
             helper.Events.Input.ButtonsChanged -= OnButtonsChanged_DragSheet;
         }
-        priorMenu.Value?.RemoveDependency();
-        priorMenu.Value = null;
-        DelayedAction.functionAfterDelay(ShowWorkspace, 0);
+        if (Context.IsWorldReady)
+        {
+            DelayedAction.functionAfterDelay(ShowWorkspace, 0);
+        }
+        else
+        {
+            justClosedEditor.Value = true;
+        }
     }
 
     #region furniture
     internal static void ShowFurnitureEditor(
         TextureAssetGroup textureAssetGroup,
         FurnitureAsset furnitureAsset,
-        Action? saveChanges,
-        bool asFollowingMenu
+        Action? saveChanges
     )
     {
         DraggableTextureContext draggableTextureContext = new(textureAssetGroup);
         FurnitureAssetContext furnitureAssetContext = new(furnitureAsset);
-        ShowEditor(saveChanges, asFollowingMenu, draggableTextureContext, furnitureAssetContext, VIEW_EDIT_FURNITURE);
+        ShowEditor(saveChanges, draggableTextureContext, furnitureAssetContext, VIEW_EDIT_FURNITURE);
     }
     #endregion
 
@@ -114,19 +134,12 @@ internal static class EditorMenuManager
     internal static void ShowWallpaperAndFlooring(
         TextureAssetGroup textureAssetGroup,
         WallpaperFlooringAsset wallpaperFlooringAsset,
-        Action? saveChanges,
-        bool asFollowingMenu
+        Action? saveChanges
     )
     {
         DraggableTextureContext draggableTextureContext = new(textureAssetGroup, canDrag: false);
         WallpaperFlooringAssetContext wallpaperFlooringAssetContext = new(wallpaperFlooringAsset);
-        ShowEditor(
-            saveChanges,
-            asFollowingMenu,
-            draggableTextureContext,
-            wallpaperFlooringAssetContext,
-            VIEW_EDIT_WALLFLOOR
-        );
+        ShowEditor(saveChanges, draggableTextureContext, wallpaperFlooringAssetContext, VIEW_EDIT_WALLFLOOR);
     }
     #endregion
 }

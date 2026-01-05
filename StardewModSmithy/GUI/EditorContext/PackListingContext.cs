@@ -24,8 +24,7 @@ internal record PackDisplayEntry(IOutputPack Pack)
             EditorMenuManager.ShowFurnitureEditor(
                 outputPackContentPatcher.TextureAssetGroup,
                 outputPackContentPatcher.FurniAsset,
-                outputPackContentPatcher.Save,
-                Context.IsWorldReady
+                outputPackContentPatcher.Save
             );
         }
         else
