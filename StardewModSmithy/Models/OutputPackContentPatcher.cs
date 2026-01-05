@@ -108,7 +108,7 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
                     }
                 );
                 changes.Add(
-                    new MockLoad(TranslationString.I18N_Asset, Path.Combine("i18n", Translations.LocaleFilename))
+                    new MockLoad(TranslationString.I18N_Asset, "i18n/{{Language}}.json")
                     {
                         When = new() { ["HasFile:{{FromFile}}"] = true },
                     }
@@ -116,7 +116,7 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
             }
             // i18n/{langaugecode}.json and i18n/default.json
             ModEntry.WriteJson(translationsDir, Translations.LocaleFilename, Translations.Data);
-            ModEntry.WriteJson(translationsDir, TranslationStore.DefaultFilename, Translations.Data);
+            ModEntry.WriteJson(translationsDir, TranslationStore.DefaultFilename, Translations.DefaultData);
         }
         // edits
         List<string> descList = [];
@@ -141,13 +141,19 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
             }
         }
 
+        List<string> includeList = [];
         foreach (IMockPatch mockPatch in changes)
         {
             if ((mockPatch.When?.TryGetValue("HasMod", out object? maybeModId) ?? false) && maybeModId is string modId)
             {
                 manifest.OptionalDependencies.Add(modId);
             }
+            if (mockPatch is MockInclude inc)
+            {
+                includeList.Add(inc.FromFile);
+            }
         }
+        manifest.StardewModSmithyInfo = new([Consts.MANIFEST_FILE, "i18n/*.json", "content.json", .. includeList]);
 
         // content.json
         ModEntry.WriteJson(targetPath, "content.json", new MockContentMain(changes));

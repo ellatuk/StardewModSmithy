@@ -1,4 +1,3 @@
-using System.ComponentModel;
 using PropertyChanged.SourceGenerator;
 using StardewModdingAPI;
 using StardewModSmithy.Models;
@@ -8,10 +7,24 @@ using StardewValley;
 
 namespace StardewModSmithy.GUI.EditorContext;
 
-internal record PackDisplayEntry(IOutputPack Pack)
+internal partial record PackDisplayEntry(IOutputPack Pack)
 {
     public string PackTitle => $"{Pack.Manifest.Name} ({Pack.Manifest.UniqueID})";
-    public string PackDesc => Pack.Manifest.Desc;
+
+    [Notify]
+    public bool isExpanded = false;
+
+    public string NexusID
+    {
+        get => Pack.Manifest.NexusID;
+        set
+        {
+            Pack.Manifest.NexusID = value;
+            OnPropertyChanged(new(nameof(NexusID)));
+        }
+    }
+
+    public bool IsLoaded => ModEntry.ModRegistry.IsLoaded(Pack.Manifest.UniqueID);
 
     public void ShowEditingMenu()
     {
@@ -53,7 +66,7 @@ internal partial record PackListingContext(TextureAssetGroup TextureAssetGroup, 
             {
                 return I18n.Message_CreateMod_NeedName();
             }
-            string uniqueID = MakeUniqueID(ModEntry.Config.AuthorName);
+            string uniqueID = MakeUniqueID(ModEntry.Config.GetAuthorName());
             if (!IsValidUniqueID(uniqueID))
             {
                 return I18n.Message_CreateMod_IdNotUnique(uniqueID);

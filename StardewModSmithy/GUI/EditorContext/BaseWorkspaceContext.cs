@@ -13,7 +13,7 @@ internal partial record TabButtonEntry(string Value)
 
 internal partial record BaseWorkspaceContext(PackListingContext PackListing, ModConfigContext ModConfig)
 {
-    public readonly List<TabButtonEntry> AllTabs = [new("packs") { IsActive = true }, new("config")];
+    public readonly List<TabButtonEntry> AllTabs = [new("packs") { IsActive = true }, new("config"), new("about")];
 
     [Notify]
     public string selectedTab = "packs";

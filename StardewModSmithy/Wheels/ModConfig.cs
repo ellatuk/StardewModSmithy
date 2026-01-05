@@ -14,6 +14,7 @@ public sealed class ModConfig
 {
     public string AuthorName { get; set; } = "";
     public AutosaveFrequencyMode AutosaveFrequency { get; set; } = AutosaveFrequencyMode.OnAdd;
+    public bool AutoSymlinkAndPatchReload { get; set; } = true;
 
     internal Action<ModConfig>? doWriteConfig = null;
 
@@ -21,10 +22,6 @@ public sealed class ModConfig
 
     internal string GetAuthorName()
     {
-        if (!string.IsNullOrEmpty(AuthorName))
-            return AuthorName;
-        if (Context.IsWorldReady)
-            return Game1.player.displayName;
-        return "Smithy";
+        return string.IsNullOrEmpty(AuthorName) ? "Smithy" : AuthorName;
     }
 }

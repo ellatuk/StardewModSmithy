@@ -35,4 +35,15 @@ internal sealed record ModConfigContext : INotifyPropertyChanged
             PropertyChanged?.Invoke(this, new(nameof(AuthorName)));
         }
     }
+
+    public bool AutoSymlinkAndPatchReload
+    {
+        get => config.AutoSymlinkAndPatchReload;
+        set
+        {
+            config.AutoSymlinkAndPatchReload = value;
+            config.WriteConfig();
+            PropertyChanged?.Invoke(this, new(nameof(AutoSymlinkAndPatchReload)));
+        }
+    }
 }

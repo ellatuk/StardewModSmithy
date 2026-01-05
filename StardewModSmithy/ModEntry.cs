@@ -25,6 +25,7 @@ public sealed class ModEntry : Mod
     internal static Func<string, IAssetName> ParseAssetName = null!;
     internal static string DirectoryPath = null!;
     internal static string StagingDirectoryPath = null!;
+    internal static string ModCreditString = null!;
     internal static IModContentHelper ModContent = null!;
     internal static ModConfig Config = null!;
     internal static IModRegistry ModRegistry = null!;
@@ -66,6 +67,7 @@ public sealed class ModEntry : Mod
         Config = helper.ReadConfig<ModConfig>();
         Config.doWriteConfig = helper.WriteConfig;
         ModRegistry = helper.ModRegistry;
+        ModCreditString = $"by {ModManifest.Name} ({ModManifest.Version}) at ";
 
         ParseAssetName = helper.GameContent.ParseAssetName;
         DirectoryPath = helper.DirectoryPath;
@@ -103,6 +105,9 @@ public sealed class ModEntry : Mod
     internal static void PatchReload(string targetPath, string uniqueId)
     {
         if (!IsContentPatcherLoaded)
+            return;
+
+        if (!Config.AutoSymlinkAndPatchReload)
             return;
 
         if (ModRegistry.IsLoaded(uniqueId))

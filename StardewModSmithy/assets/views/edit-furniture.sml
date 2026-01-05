@@ -126,7 +126,7 @@
           <lane orientation="vertical">
             <textinput layout="stretch 54px" margin="-8,12" text={<>PriceInput} />
             <checkbox label-text={#gui.label.no-random-sale} is-checked={<>OffLimitsForRandomSale}/>
-          <checkbox label-text={#gui.label.is-catalogue} is-checked={<>IsCatalogue}/>
+            <checkbox label-text={#gui.label.is-catalogue} is-checked={<>IsCatalogue}/>
           </lane>
         </form-row>
       </lane>

@@ -448,7 +448,7 @@ public sealed class FurnitureAsset : IEditableAsset
         foreach (FurnitureDelimString furniDelim in Editing.Values)
         {
             furniDelim.UpdateForFirstTimeSerialize();
-            translations.Data[furniDelim.DisplayNameImpl.Key] = furniDelim.DisplayNameImpl.Value ?? "???";
+            translations.SetDataKeyValue(furniDelim.DisplayNameImpl.Key, furniDelim.DisplayNameImpl.Value ?? "???");
             requiresLoad = requiresLoad || furniDelim.DisplayNameImpl.Kind == TranslationStringKind.LocalizedText;
         }
         return requiresLoad;

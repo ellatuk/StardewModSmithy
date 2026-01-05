@@ -1,7 +1,14 @@
 using StardewModSmithy.Wheels;
 using StardewValley;
+using StardewValley.Extensions;
 
 namespace StardewModSmithy.Models;
+
+public sealed record SmithyInfo(List<string> GeneratedFileList)
+{
+    public string Exported =>
+        string.Concat(ModEntry.ModCreditString, DateTime.Now.ToString(Game1.content.CurrentCulture));
+};
 
 public sealed class OutputManifest()
 {
@@ -11,6 +18,7 @@ public sealed class OutputManifest()
         Path.Combine(ModEntry.DirectoryPath, Consts.EDITING_OUTPUT, Sanitize.Path(UniqueID));
     internal string TranslationFolder => Path.Combine(OutputFolder, "i18n");
     internal HashSet<string> OptionalDependencies = [];
+    internal string NexusID { get; set; } = string.Empty;
 
     public string Author { get; set; } = "";
     public string Name { get; set; } = "";
@@ -18,7 +26,7 @@ public sealed class OutputManifest()
     public string UniqueID { get; set; } = string.Empty;
     public string Description
     {
-        get => string.IsNullOrEmpty(field) ? $"{Desc}, exported by {ModEntry.ModId}" : field;
+        get => string.IsNullOrEmpty(field) ? Desc : field;
         set => field = value;
     } = string.Empty;
     public object ContentPackFor => new { UniqueID = PackFor };
@@ -35,8 +43,36 @@ public sealed class OutputManifest()
             return deps;
         }
     }
-    public List<string> UpdateKeys = [];
-    public string StardewModSmithy_ExportedAt => DateTime.Now.ToString(Game1.content.CurrentCulture);
+    public List<string>? UpdateKeys
+    {
+        get
+        {
+            List<string>? updateKeys = null;
+            if (!string.IsNullOrEmpty(NexusID))
+            {
+                updateKeys ??= [];
+                updateKeys.Add(string.Concat("Nexus:", NexusID));
+            }
+            return updateKeys;
+        }
+        set
+        {
+            if (value == null)
+            {
+                NexusID = string.Empty;
+                return;
+            }
+            foreach (string updateKey in value)
+            {
+                if (updateKey.StartsWithIgnoreCase("nexus:"))
+                {
+                    NexusID = updateKey[6..];
+                    return;
+                }
+            }
+        }
+    }
+    public SmithyInfo? StardewModSmithyInfo;
 
     public static IEnumerable<OutputManifest> LoadAllFromOutputFolder()
     {
