@@ -1,0 +1,9 @@
+{
+  "Texture": "LooseSprites/emojis",
+  "Sprites": {
+    "checkmark": {
+      "SourceRect": "117,81,9,9",
+      "Scale": 4
+    }
+  }
+}

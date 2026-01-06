@@ -143,6 +143,15 @@ internal static class SpritePacker
         );
         forExport.SaveAsPng(stream, forExport.Width, forExport.Height);
 
+        txAtlasEntries.Sort(
+            (a, b) =>
+            {
+                int cmp1 = a.Area.Y.CompareTo(b.Area.Y);
+                if (cmp1 != 0)
+                    return cmp1;
+                return a.Area.X.CompareTo(b.Area.X);
+            }
+        );
         ModEntry.WriteJson(
             Path.Combine(ModEntry.DirectoryPath, Consts.EDITING_INPUT),
             string.Concat(subdir, Consts.ATLAS_SUFFIX),

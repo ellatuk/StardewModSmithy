@@ -1,5 +1,6 @@
 using Microsoft.Xna.Framework;
 using PropertyChanged.SourceGenerator;
+using StardewModdingAPI;
 using StardewModSmithy.GUI.ViewModels;
 using StardewModSmithy.Integration;
 using StardewModSmithy.Models;
@@ -13,13 +14,24 @@ public enum DragMovementMode
     Bounds = 1,
 }
 
-public partial class DraggableTextureContext(TextureAssetGroup textureAssetGroup)
+public partial class DraggableTextureContext(
+    TextureAssetGroup textureAssetGroup,
+    Func<TextureAsset, bool>? textureFilter,
+    bool canDrag = true,
+    bool enableFront = false,
+    int tileUnit = Consts.DRAW_TILE
+)
 {
     public event EventHandler<int>? Dragged;
     public event EventHandler<TextureAsset>? TextureChanged;
 
+    public bool CanDrag => tileUnit > 0 && canDrag;
+
     [Notify]
-    public TextureAsset selected = textureAssetGroup.GatheredTextures.First().Value;
+    public TextureAsset selected =
+        textureFilter == null
+            ? textureAssetGroup.GatheredTextures.Values.First()
+            : textureAssetGroup.GatheredTextures.Values.First(textureFilter);
 
     public TextureAsset? SelectedFront
     {
@@ -54,7 +66,7 @@ public partial class DraggableTextureContext(TextureAssetGroup textureAssetGroup
     public float SheetOpacityFront => SheetOpacity * 0.5f;
 
     [Notify]
-    public SDUIEdges boundsPadding = new(2 * Consts.DRAW_TILE, 2 * Consts.DRAW_TILE, 0, 0);
+    public SDUIEdges boundsPadding = canDrag ? new(2 * tileUnit, 2 * tileUnit, 0, 0) : new(0);
 
     [Notify]
     private IBoundsProvider? boundsProvider = null;
@@ -65,7 +77,10 @@ public partial class DraggableTextureContext(TextureAssetGroup textureAssetGroup
     [Notify]
     private bool showingTextureSelector = false;
 
-    public IEnumerable<TextureAsset> Textures => textureAssetGroup.GatheredTextures.Values;
+    public IEnumerable<TextureAsset> Textures =>
+        textureFilter == null
+            ? textureAssetGroup.GatheredTextures.Values
+            : textureAssetGroup.GatheredTextures.Values.Where(textureFilter);
 
     public void SelectTextureAsset(TextureAsset selectedAsset)
     {
@@ -81,7 +96,7 @@ public partial class DraggableTextureContext(TextureAssetGroup textureAssetGroup
 
     public void SelectTextureAssetFront(TextureAsset selectedAsset)
     {
-        if (!textureAssetGroup.EnableFront)
+        if (!enableFront)
             return;
         if (selectedAsset.IsSelected)
             return;
@@ -97,6 +112,9 @@ public partial class DraggableTextureContext(TextureAssetGroup textureAssetGroup
 
     public void UpdateSpriteIndex(SDUIEdges newSheetMargin, SDUIEdges newBoundsPadding)
     {
+        if (!CanDrag)
+            return;
+
         if (boundsProvider == null)
         {
             if (MovementMode.SelectedValue == DragMovementMode.Bounds)
@@ -108,14 +126,14 @@ public partial class DraggableTextureContext(TextureAssetGroup textureAssetGroup
         int xDelta = Math.Max(
             0,
             Math.Min(
-                (newBoundsPadding.Left - newSheetMargin.Left) / Consts.DRAW_TILE,
+                (newBoundsPadding.Left - newSheetMargin.Left) / tileUnit,
                 Sheet.IndexColCnt - boundsProvider.TilesheetSize.X
             )
         );
         int yDelta = Math.Max(
             0,
             Math.Min(
-                (newBoundsPadding.Top - newSheetMargin.Top) / Consts.DRAW_TILE,
+                (newBoundsPadding.Top - newSheetMargin.Top) / tileUnit,
                 Sheet.IndexRowCnt - boundsProvider.TilesheetSize.Y
             )
         );
@@ -123,18 +141,13 @@ public partial class DraggableTextureContext(TextureAssetGroup textureAssetGroup
 
         if (MovementMode.SelectedValue == DragMovementMode.Bounds)
         {
-            BoundsPadding = new(
-                newSheetMargin.Left + xDelta * Consts.DRAW_TILE,
-                newSheetMargin.Top + yDelta * Consts.DRAW_TILE,
-                0,
-                0
-            );
+            BoundsPadding = new(newSheetMargin.Left + xDelta * tileUnit, newSheetMargin.Top + yDelta * tileUnit, 0, 0);
         }
         else
         {
             SheetMargin = new(
-                newBoundsPadding.Left - xDelta * Consts.DRAW_TILE,
-                newBoundsPadding.Top - yDelta * Consts.DRAW_TILE,
+                newBoundsPadding.Left - xDelta * tileUnit,
+                newBoundsPadding.Top - yDelta * tileUnit,
                 0,
                 0
             );
@@ -149,24 +162,25 @@ public partial class DraggableTextureContext(TextureAssetGroup textureAssetGroup
         int xPos = SpriteIndex % Sheet.IndexColCnt;
         int yPos = SpriteIndex / Sheet.IndexColCnt;
 
-        SheetMargin = new(
-            BoundsPadding.Left - xPos * Consts.DRAW_TILE,
-            BoundsPadding.Top - yPos * Consts.DRAW_TILE,
-            0,
-            0
-        );
+        SheetMargin = new(BoundsPadding.Left - xPos * tileUnit, BoundsPadding.Top - yPos * tileUnit, 0, 0);
     }
 
     private Vector2 lastDragPos = new(-1, -1);
 
     public void SheetDragStart(Vector2 position)
     {
+        if (!CanDrag)
+            return;
+
         lastDragPos = position;
         SheetOpacity = 0.7f;
     }
 
     public void SheetDrag(Vector2 position)
     {
+        if (!CanDrag)
+            return;
+
         int newOffsetX;
         int newOffsetY;
         if (MovementMode.SelectedValue == DragMovementMode.Bounds)
@@ -183,14 +197,14 @@ public partial class DraggableTextureContext(TextureAssetGroup textureAssetGroup
         Vector2 dragChange = position - lastDragPos;
         int dragTileCnt;
         bool changed = false;
-        if ((dragTileCnt = (int)(MathF.Abs(dragChange.X) / Consts.DRAW_TILE) * Consts.DRAW_TILE) > 0)
+        if ((dragTileCnt = (int)(MathF.Abs(dragChange.X) / tileUnit) * tileUnit) > 0)
         {
             dragTileCnt *= Math.Sign(dragChange.X);
             newOffsetX += dragTileCnt;
             lastDragPos.X += dragTileCnt;
             changed = true;
         }
-        if ((dragTileCnt = (int)(MathF.Abs(dragChange.Y) / Consts.DRAW_TILE) * Consts.DRAW_TILE) > 0)
+        if ((dragTileCnt = (int)(MathF.Abs(dragChange.Y) / tileUnit) * tileUnit) > 0)
         {
             dragTileCnt *= Math.Sign(dragChange.Y);
             newOffsetY += dragTileCnt;
@@ -213,6 +227,9 @@ public partial class DraggableTextureContext(TextureAssetGroup textureAssetGroup
 
     public void SheetDragEnd(Vector2 position)
     {
+        if (!CanDrag)
+            return;
+
         lastDragPos = new(-1, -1);
         SheetOpacity = 1f;
         if (SpriteIndex < 0)

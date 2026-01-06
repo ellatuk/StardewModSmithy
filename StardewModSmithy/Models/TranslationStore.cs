@@ -8,14 +8,13 @@ public sealed class TranslationStore
     public LocalizedContentManager.LanguageCode code = Game1.content.GetCurrentLanguage();
     public string LocaleFilename => $"{code}.json";
     public Dictionary<string, string> Data = [];
+    public Dictionary<string, string> DefaultData = [];
 
     public void LoadForCurrentLanguage(string translationsDir)
     {
         code = Game1.content.GetCurrentLanguage();
-        Data =
-            ModEntry.ReadJson<Dictionary<string, string>>(translationsDir, LocaleFilename)
-            ?? ModEntry.ReadJson<Dictionary<string, string>>(translationsDir, DefaultFilename)
-            ?? Data;
+        DefaultData = ModEntry.ReadJson<Dictionary<string, string>>(translationsDir, DefaultFilename) ?? DefaultData;
+        Data = ModEntry.ReadJson<Dictionary<string, string>>(translationsDir, DefaultFilename) ?? Data;
     }
 
     public static TranslationStore? FromSourceDir(string translationsDir)
@@ -27,5 +26,15 @@ public sealed class TranslationStore
         TranslationStore store = new();
         store.LoadForCurrentLanguage(translationsDir);
         return store;
+    }
+
+    internal void SetDataKeyValue(string key, string value, bool overwrite = true)
+    {
+        if (overwrite || !Data.ContainsKey(key))
+            Data[key] = value;
+        if (!DefaultData.ContainsKey(key))
+        {
+            DefaultData[key] = value;
+        }
     }
 }

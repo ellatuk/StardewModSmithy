@@ -1,3 +1,6 @@
+using System.Buffers.Text;
+using System.Text;
+using System.Text.RegularExpressions;
 using StardewModdingAPI;
 
 namespace StardewModSmithy.Wheels;
@@ -13,6 +16,8 @@ internal static class Sanitize
         return string.Join(replacement.Value, value.Split(illegal));
     }
 
+    public static Regex UniqueIDExclusionPattern = new(@"[^a-zA-Z0-9_.-]+");
+
     public static readonly char[] IllegalKeyChars = ['{', '}', '[', ']', '(', ')', ':', '/', ',', ' '];
 
     public static string Key(string key)
@@ -27,7 +32,7 @@ internal static class Sanitize
 
     public static string UniqueID(string id)
     {
-        return SanitizeImpl(id, null, IllegalKeyChars);
+        return UniqueIDExclusionPattern.Replace(id, string.Empty);
     }
 
     public static string AssetName(IAssetName assetName)

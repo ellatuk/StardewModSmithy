@@ -1,27 +1,77 @@
 using Newtonsoft.Json;
 using StardewModSmithy.Wheels;
+using StardewValley;
+using StardewValley.Extensions;
 
 namespace StardewModSmithy.Models;
 
+public sealed record SmithyInfo(List<string> GeneratedFileList)
+{
+    public string Exported =>
+        string.Concat(ModEntry.ModCreditString, DateTime.Now.ToString(Game1.content.CurrentCulture));
+};
+
 public sealed class OutputManifest()
 {
+    [JsonProperty("$schema")]
+    public string JsonSchema => "https://smapi.io/schemas/manifest.json";
+
     internal string PackFor { get; set; } = "???";
-    internal string Desc { get; set; } = "???";
     internal string OutputFolder =>
         Path.Combine(ModEntry.DirectoryPath, Consts.EDITING_OUTPUT, Sanitize.Path(UniqueID));
     internal string TranslationFolder => Path.Combine(OutputFolder, "i18n");
+    internal HashSet<string> OptionalDependencies = [];
+    internal string NexusID { get; set; } = string.Empty;
 
     public string Author { get; set; } = "";
     public string Name { get; set; } = "";
     public string Version { get; set; } = "1.0.0";
-    public string UniqueID => string.Concat(Sanitize.UniqueID(Author), '.', Sanitize.UniqueID(Name));
-    public string Description
-    {
-        get => string.IsNullOrEmpty(field) ? $"{Desc}, exported by {ModEntry.ModId}" : field;
-        set => field = value;
-    } = string.Empty;
+    public string UniqueID { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
     public object ContentPackFor => new { UniqueID = PackFor };
-    public List<string> UpdateKeys = [];
+    public List<object>? Dependencies
+    {
+        get
+        {
+            List<object>? deps = null;
+            if (OptionalDependencies.Any())
+            {
+                deps ??= [];
+                deps.AddRange(OptionalDependencies.Select(dep => new { UniqueID = dep, IsRequired = false }));
+            }
+            return deps;
+        }
+    }
+    public List<string>? UpdateKeys
+    {
+        get
+        {
+            List<string>? updateKeys = null;
+            if (!string.IsNullOrEmpty(NexusID))
+            {
+                updateKeys ??= [];
+                updateKeys.Add(string.Concat("Nexus:", NexusID));
+            }
+            return updateKeys;
+        }
+        set
+        {
+            if (value == null)
+            {
+                NexusID = string.Empty;
+                return;
+            }
+            foreach (string updateKey in value)
+            {
+                if (updateKey.StartsWithIgnoreCase("nexus:"))
+                {
+                    NexusID = updateKey[6..];
+                    return;
+                }
+            }
+        }
+    }
+    public SmithyInfo? StardewModSmithyInfo;
 
     public static IEnumerable<OutputManifest> LoadAllFromOutputFolder()
     {

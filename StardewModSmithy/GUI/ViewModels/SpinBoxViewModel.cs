@@ -1,13 +1,17 @@
 using System.ComponentModel;
-using StardewModdingAPI;
 using StardewModSmithy.Integration;
+using StardewModSmithy.Wheels;
 
 namespace StardewModSmithy.GUI.ViewModels;
 
-public partial class AbstractSpinBoxViewModel<T>(Func<T> backingGetter, Action<T> backingSetter)
-    : INotifyPropertyChanged
+public class AbstractSpinBoxViewModel<T>(Func<T> backingGetter, Action<T> backingSetter) : INotifyPropertyChanged
 {
     public event PropertyChangedEventHandler? PropertyChanged;
+
+    public void InvokePropertyChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        PropertyChanged?.Invoke(sender, e);
+    }
 
     public T Value
     {
@@ -20,7 +24,6 @@ public partial class AbstractSpinBoxViewModel<T>(Func<T> backingGetter, Action<T
 
     public virtual void ValueSetter(T newValue)
     {
-        T prevValue = backingGetter();
         backingSetter(newValue);
         PropertyChanged?.Invoke(this, new(nameof(Value)));
         PropertyChanged?.Invoke(this, new(nameof(ValueLabel)));
@@ -46,7 +49,7 @@ public partial class AbstractSpinBoxViewModel<T>(Func<T> backingGetter, Action<T
     }
 }
 
-public partial class IntSpinBoxViewModel(Func<int> backingGetter, Action<int> backingSetter, int minimum, int maximum)
+public class IntSpinBoxViewModel(Func<int> backingGetter, Action<int> backingSetter, int minimum, int maximum)
     : AbstractSpinBoxViewModel<int>(backingGetter, backingSetter)
 {
     public override void ValueSetter(int newValue)
@@ -61,26 +64,122 @@ public partial class IntSpinBoxViewModel(Func<int> backingGetter, Action<int> ba
     public override void Increase() => Value += 1;
 }
 
-public partial class IBoundsProviderSpinBoxViewModel(
+public class IBoundsProviderSpinBoxViewModel(
     Func<IBoundsProvider?> backingGetter,
-    Action<IBoundsProvider?> backingSetter
+    Action<IBoundsProvider?> backingSetter,
+    Action<AutosaveFrequencyMode> SaveDelegate
 ) : AbstractSpinBoxViewModel<IBoundsProvider?>(backingGetter, backingSetter)
 {
-    internal IReadOnlyList<IBoundsProvider?> furnitureDataList = [];
-    private int currentIdx = 0;
-    private int MaxIdx => furnitureDataList.Count - 1;
+    public record BoundsProviderSelectEntry(IBoundsProvider BoundsProvider, bool IsSelected)
+    {
+        public string UILabel => BoundsProvider.UILabel;
+    }
+
+    internal IReadOnlyList<IBoundsProvider> BoundsProviderList = [];
+    private int currentIdx = -1;
+    private int MaxIdx => BoundsProviderList.Count - 1;
+
+    private void SetValueToCurrentIndex()
+    {
+        if (currentIdx >= 0 && currentIdx <= MaxIdx)
+            Value = BoundsProviderList[currentIdx];
+        else
+            Value = null;
+        ViewingBoundsProviderList = false;
+        InvokePropertyChanged(this, new(nameof(FilteredBoundsProviderList)));
+    }
+
+    public void SeekIndex()
+    {
+        if (Value == null)
+        {
+            currentIdx = -1;
+        }
+        else
+        {
+            currentIdx = -1;
+            foreach (IBoundsProvider? prov in BoundsProviderList)
+            {
+                currentIdx++;
+                if (prov == Value)
+                    break;
+            }
+        }
+        SetValueToCurrentIndex();
+    }
+
+    public void ClampIndex()
+    {
+        if (MaxIdx == -1)
+        {
+            currentIdx = -1;
+        }
+        else if (currentIdx < 0)
+        {
+            currentIdx = 0;
+        }
+        else if (currentIdx > MaxIdx)
+        {
+            currentIdx = MaxIdx;
+        }
+        SetValueToCurrentIndex();
+    }
 
     public override void Decrease()
     {
         currentIdx = currentIdx <= 0 ? MaxIdx : currentIdx - 1;
-        Value = furnitureDataList[currentIdx];
+        SetValueToCurrentIndex();
+        SaveDelegate(AutosaveFrequencyMode.OnSwitch);
     }
 
     public override void Increase()
     {
         currentIdx = currentIdx >= MaxIdx ? 0 : currentIdx + 1;
-        Value = furnitureDataList[currentIdx];
+        SetValueToCurrentIndex();
+        SaveDelegate(AutosaveFrequencyMode.OnSwitch);
     }
 
-    public override string ValueLabelGetter() => Value?.UILabel ?? string.Empty;
+    public override string ValueLabelGetter() => Value?.UILabel ?? "NULL";
+
+    public IEnumerable<BoundsProviderSelectEntry> FilteredBoundsProviderList =>
+        (
+            string.IsNullOrEmpty(BoundsProviderSearchTerm)
+                ? BoundsProviderList
+                : BoundsProviderList.Where(bp => bp.UILabel.Contains(BoundsProviderSearchTerm))
+        ).Select(bp => new BoundsProviderSelectEntry(bp, bp == Value));
+
+    private bool viewingBoundsProviderList = false;
+    public bool ViewingBoundsProviderList
+    {
+        get => viewingBoundsProviderList;
+        set
+        {
+            viewingBoundsProviderList = value;
+            InvokePropertyChanged(this, new(nameof(ViewingBoundsProviderList)));
+        }
+    }
+
+    public void ToggleViewingBoundsProviderList()
+    {
+        ViewingBoundsProviderList = !ViewingBoundsProviderList;
+    }
+
+    public void SelectBoundsProvider(BoundsProviderSelectEntry entry)
+    {
+        Value = entry.BoundsProvider;
+        SeekIndex();
+        SaveDelegate(AutosaveFrequencyMode.OnSwitch);
+    }
+
+    private string boundsProviderSearchTerm = string.Empty;
+    public string BoundsProviderSearchTerm
+    {
+        get => boundsProviderSearchTerm;
+        set
+        {
+            boundsProviderSearchTerm = value;
+            InvokePropertyChanged(this, new(nameof(BoundsProviderSearchTerm)));
+            InvokePropertyChanged(this, new(nameof(FilteredBoundsProviderList)));
+        }
+    }
 }

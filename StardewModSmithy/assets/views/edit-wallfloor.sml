@@ -1,17 +1,8 @@
 <panel layout="100% 100%" horizontal-content-alignment="end">
   <include name="mushymato.StardewModSmithy/views/includes/draggable-texture-sheet" *context={:TextureContext}/>
   <lane layout="500px content" orientation="vertical" *context={:EditableContext}>
-    <!-- General Controls -->
     <frame layout="stretch content" padding="30,20" border={@Mods/StardewUI/Sprites/ControlBorder}>
       <lane orientation="vertical">
-        <panel *if={TextureHasAtlas} layout="stretch content" horizontal-content-alignment="start">
-          <button hover-background={@Mods/StardewUI/Sprites/ButtonLight}
-            layout="stretch 56px"
-            margin="0,4,0,0"
-            text={#gui.button.populate}
-            left-click=|PopulateFromAtlas()|
-          />
-        </panel>
         <include name="mushymato.StardewModSmithy/views/includes/bounds-provider-selector" *context={:BoundsProviderSelector}/>
         <grid layout="stretch content" item-layout="count: 2" item-spacing="4,4" >
           <button hover-background={@Mods/StardewUI/Sprites/ButtonLight}
@@ -38,43 +29,13 @@
         <label layout="stretch content" opacity="0.6" text={LastSavedMessage}/>
       </lane>
     </frame>
-    <!-- Furniture Edit -->
+    <!-- wallpaper/floor Edit -->
     <frame layout="stretch content" padding="32,16,32,32" border={@Mods/StardewUI/Sprites/ControlBorder} *if={HasBoundsProvider}>
       <lane orientation="vertical" *context={Selected}>
-        <form-row title={#gui.label.name}>
-          <textinput text={<>DisplayName} font="dialogue" layout="content 64px" margin="-8,12" />
+        <form-row title={#gui.label.count}>
+          <spin-box *context={Count} />
         </form-row>
-        <form-row title={#gui.label.tilesheet}>
-          <spin-box *context={TilesheetSizeX} />
-          <spin-box *context={TilesheetSizeY} />
-        </form-row>
-        <form-row title={#gui.label.bounding}>
-          <spin-box *context={BoundingBoxSizeX} />
-          <spin-box *context={BoundingBoxSizeY} />
-        </form-row>
-        <form-row title={#gui.label.type}>
-          <dropdown layout="stretch content"
-            options={Type_Options}
-            option-min-width="240"
-            selected-option={<>Type} />
-        </form-row>
-        <form-row title={#gui.label.rotation}>
-          <dropdown options={Rotation_Options}
-            option-format={:RotationName}
-            option-min-width="240"
-            selected-option={<>Rotation}/>
-        </form-row>
-        <form-row title={#gui.label.placement}>
-          <dropdown options={Placement_Options}
-            option-format={:PlacementName}
-            option-min-width="240"
-            selected-option={<>Placement}/>
-        </form-row>
-        <form-row title={#gui.label.price}>
-          <textinput layout="stretch 54px" margin="-8,12" text={<>PriceInput} />
-        </form-row>
-        <checkbox margin="8" label-text={#gui.label.no-random-sale} is-checked={<>OffLimitsForRandomSale}/>
-        <checkbox margin="8" label-text={#gui.label.is-catalogue} is-checked={<>IsCatalogue}/>
+        <checkbox margin="8" label-text={#gui.label.is-flooring} is-checked={<>IsFlooring}/>
       </lane>
     </frame>
   </lane>
