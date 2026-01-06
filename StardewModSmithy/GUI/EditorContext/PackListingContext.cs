@@ -11,6 +11,26 @@ internal partial record PackDisplayEntry(IOutputPack Pack)
 {
     public string PackTitle => $"{Pack.Manifest.Name} ({Pack.Manifest.UniqueID})";
 
+    public string PackName
+    {
+        get => Pack.Manifest.Name;
+        set
+        {
+            Pack.Manifest.Name = value;
+            OnPropertyChanged(new(nameof(PackName)));
+        }
+    }
+
+    public string PackDescription
+    {
+        get => Pack.Manifest.Description;
+        set
+        {
+            Pack.Manifest.Description = value;
+            OnPropertyChanged(new(nameof(PackDescription)));
+        }
+    }
+
     [Notify]
     public bool isExpanded = false;
 

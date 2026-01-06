@@ -308,7 +308,6 @@ public sealed partial class FurnitureDelimString(string id) : IBoundsProvider
 public sealed class FurnitureAsset : IEditableAsset
 {
     public const string DEFAULT_INCLUDE_NAME = "furniture.json";
-    public string Desc => "furniture";
     public string IncludeName => DEFAULT_INCLUDE_NAME;
     public Dictionary<string, FurnitureDelimString> Editing = [];
 
@@ -357,14 +356,15 @@ public sealed class FurnitureAsset : IEditableAsset
             {
                 When = hasMMAP,
             };
-            List<object> catalogueShopItems = [];
+            Dictionary<string, object> catalogueShopItems = [];
             Dictionary<string, object> catalogueTileProp = [];
             foreach ((string itemId, FurnitureDelimString furni) in catalogue)
             {
                 string qId = string.Concat("(F)", itemId);
-                catalogueShopItems.Add(new { Id = qId, ItemId = qId });
+                catalogueShopItems[qId] = new { Id = qId, ItemId = qId };
                 catalogueTileProp[itemId] = new
                 {
+                    Description = furni.DisplayNameImpl.GetToken(".description"),
                     TileProperties = new List<object>
                     {
                         new
@@ -379,20 +379,7 @@ public sealed class FurnitureAsset : IEditableAsset
                 };
             }
 
-            yield return new MockEditData(
-                "Data/Shops",
-                new Dictionary<string, object>()
-                {
-                    ["{{ModId}}_furniture_catalogue"] = new
-                    {
-                        Items = catalogueShopItems,
-                        CustomFields = new Dictionary<string, string>()
-                        {
-                            ["HappyHomeDesigner/Catalogue"] = true.ToString(),
-                        },
-                    },
-                }
-            )
+            yield return new MockEditData("Data/Shops", catalogueShopItems)
             {
                 TargetField = ["Carpenter", "Items"],
                 When = hasMMAP,
@@ -442,7 +429,7 @@ public sealed class FurnitureAsset : IEditableAsset
 
     public IEnumerable<IAssetName> GetRequiredAssets() => Editing.Values.GetRequiredAssetsFromIBoundsProvider();
 
-    public bool GetTranslations(ref TranslationStore translations)
+    public bool GetTranslations(ref TranslationStore translations, string modName)
     {
         bool requiresLoad = false;
         foreach (FurnitureDelimString furniDelim in Editing.Values)
@@ -450,6 +437,13 @@ public sealed class FurnitureAsset : IEditableAsset
             furniDelim.UpdateForFirstTimeSerialize();
             translations.SetDataKeyValue(furniDelim.DisplayNameImpl.Key, furniDelim.DisplayNameImpl.Value ?? "???");
             requiresLoad = requiresLoad || furniDelim.DisplayNameImpl.Kind == TranslationStringKind.LocalizedText;
+            if (furniDelim.IsCatalogue)
+            {
+                translations.SetDataKeyValue(
+                    string.Concat(furniDelim.DisplayNameImpl.Key, ".description"),
+                    I18n.Description_FurnitureCatalogue(modName)
+                );
+            }
         }
         return requiresLoad;
     }

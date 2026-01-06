@@ -40,7 +40,7 @@
               header-padding="0,12"
               header-background-tint="#99c"
               is-expanded={<>IsExpanded}>
-              <lane *outlet="header" orientation="horizontal" vertical-content-alignment="middle">
+              <lane *outlet="header" vertical-content-alignment="middle" orientation="horizontal">
                 <label layout="stretch content" font="dialogue" text={:PackTitle} />
                 <image *if={:IsLoaded} sprite={@mushymato.StardewModSmithy/sprites/emojis:checkmark} layout="36px 36px" margin="12"/>
                 <button hover-background={@Mods/StardewUI/Sprites/ButtonLight}
@@ -50,15 +50,29 @@
                   left-click=|ShowEditingMenu()|
                 />
               </lane>
-              <lane *if={IsExpanded} layout="content content"
-                    vertical-content-alignment="middle"
-                    margin="8">
-                <label text={#gui.label.nexus-id}
-                  margin="8" font="small"
-                  shadow-alpha="0.8"
-                  shadow-color="#4448"
-                  shadow-offset="-2, 2" />
-                <textinput  layout="300px 54px" text={<>NexusID} />
+              <lane orientation="vertical"  *if={IsExpanded}>
+                <lane vertical-content-alignment="middle" layout="content content">
+                  <label text={#gui.label.mod-name}
+                    margin="8" font="small"
+                    shadow-alpha="0.8"
+                    shadow-color="#4448"
+                    shadow-offset="-2, 2" />
+                  <textinput margin="8" layout="stretch 54px" text={<>PackName} />
+                  <label text={#gui.label.nexus-id}
+                    margin="8" font="small"
+                    shadow-alpha="0.8"
+                    shadow-color="#4448"
+                    shadow-offset="-2, 2" />
+                  <textinput margin="8" layout="150px 54px" text={<>NexusID} />
+                </lane>
+                <lane vertical-content-alignment="middle" layout="content content">
+                  <label text={#gui.label.mod-desc}
+                    margin="8" font="small"
+                    shadow-alpha="0.8"
+                    shadow-color="#4448"
+                    shadow-offset="-2, 2" />
+                  <textinput margin="8" layout="stretch 54px" text={<>PackDescription} />
+                </lane>
               </lane>
             </expander>
           </frame>
@@ -87,33 +101,45 @@
     <!-- Config -->
     <lane *case="config" *context={:ModConfig} orientation="vertical">
       <banner margin="8" text={#gui.label.mod-configuration} layout="content content"/>
-      <form-row title={#gui.label.author} tooltip={#gui.tooltip.author-name}>
-        <textinput layout="stretch 64px" margin="16" font="dialogue" text={<>AuthorName} />
-      </form-row>
-      <form-row title={#gui.label.autosave} tooltip={#gui.tooltip.autosave-frequency}>
-        <frame *context={:AutosaveFrequency}
-            background={@Mods/StardewUI/Sprites/MenuSlotOutset}
-            padding="4"
-            margin="24,0,0,0">
-          <segments balanced="true"
-              highlight={@Mods/StardewUI/Sprites/White}
-              highlight-tint="#39d"
-              highlight-transition="150ms EaseOutQuart"
-              separator={@Mods/StardewUI/Sprites/White}
-              separator-tint="#c99"
-              separator-width="2"
-              selected-index={<>SelectedIndex}>
-            <label *repeat={Segments}
-              layout="content[200..] content"
-              padding="16"
-              text={:Name}
-              tooltip={:Description} />
-          </segments>
-        </frame>
-      </form-row>
-      <form-row title={#gui.label.auto-symlink-reload} tooltip={#gui.tooltip.auto-symlink-reload}>
-        <checkbox is-checked={<>AutoSymlinkAndPatchReload}/>
-      </form-row>
+      <scrollable peeking="128" scrollbar-margin="8,0,0,0">
+        <lane orientation="vertical">
+          <form-row title={#gui.label.show-workspace-key} tooltip={#gui.tooltip.show-workspace-key}>
+            <keybind-editor button-height="64"
+                sprite-map={@Mods/StardewUI/SpriteMaps/Buttons:default-default-0.5}
+                editable-type="MultipleKeybinds"
+                add-button-text={#gui.label.show-workspace-key.add}
+                focusable="true"
+                keybind-list={<>ShowWorkspaceKey} />
+          </form-row>
+          <form-row title={#gui.label.author} tooltip={#gui.tooltip.author-name}>
+            <textinput layout="stretch 64px" margin="16,0" font="dialogue" placeholder={#gui.placeholder.author-name} text={<>AuthorName} />
+          </form-row>
+          <form-row title={#gui.label.autosave} tooltip={#gui.tooltip.autosave-frequency}>
+            <frame *context={:AutosaveFrequency}
+                background={@Mods/StardewUI/Sprites/MenuSlotOutset}
+                padding="4"
+                margin="22,0,0,0">
+              <segments balanced="true"
+                  highlight={@Mods/StardewUI/Sprites/White}
+                  highlight-tint="#39d"
+                  highlight-transition="150ms EaseOutQuart"
+                  separator={@Mods/StardewUI/Sprites/White}
+                  separator-tint="#c99"
+                  separator-width="2"
+                  selected-index={<>SelectedIndex}>
+                <label *repeat={Segments}
+                  layout="content[200..] content"
+                  padding="16"
+                  text={:Name}
+                  tooltip={:Description} />
+              </segments>
+            </frame>
+          </form-row>
+          <form-row title={#gui.label.auto-symlink-reload} tooltip={#gui.tooltip.auto-symlink-reload}>
+            <checkbox margin="22,0,0,0" is-checked={<>AutoSymlinkAndPatchReload}/>
+          </form-row>
+        </lane>
+      </scrollable>
     </lane>
     <!-- About -->
     <lane *case="about" *context={:ModConfig} orientation="vertical">

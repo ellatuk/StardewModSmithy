@@ -54,4 +54,9 @@ public abstract partial class AbstractEditableAssetContext
         LastSavedMessage = I18n.Message_LastSavedAt(time: now);
         saveChangesDelegate?.Invoke();
     }
+
+    public void Exit()
+    {
+        Game1.activeClickableMenu?.exitThisMenu();
+    }
 }

@@ -1,3 +1,4 @@
+using Newtonsoft.Json;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModSmithy.Models.Interfaces;
@@ -33,7 +34,11 @@ public sealed record MockInclude(string FromFile) : IMockPatch
     public Dictionary<string, object>? When { get; set; }
 }
 
-internal record MockContent(List<IMockPatch> Changes);
+internal record MockContent(List<IMockPatch> Changes)
+{
+    [JsonProperty("$schema")]
+    public string JsonSchema => "https://smapi.io/schemas/content-patcher.json";
+}
 
 internal record MockContentFurniture(List<MockEditData> Changes);
 
@@ -97,7 +102,8 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
             bool translationRequiresLoad = false;
             foreach (IEditableAsset editable in EditableAssets)
             {
-                translationRequiresLoad = editable.GetTranslations(ref Translations) || translationRequiresLoad;
+                translationRequiresLoad =
+                    editable.GetTranslations(ref Translations, manifest.Name) || translationRequiresLoad;
             }
             if (translationRequiresLoad)
             {
@@ -119,16 +125,13 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
             ModEntry.WriteJson(translationsDir, TranslationStore.DefaultFilename, Translations.DefaultData);
         }
         // edits
-        List<string> descList = [];
         HashSet<IAssetName> requiredAssets = [];
         foreach (IEditableAsset editable in EditableAssets)
         {
             changes.Add(new MockInclude(Path.Combine("data", editable.IncludeName)));
             ModEntry.WriteJson(dataDir, editable.IncludeName, new MockContent(editable.GetPatches().ToList()));
-            descList.Add(editable.Desc);
             requiredAssets.AddRange(editable.GetRequiredAssets());
         }
-        manifest.Desc = string.Join(" and ", descList);
         // loads
         foreach (ILoadableAsset loadable in LoadableAssets)
         {

@@ -14,7 +14,7 @@
   <PropertyGroup>
     <Name>StardewModSmithy</Name>
     <Authors>mushymato</Authors>
-    <Description>DESCRIPTION</Description>
+    <Description>A mod for creating mods.</Description>
     <UniqueId>mushymato.StardewModSmithy</UniqueId>
     <UpdateKeys>Nexus:???,GitHub:Mushymato/StardewModSmithy</UpdateKeys>
     <Version>0.4.0</Version>

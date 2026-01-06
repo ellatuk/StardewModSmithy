@@ -41,12 +41,13 @@ public sealed class TranslationString(string key)
         }
     }
 
-    public string GetToken()
+    public string GetToken(string? suffix = null)
     {
+        suffix ??= string.Empty;
         return Kind switch
         {
-            TranslationStringKind.LocalizedText => $"[LocalizedText {I18N_Asset}:{Key}]",
-            TranslationStringKind.ContentPatcherI18N => $"{{{{i18n: {Key}}}}}",
+            TranslationStringKind.LocalizedText => $"[LocalizedText {I18N_Asset}:{Key}{suffix}]",
+            TranslationStringKind.ContentPatcherI18N => $"{{{{i18n: {Key}{suffix}}}}}",
             _ => Value ?? Key,
         };
     }

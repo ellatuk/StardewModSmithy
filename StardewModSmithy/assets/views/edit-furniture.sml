@@ -40,6 +40,7 @@
           </lane>
           <textinput *if={ViewingBoundsProviderList}
             text={<>BoundsProviderSearchTerm}
+            placeholder={#gui.placeholder.search}
             font="dialogue" layout="content 64px" margin="-4,0,0,0"/>
           <scrollable *if={ViewingBoundsProviderList} peeking="128" scrollbar-margin="8,0,0,0">
             <lane orientation="vertical" layout="content content">
@@ -67,27 +68,28 @@
             </lane>
           </scrollable>
         </lane>
-        <lane layout="stretch content" horizontal-content-alignment="start" >
+        <grid layout="stretch content" item-layout="count: 2" item-spacing="4,4" >
           <button hover-background={@Mods/StardewUI/Sprites/ButtonLight}
-            layout="50% 56px"
-            margin="0,0,10,0"
+            layout="stretch 56px"
             text={#gui.button.create}
             left-click=|Create()|
           />
           <button hover-background={@Mods/StardewUI/Sprites/ButtonLight}
-            layout="100% 56px"
+            layout="stretch 56px"
             text={#gui.button.delete}
             left-click=|Delete()|
           />
-        </lane>
-        <panel layout="stretch content" horizontal-content-alignment="start" >
           <button hover-background={@Mods/StardewUI/Sprites/ButtonLight}
-            layout="stretch[320..] 56px"
-            margin="0,4,0,0"
+            layout="stretch 56px"
             text={#gui.button.save}
             left-click=|Save()|
           />
-        </panel>
+          <button hover-background={@Mods/StardewUI/Sprites/ButtonLight}
+            layout="stretch 56px"
+            text={#gui.button.exit}
+            left-click=|Exit()|
+          />
+        </grid>
         <label layout="stretch content" opacity="0.6" text={LastSavedMessage}/>
       </lane>
     </frame>
@@ -123,12 +125,10 @@
             selected-option={<>Placement}/>
         </form-row>
         <form-row title={#gui.label.price}>
-          <lane orientation="vertical">
-            <textinput layout="stretch 54px" margin="-8,12" text={<>PriceInput} />
-            <checkbox label-text={#gui.label.no-random-sale} is-checked={<>OffLimitsForRandomSale}/>
-            <checkbox label-text={#gui.label.is-catalogue} is-checked={<>IsCatalogue}/>
-          </lane>
+          <textinput layout="stretch 54px" margin="-8,12" text={<>PriceInput} />
         </form-row>
+        <checkbox margin="8" label-text={#gui.label.no-random-sale} is-checked={<>OffLimitsForRandomSale}/>
+        <checkbox margin="8" label-text={#gui.label.is-catalogue} is-checked={<>IsCatalogue}/>
       </lane>
     </frame>
   </lane>

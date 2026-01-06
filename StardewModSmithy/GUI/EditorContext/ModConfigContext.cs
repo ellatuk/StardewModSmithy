@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using StardewModdingAPI.Utilities;
 using StardewModSmithy.GUI.ViewModels;
 using StardewModSmithy.Wheels;
 
@@ -44,6 +45,17 @@ internal sealed record ModConfigContext : INotifyPropertyChanged
             config.AutoSymlinkAndPatchReload = value;
             config.WriteConfig();
             PropertyChanged?.Invoke(this, new(nameof(AutoSymlinkAndPatchReload)));
+        }
+    }
+
+    public KeybindList ShowWorkspaceKey
+    {
+        get => config.ShowWorkspaceKey;
+        set
+        {
+            config.ShowWorkspaceKey = value;
+            config.WriteConfig();
+            PropertyChanged?.Invoke(this, new(nameof(ShowWorkspaceKey)));
         }
     }
 }

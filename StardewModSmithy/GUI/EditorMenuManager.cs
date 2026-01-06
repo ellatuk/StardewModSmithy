@@ -18,7 +18,7 @@ internal static class EditorMenuManager
     private const string VIEW_EDIT_WALLFLOOR = $"{VIEW_ASSET_PREFIX}/edit-wallfloor";
     private static readonly PerScreen<PackListingContext?> packListingContext = new();
     private static readonly PerScreen<BaseEditorContext?> editorContext = new();
-    private static readonly PerScreen<bool> justClosedEditor = new();
+    internal static readonly PerScreen<bool> showWorkspaceNextTick = new();
     private static IModHelper helper = null!;
 
     private static readonly KeybindList toggleMovingMode = new(SButton.MouseMiddle);
@@ -39,9 +39,9 @@ internal static class EditorMenuManager
     {
         if (Context.IsWorldReady)
             return;
-        if (justClosedEditor.Value && TitleMenu.subMenu == null)
+        if (showWorkspaceNextTick.Value && TitleMenu.subMenu == null)
         {
-            justClosedEditor.Value = false;
+            showWorkspaceNextTick.Value = false;
             ShowWorkspace();
         }
     }
@@ -99,7 +99,7 @@ internal static class EditorMenuManager
         Game1.activeClickableMenu = ctrl.Menu;
     }
 
-    private static void EditorClosing()
+    internal static void EditorClosing()
     {
         if (editorContext.Value is not null)
         {
@@ -113,7 +113,7 @@ internal static class EditorMenuManager
         }
         else
         {
-            justClosedEditor.Value = true;
+            showWorkspaceNextTick.Value = true;
         }
     }
 

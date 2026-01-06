@@ -1,4 +1,5 @@
 using StardewModdingAPI;
+using StardewModdingAPI.Utilities;
 using StardewValley;
 
 namespace StardewModSmithy.Wheels;
@@ -15,6 +16,7 @@ public sealed class ModConfig
     public string AuthorName { get; set; } = "";
     public AutosaveFrequencyMode AutosaveFrequency { get; set; } = AutosaveFrequencyMode.OnAdd;
     public bool AutoSymlinkAndPatchReload { get; set; } = true;
+    public KeybindList ShowWorkspaceKey { get; set; } = new();
 
     internal Action<ModConfig>? doWriteConfig = null;
 

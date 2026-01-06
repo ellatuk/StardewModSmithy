@@ -97,7 +97,7 @@ public sealed class WallpaperFlooringAsset : IEditableAsset
 
     public IEnumerable<IAssetName> GetRequiredAssets() => Editing.Values.GetRequiredAssetsFromIBoundsProvider();
 
-    public bool GetTranslations(ref TranslationStore translations)
+    public bool GetTranslations(ref TranslationStore translations, string modName)
     {
         return false;
     }

@@ -14,7 +14,7 @@ public partial class FurnitureAssetContext : AbstractEditableAssetContext
     public readonly IBoundsProviderSpinBoxViewModel BoundsProviderSelector;
 
     public Func<FurnitureDelimString, string> FurnitureDataName = (delimStr) =>
-        delimStr.FromDeserialize ? delimStr.DisplayName : I18n.Gui_Placeholder(delimStr.PreSerializeSeq);
+        delimStr.FromDeserialize ? delimStr.DisplayName : I18n.Gui_Placeholder_New(delimStr.PreSerializeSeq);
 
     [DependsOn(nameof(BoundsProvider))]
     public FurnitureDelimString? SelectedFurniture => (FurnitureDelimString?)BoundsProvider;
