@@ -40,7 +40,7 @@ internal record MockContent(List<IMockPatch> Changes)
     public string JsonSchema => "https://smapi.io/schemas/content-patcher.json";
 }
 
-internal record MockContentFurniture(List<MockEditData> Changes);
+internal record MockContentEditDataInclude(List<MockEditData> Changes);
 
 internal sealed record MockContentMain(List<IMockPatch> Changes) : MockContent(Changes)
 {
@@ -56,6 +56,7 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
 
     public TextureAssetGroup? TextureAssetGroup { get; set; } = null;
     public FurnitureAsset? FurniAsset { get; set; } = null;
+    public WallpaperFlooringAsset? WallAndFloorAsset { get; set; } = null;
 
     public IEnumerable<ILoadableAsset> LoadableAssets
     {
@@ -71,6 +72,8 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
         {
             if (FurniAsset is not null)
                 yield return FurniAsset;
+            if (WallAndFloorAsset is not null)
+                yield return WallAndFloorAsset;
         }
     }
 
@@ -128,8 +131,14 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
         HashSet<IAssetName> requiredAssets = [];
         foreach (IEditableAsset editable in EditableAssets)
         {
+            List<IMockPatch> patches = editable.GetPatches(this).ToList();
+            if (patches.Count == 0)
+            {
+                File.Delete(Path.Combine(dataDir, editable.IncludeName));
+                continue;
+            }
             changes.Add(new MockInclude(Path.Combine("data", editable.IncludeName)));
-            ModEntry.WriteJson(dataDir, editable.IncludeName, new MockContent(editable.GetPatches().ToList()));
+            ModEntry.WriteJson(dataDir, editable.IncludeName, new MockContent(patches));
             requiredAssets.AddRange(editable.GetRequiredAssets());
         }
         // loads
@@ -181,27 +190,38 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
                 continue;
             }
             string fileName = Path.GetFileName(file);
-            if (Path.GetFileName(file) != FurnitureAsset.DEFAULT_INCLUDE_NAME)
-            {
-                continue;
-            }
             if (
-                ModEntry.ReadJson<MockContentFurniture>(dataDir, fileName) is not MockContentFurniture furnitureContent
-                || furnitureContent.Changes.FirstOrDefault(patch => patch is not null) is not MockEditData editData
+                ModEntry.ReadJson<MockContentEditDataInclude>(dataDir, fileName)
+                    is not MockContentEditDataInclude editDataContent
+                || editDataContent.Changes.FirstOrDefault(patch => patch is not null) is not MockEditData editData
             )
             {
                 continue;
             }
-            InitializeFurnitureAsset(editData.Entries);
-            break;
+            switch (fileName)
+            {
+                case FurnitureAsset.DEFAULT_INCLUDE_NAME:
+                    InitializeFurnitureAsset(editData.Entries);
+                    break;
+                case WallpaperFlooringAsset.DEFAULT_INCLUDE_NAME:
+                    InitializeWallpaperAndFlooringAsset(editData.Entries);
+                    break;
+            }
+            continue;
         }
     }
 
-    public FurnitureAsset InitializeFurnitureAsset(Dictionary<string, object> entries)
+    public void InitializeFurnitureAsset(Dictionary<string, object> entries)
     {
         FurniAsset = new();
         FurniAsset.SetData(entries);
         FurniAsset.SetTranslations(Translations);
-        return FurniAsset;
+    }
+
+    public void InitializeWallpaperAndFlooringAsset(Dictionary<string, object> entries)
+    {
+        WallAndFloorAsset = new();
+        WallAndFloorAsset.SetData(entries);
+        WallAndFloorAsset.SetTranslations(Translations);
     }
 }

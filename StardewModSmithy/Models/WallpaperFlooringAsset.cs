@@ -1,20 +1,33 @@
+using System.ComponentModel;
 using Microsoft.Xna.Framework;
+using Newtonsoft.Json.Linq;
 using StardewModdingAPI;
 using StardewModSmithy.GUI.ViewModels;
 using StardewModSmithy.Integration;
 using StardewModSmithy.Models.Interfaces;
 using StardewModSmithy.Wheels;
+using StardewValley.Extensions;
 using StardewValley.GameData;
 
 namespace StardewModSmithy.Models;
 
-public sealed record EditableWallpaperOrFlooring(ModWallpaperOrFlooring BaseData) : IBoundsProvider
+public sealed record EditableWallpaperOrFlooring(string BaseKey, ModWallpaperOrFlooring BaseData)
+    : IBoundsProvider,
+        INotifyPropertyChanged
 {
     private const int WF_WIDTH = 256;
     private const int PER_ROW_FLOOR_COUNT = WF_WIDTH / 32;
     private const int PER_ROW_WALL_COUNT = WF_WIDTH / 16;
 
-    public IAssetName? TextureAssetName { get; set; } = ModEntry.ParseAssetName(BaseData.Texture);
+    public IAssetName? TextureAssetName
+    {
+        get => ModEntry.ParseAssetName(BaseData.Texture);
+        set
+        {
+            if (value != null)
+                BaseData.Texture = value.BaseName;
+        }
+    }
 
     public int SpriteIndex => 0;
 
@@ -24,12 +37,6 @@ public sealed record EditableWallpaperOrFlooring(ModWallpaperOrFlooring BaseData
         {
             if (BaseData.IsFlooring)
             {
-                ModEntry.Log(
-                    new Point(
-                        2 * Math.Min(BaseData.Count, PER_ROW_FLOOR_COUNT),
-                        2 * (int)Math.Ceiling(BaseData.Count / (float)PER_ROW_FLOOR_COUNT)
-                    ).ToString()
-                );
                 return new(
                     2 * Math.Min(BaseData.Count, PER_ROW_FLOOR_COUNT),
                     2 * (int)Math.Ceiling(BaseData.Count / (float)PER_ROW_FLOOR_COUNT)
@@ -37,12 +44,6 @@ public sealed record EditableWallpaperOrFlooring(ModWallpaperOrFlooring BaseData
             }
             else
             {
-                ModEntry.Log(
-                    new Point(
-                        1 * Math.Min(BaseData.Count, PER_ROW_WALL_COUNT),
-                        3 * (int)Math.Ceiling(BaseData.Count / (float)PER_ROW_WALL_COUNT)
-                    ).ToString()
-                );
                 return new(
                     Math.Min(BaseData.Count, PER_ROW_WALL_COUNT),
                     3 * (int)Math.Ceiling(BaseData.Count / (float)PER_ROW_WALL_COUNT)
@@ -51,27 +52,70 @@ public sealed record EditableWallpaperOrFlooring(ModWallpaperOrFlooring BaseData
         }
     }
 
-    public Point BoundingBoxSize
+    public Point BoundingBoxSize => BaseData.IsFlooring ? new(2, 2) : new(1, 3);
+
+    public string GUI_TilesheetArea => Consts.Basic_GUI_TilesheetSize(TilesheetSize);
+
+    public IEnumerable<SDUIEdges> GUI_BoundingSquares
     {
         get
         {
+            int perRowCount;
             if (BaseData.IsFlooring)
             {
-                return new(2, 2);
+                perRowCount = (BaseData.Count - 1) % PER_ROW_FLOOR_COUNT;
+                perRowCount *= 2;
             }
             else
             {
-                return new(1, 3);
+                perRowCount = (BaseData.Count - 1) % PER_ROW_WALL_COUNT;
+            }
+            for (int x = 0; x < BoundingBoxSize.X; x++)
+            {
+                for (int y = 0; y < BoundingBoxSize.Y; y++)
+                {
+                    yield return new(
+                        (perRowCount + x) * Consts.DRAW_TILE,
+                        (TilesheetSize.Y - 1 - y) * Consts.DRAW_TILE
+                    );
+                }
             }
         }
     }
 
-    public string GUI_TilesheetArea => Consts.Basic_GUI_TilesheetSize(TilesheetSize);
+    public string UILabel => BaseKey;
 
-    public IEnumerable<SDUIEdges> GUI_BoundingSquares =>
-        Consts.Basic_GUI_BoundingSquares(TilesheetSize, BoundingBoxSize);
+    public bool IsFlooring
+    {
+        get => BaseData.IsFlooring;
+        set
+        {
+            BaseData.IsFlooring = value;
+            OnPropertyChanged(new(nameof(IsFlooring)));
+            OnPropertyChanged(new(nameof(GUI_BoundingSquares)));
+            OnPropertyChanged(new(nameof(GUI_TilesheetArea)));
+        }
+    }
 
-    public string UILabel => BaseData.Id;
+    public IntSpinBoxViewModel Count =>
+        new(
+            () => BaseData.Count,
+            (value) =>
+            {
+                BaseData.Count = value;
+                OnPropertyChanged(new(nameof(BoundsLabel)));
+                OnPropertyChanged(new(nameof(GUI_BoundingSquares)));
+                OnPropertyChanged(new(nameof(GUI_TilesheetArea)));
+            },
+            1,
+            int.MaxValue
+        );
+
+    public string BoundsLabel => BaseData.Count.ToString();
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    private void OnPropertyChanged(PropertyChangedEventArgs value) => PropertyChanged?.Invoke(this, value);
 }
 
 public sealed class WallpaperFlooringAsset : IEditableAsset
@@ -79,42 +123,64 @@ public sealed class WallpaperFlooringAsset : IEditableAsset
     public const string DEFAULT_INCLUDE_NAME = "wallpaper_flooring.json";
     public const string TARGET_ASSET = "Data/AdditionalWallpaperFlooring";
 
-    public string Desc => "wallpaper and flooring";
     public string IncludeName => DEFAULT_INCLUDE_NAME;
 
     public Dictionary<string, EditableWallpaperOrFlooring> Editing = [];
 
-    public IEnumerable<IMockPatch> GetPatches()
+    public IEnumerable<IMockPatch> GetPatches(IOutputPack outputPack)
     {
         Dictionary<string, object> output = [];
         foreach (EditableWallpaperOrFlooring wallfloor in Editing.Values)
         {
             if (wallfloor.TextureAssetName != null)
-                output[string.Concat(Sanitize.ModIdPrefixValue, wallfloor.BaseData.Id)] = wallfloor.BaseData;
+            {
+                string fullId = string.Concat(Sanitize.ModIdPrefixValue, wallfloor.BaseData.Id);
+                wallfloor.BaseData.Id = fullId;
+                output[fullId] = wallfloor.BaseData;
+            }
         }
-        yield return new MockEditData(TARGET_ASSET, output);
+        if (output.Any())
+            yield return new MockEditData(TARGET_ASSET, output);
     }
+
+    public bool GetTranslations(ref TranslationStore translations, string modName) => false;
+
+    public void SetTranslations(TranslationStore? translations) { }
 
     public IEnumerable<IAssetName> GetRequiredAssets() => Editing.Values.GetRequiredAssetsFromIBoundsProvider();
-
-    public bool GetTranslations(ref TranslationStore translations, string modName)
-    {
-        return false;
-    }
 
     public void SetData(Dictionary<string, object> data)
     {
         foreach ((string key, object value) in data)
         {
-            if (value is not ModWallpaperOrFlooring wallfloor)
+            if (JToken.FromObject(value).ToObject<ModWallpaperOrFlooring>() is not ModWallpaperOrFlooring wallfloor)
                 return;
             string baseKey = Sanitize.ModIdPrefix(key);
-            Editing[baseKey] = new(wallfloor);
+            Editing[baseKey] = new(baseKey, wallfloor);
         }
     }
 
-    public void SetTranslations(TranslationStore? translations)
+    public static bool TextureFilter(TextureAsset asset)
     {
-        throw new NotImplementedException();
+        return asset.Texture.Width == 256;
+    }
+
+    public EditableWallpaperOrFlooring AddNewDefault(IAssetName assetName)
+    {
+        ModWallpaperOrFlooring newWallFloor = new()
+        {
+            Id = Sanitize.Key(Path.GetFileNameWithoutExtension(assetName.BaseName)),
+            Texture = assetName.BaseName,
+            IsFlooring = false,
+            Count = 1,
+        };
+        EditableWallpaperOrFlooring newWallFloorEdit = new(newWallFloor.Id, newWallFloor);
+        Editing[newWallFloor.Id] = newWallFloorEdit;
+        return newWallFloorEdit;
+    }
+
+    internal bool Delete(EditableWallpaperOrFlooring selectedFurniture)
+    {
+        return Editing.RemoveWhere(kv => kv.Value.BaseData.Id == selectedFurniture.BaseData.Id) > 0;
     }
 }

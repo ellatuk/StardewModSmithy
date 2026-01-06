@@ -62,8 +62,6 @@ public sealed class TextureAssetGroup(string group, Dictionary<IAssetName, Textu
 {
     public string Group { get; set; } = group;
 
-    public bool EnableFront { get; set; } = true;
-
     public Dictionary<IAssetName, TextureAsset> GatheredTextures { get; set; } = gatheredTextures;
 
     public ValueTuple<string, string>? StageAndGetTargetAndFromFile(
@@ -71,8 +69,6 @@ public sealed class TextureAssetGroup(string group, Dictionary<IAssetName, Textu
         ref HashSet<IAssetName> requiredAssets
     )
     {
-        string targetGroupDir = Path.Combine(targetPath, Group);
-        Directory.CreateDirectory(targetGroupDir);
         StringBuilder targetSB = new();
         foreach (IAssetName key in requiredAssets.Reverse())
         {
@@ -82,7 +78,7 @@ public sealed class TextureAssetGroup(string group, Dictionary<IAssetName, Textu
             }
             File.Copy(
                 Path.Combine(ModEntry.DirectoryPath, txAsset.PathOnDisk),
-                Path.Combine(targetGroupDir, Path.GetFileName(key.BaseName) + ".png")
+                Path.Combine(targetPath, Path.GetFileName(key.BaseName) + ".png")
             );
             targetSB.Append(',');
             targetSB.Append(key.BaseName);
@@ -91,7 +87,7 @@ public sealed class TextureAssetGroup(string group, Dictionary<IAssetName, Textu
             {
                 File.Copy(
                     Path.Combine(ModEntry.DirectoryPath, txAssetFront.PathOnDisk),
-                    Path.Combine(targetGroupDir, Path.GetFileName(key.BaseName) + "Front.png")
+                    Path.Combine(targetPath, Path.GetFileName(key.BaseName) + "Front.png")
                 );
                 targetSB.Append(',');
                 targetSB.Append(key.BaseName);
@@ -101,7 +97,7 @@ public sealed class TextureAssetGroup(string group, Dictionary<IAssetName, Textu
         if (targetSB.Length > 1)
         {
             targetSB.Remove(0, 1);
-            return new(targetSB.ToString(), Path.Join("", Group, "{{TargetWithoutPath}}.png"));
+            return new(targetSB.ToString(), "{{TargetWithoutPath}}.png");
         }
         return null;
     }

@@ -70,21 +70,20 @@ internal record PackDisplayEntry(IOutputPack Pack) : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    private void OnPropertyChanged(PropertyChangedEventArgs value)
-    {
-        PropertyChanged?.Invoke(this, value);
-    }
+    private void OnPropertyChanged(PropertyChangedEventArgs value) => PropertyChanged?.Invoke(this, value);
 
     public bool IsLoaded => ModEntry.ModRegistry.IsLoaded(Pack.Manifest.UniqueID);
 
-    public void ShowEditingMenu()
+    public void ShowEdit_Furniture()
     {
+        IsExpanded = false;
+
         if (
             Pack is OutputPackContentPatcher outputPackContentPatcher
             && outputPackContentPatcher.TextureAssetGroup != null
-            && outputPackContentPatcher.FurniAsset != null
         )
         {
+            outputPackContentPatcher.FurniAsset ??= new();
             EditorMenuManager.ShowFurnitureEditor(
                 outputPackContentPatcher.TextureAssetGroup,
                 outputPackContentPatcher.FurniAsset,
@@ -94,6 +93,23 @@ internal record PackDisplayEntry(IOutputPack Pack) : INotifyPropertyChanged
         else
         {
             ModEntry.Log($"Editor not implemented for this pack!", LogLevel.Error);
+        }
+    }
+
+    public void ShowEdit_WallFloor()
+    {
+        IsExpanded = false;
+        if (
+            Pack is OutputPackContentPatcher outputPackContentPatcher
+            && outputPackContentPatcher.TextureAssetGroup != null
+        )
+        {
+            outputPackContentPatcher.WallAndFloorAsset ??= new();
+            EditorMenuManager.ShowWallpaperAndFlooringEditor(
+                outputPackContentPatcher.TextureAssetGroup,
+                outputPackContentPatcher.WallAndFloorAsset,
+                outputPackContentPatcher.Save
+            );
         }
     }
 }
@@ -136,7 +152,7 @@ internal partial record PackListingContext(TextureAssetGroup TextureAssetGroup, 
 
     internal static PackListingContext? Initialize()
     {
-        TextureAssetGroup textureAssetGroup = TextureAssetGroup.FromSourceDir("furniture");
+        TextureAssetGroup textureAssetGroup = TextureAssetGroup.FromSourceDir("smithy");
         if (textureAssetGroup.GatheredTextures.Count == 0)
         {
             Game1.addHUDMessage(HUDMessage.ForCornerTextbox(I18n.Message_PutTexture(Consts.EDITING_INPUT)));
@@ -175,16 +191,11 @@ internal partial record PackListingContext(TextureAssetGroup TextureAssetGroup, 
             Name = NewModName,
             UniqueID = uniqueID,
         };
-        OutputPackContentPatcher outputPackContentPatcher = new(manifest)
-        {
-            TextureAssetGroup = TextureAssetGroup,
-            FurniAsset = new FurnitureAsset(),
-        };
+        OutputPackContentPatcher outputPackContentPatcher = new(manifest) { TextureAssetGroup = TextureAssetGroup };
         outputPackContentPatcher.InitializeFurnitureAsset([]);
         PackDisplayEntry packDisplay = new(outputPackContentPatcher);
         packDisplayList.Add(packDisplay);
         PropertyChanged?.Invoke(this, new(nameof(PackDisplayList)));
-        packDisplay.ShowEditingMenu();
     }
 
     private string MakeUniqueID(string authorName) =>

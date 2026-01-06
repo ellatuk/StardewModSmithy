@@ -83,8 +83,19 @@ public sealed partial class FurnitureDelimString(string id) : IBoundsProvider
 
     public string GUI_TilesheetArea => Consts.Basic_GUI_TilesheetSize(TilesheetSize);
 
-    public IEnumerable<SDUIEdges> GUI_BoundingSquares =>
-        Consts.Basic_GUI_BoundingSquares(TilesheetSize, BoundingBoxSize);
+    public IEnumerable<SDUIEdges> GUI_BoundingSquares
+    {
+        get
+        {
+            for (int x = 0; x < BoundingBoxSize.X; x++)
+            {
+                for (int y = 0; y < BoundingBoxSize.Y; y++)
+                {
+                    yield return new(x * Consts.DRAW_TILE, (TilesheetSize.Y - 1 - y) * Consts.DRAW_TILE);
+                }
+            }
+        }
+    }
 
     private readonly OptionedValue<int> RotationImpl = new(rotation_Options, 1);
     public int Rotation
@@ -141,7 +152,8 @@ public sealed partial class FurnitureDelimString(string id) : IBoundsProvider
         }
     }
 
-    public int SpriteIndex { get; set; } = 0;
+    [Notify]
+    private int spriteIndex = 0;
 
     public IAssetName? TextureAssetName { get; set; }
 
@@ -156,8 +168,9 @@ public sealed partial class FurnitureDelimString(string id) : IBoundsProvider
 
     public string UILabel => $"{Id}:{DisplayName}";
 
+    public string BoundsLabel => SpriteIndex.ToString();
+
     internal bool FromDeserialize = false;
-    internal int PreSerializeSeq = -1;
 
     private static Point PointFromString(string str)
     {
@@ -306,9 +319,10 @@ public sealed class FurnitureAsset : IEditableAsset
 {
     public const string DEFAULT_INCLUDE_NAME = "furniture.json";
     public string IncludeName => DEFAULT_INCLUDE_NAME;
+
     public Dictionary<string, FurnitureDelimString> Editing = [];
 
-    public IEnumerable<IMockPatch> GetPatches()
+    public IEnumerable<IMockPatch> GetPatches(IOutputPack outputPack)
     {
         Dictionary<string, object> output = [];
         Dictionary<string, FurnitureDelimString> catalogue = [];
@@ -318,31 +332,70 @@ public sealed class FurnitureAsset : IEditableAsset
             {
                 string fullId = string.Concat(Sanitize.ModIdPrefixValue, furniDelim.Id);
                 output[fullId] = furniDelim.Serialize();
+                furniDelim.Name = fullId;
                 if (furniDelim.IsCatalogue)
                 {
                     catalogue[fullId] = furniDelim;
                 }
             }
         }
-        yield return new MockEditData("Data/Furniture", output);
+        if (output.Any())
+            yield return new MockEditData("Data/Furniture", output);
         if (catalogue.Any())
         {
             Dictionary<string, object> hasMMAP = new() { ["HasMod"] = "mushymato.MMAP" };
+            List<object> catalogueItemQueries =
+            [
+                new
+                {
+                    Id = "{{ModId}}_catalogue_all_furniture",
+                    ItemId = "ALL_ITEMS (F)",
+                    PerItemCondition = "ITEM_ID_PREFIX Target {{ModId}}_",
+                },
+            ];
+            if (
+                outputPack is OutputPackContentPatcher pack
+                && pack.WallAndFloorAsset is WallpaperFlooringAsset wallpaperFlooringAsset
+            )
+            {
+                bool hasFloor = false;
+                bool hasWall = false;
+                foreach (EditableWallpaperOrFlooring editing in wallpaperFlooringAsset.Editing.Values)
+                {
+                    if (!hasFloor && editing.IsFlooring)
+                    {
+                        hasFloor = true;
+                        catalogueItemQueries.Add(
+                            new
+                            {
+                                Id = "{{ModId}}_catalogue_all_flooring",
+                                ItemId = "ALL_ITEMS (FL)",
+                                PerItemCondition = "ITEM_ID_PREFIX Target {{ModId}}_",
+                            }
+                        );
+                    }
+                    else if (!hasWall)
+                    {
+                        hasWall = true;
+                        catalogueItemQueries.Add(
+                            new
+                            {
+                                Id = "{{ModId}}_catalogue_all_wallpaper",
+                                ItemId = "ALL_ITEMS (WP)",
+                                PerItemCondition = "ITEM_ID_PREFIX Target {{ModId}}_",
+                            }
+                        );
+                    }
+                    if (hasFloor && hasWall) { }
+                }
+            }
             yield return new MockEditData(
                 "Data/Shops",
                 new Dictionary<string, object>()
                 {
                     ["{{ModId}}_furniture_catalogue"] = new
                     {
-                        Items = new List<object>
-                        {
-                            new
-                            {
-                                Id = "{{ModId}}_catalogue_all_furniture",
-                                ItemId = "ALL_ITEMS (F)",
-                                PerItemCondition = "ITEM_ID_PREFIX Target {{ModId}}_",
-                            },
-                        },
+                        Items = catalogueItemQueries,
                         CustomFields = new Dictionary<string, string>()
                         {
                             ["HappyHomeDesigner/Catalogue"] = true.ToString(),
@@ -400,20 +453,13 @@ public sealed class FurnitureAsset : IEditableAsset
 
     public FurnitureDelimString AddNewDefault()
     {
-        int seq = 0;
-        string seqId = seq.ToString();
-        while (Editing.ContainsKey(seqId))
-        {
-            seq++;
-            seqId = seq.ToString();
-        }
+        (int seq, string seqId) = Consts.GetSeq(Editing.Keys.Contains);
         FurnitureDelimString newDefaultFurni = new(seqId)
         {
             Name = seqId,
             Type = "decor",
             TilesheetSize = new(1, 1),
             BoundingBoxSize = new(1, 1),
-            PreSerializeSeq = seq,
         };
         Editing[seqId] = newDefaultFurni;
         return newDefaultFurni;

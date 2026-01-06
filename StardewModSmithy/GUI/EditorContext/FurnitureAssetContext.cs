@@ -14,10 +14,10 @@ public partial class FurnitureAssetContext : AbstractEditableAssetContext
     public readonly IBoundsProviderSpinBoxViewModel BoundsProviderSelector;
 
     public Func<FurnitureDelimString, string> FurnitureDataName = (delimStr) =>
-        delimStr.FromDeserialize ? delimStr.DisplayName : I18n.Gui_Placeholder_New(delimStr.PreSerializeSeq);
+        delimStr.FromDeserialize ? delimStr.DisplayName : I18n.Gui_Placeholder_New(delimStr.Id);
 
     [DependsOn(nameof(BoundsProvider))]
-    public FurnitureDelimString? SelectedFurniture => (FurnitureDelimString?)BoundsProvider;
+    public FurnitureDelimString? Selected => (FurnitureDelimString?)BoundsProvider;
 
     [Notify]
     public bool textureHasAtlas = false;
@@ -37,7 +37,7 @@ public partial class FurnitureAssetContext : AbstractEditableAssetContext
         };
     }
 
-    private void UpdateFurnitureDataList()
+    private void UpdateDataList()
     {
         this.FurnitureDataList = furnitureAsset.Editing.Values.ToList();
         this.BoundsProviderSelector.BoundsProviderList = this.FurnitureDataList;
@@ -46,36 +46,36 @@ public partial class FurnitureAssetContext : AbstractEditableAssetContext
     public override void SetSpriteIndex(object? sender, int spriteIndex)
     {
         base.SetSpriteIndex(sender, spriteIndex);
-        if (SelectedFurniture != null && spriteIndex >= 0)
+        if (Selected != null && spriteIndex >= 0)
         {
-            SelectedFurniture.SpriteIndex = spriteIndex;
+            Selected.SpriteIndex = spriteIndex;
         }
     }
 
     public override void SetTexture(object? sender, TextureAsset textureAsset)
     {
         base.SetTexture(sender, textureAsset);
-        SelectedFurniture?.TextureAssetName = textureAsset.AssetName;
+        Selected?.TextureAssetName = textureAsset.AssetName;
         TextureHasAtlas = textureAsset?.TextureAtlas != null;
     }
 
-    public void Create()
+    public override void Create()
     {
         FurnitureDelimString furni = furnitureAsset.AddNewDefault();
         furni.TextureAssetName = SelectedTextureAsset.AssetName;
-        UpdateFurnitureDataList();
+        UpdateDataList();
         this.BoundsProviderSelector.Value = furni;
         this.BoundsProviderSelector.SeekIndex();
-        SaveChanges(AutosaveFrequencyMode.OnAdd);
+        AutoSaveChanges(AutosaveFrequencyMode.OnAdd);
     }
 
-    public void Delete()
+    public override void Delete()
     {
-        if (SelectedFurniture == null)
+        if (Selected == null)
             return;
-        if (furnitureAsset.Delete(SelectedFurniture))
+        if (furnitureAsset.Delete(Selected))
         {
-            UpdateFurnitureDataList();
+            UpdateDataList();
             this.BoundsProviderSelector.ClampIndex();
             BoundsProvider = this.BoundsProviderSelector.Value;
         }
@@ -98,9 +98,9 @@ public partial class FurnitureAssetContext : AbstractEditableAssetContext
             furni.UpdateForFirstTimeSerialize();
             firstFurni ??= furni;
         }
-        UpdateFurnitureDataList();
+        UpdateDataList();
         this.BoundsProviderSelector.Value = firstFurni;
         this.BoundsProviderSelector.SeekIndex();
-        SaveChanges(AutosaveFrequencyMode.OnAdd);
+        AutoSaveChanges(AutosaveFrequencyMode.OnAdd);
     }
 }

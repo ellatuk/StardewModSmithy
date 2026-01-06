@@ -103,7 +103,7 @@ internal static class EditorMenuManager
     {
         if (editorContext.Value is not null)
         {
-            editorContext.Value.EditableContext.SaveChanges(Wheels.AutosaveFrequencyMode.OnExit);
+            editorContext.Value.EditableContext.AutoSaveChanges(Wheels.AutosaveFrequencyMode.OnExit);
             editorContext.Value = null;
             helper.Events.Input.ButtonsChanged -= OnButtonsChanged_DragSheet;
         }
@@ -124,20 +124,24 @@ internal static class EditorMenuManager
         Action? saveChanges
     )
     {
-        DraggableTextureContext draggableTextureContext = new(textureAssetGroup);
+        DraggableTextureContext draggableTextureContext = new(textureAssetGroup, null, enableFront: false);
         FurnitureAssetContext furnitureAssetContext = new(furnitureAsset);
         ShowEditor(saveChanges, draggableTextureContext, furnitureAssetContext, VIEW_EDIT_FURNITURE);
     }
     #endregion
 
     #region wallpaper and flooring
-    internal static void ShowWallpaperAndFlooring(
+    internal static void ShowWallpaperAndFlooringEditor(
         TextureAssetGroup textureAssetGroup,
         WallpaperFlooringAsset wallpaperFlooringAsset,
         Action? saveChanges
     )
     {
-        DraggableTextureContext draggableTextureContext = new(textureAssetGroup, canDrag: false);
+        DraggableTextureContext draggableTextureContext = new(
+            textureAssetGroup,
+            WallpaperFlooringAsset.TextureFilter,
+            canDrag: false
+        );
         WallpaperFlooringAssetContext wallpaperFlooringAssetContext = new(wallpaperFlooringAsset);
         ShowEditor(saveChanges, draggableTextureContext, wallpaperFlooringAssetContext, VIEW_EDIT_WALLFLOOR);
     }

@@ -40,7 +40,7 @@ public abstract partial class AbstractEditableAssetContext
         SelectedTextureAsset = textureAsset;
     }
 
-    public void SaveChanges(AutosaveFrequencyMode saveReason)
+    public void AutoSaveChanges(AutosaveFrequencyMode saveReason)
     {
         if (ModEntry.Config.AutosaveFrequency == saveReason)
         {
@@ -48,14 +48,18 @@ public abstract partial class AbstractEditableAssetContext
         }
     }
 
-    public void Save()
+    public virtual void Create() { }
+
+    public virtual void Delete() { }
+
+    public virtual void Save()
     {
         string now = DateTime.Now.ToString(Game1.content.CurrentCulture);
         LastSavedMessage = I18n.Message_LastSavedAt(time: now);
         saveChangesDelegate?.Invoke();
     }
 
-    public void Exit()
+    public virtual void Exit()
     {
         Game1.activeClickableMenu?.exitThisMenu();
     }

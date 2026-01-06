@@ -86,9 +86,7 @@ public sealed class ModEntry : Mod
 
         helper.ConsoleCommands.Add("sms-show", "show smithy menu to edit your mods.", ConsoleShowWorkspace);
         helper.ConsoleCommands.Add("sms-pack", "pack a folder of loose textures", ConsolePackTexture);
-#if DEBUG
-        helper.ConsoleCommands.Add("sms-testy", "show smithy menu to edit your mods.", ConsoleShowTesty);
-#endif
+
         helper.Events.GameLoop.GameLaunched += OnGameLaunched;
         helper.Events.Input.ButtonsChanged += OnButtonsChanged;
         helper.Events.Display.RenderedActiveMenu += OnRenderedActiveMenu;
@@ -204,19 +202,6 @@ public sealed class ModEntry : Mod
             }
         }
     }
-
-#if DEBUG
-    private void ConsoleShowTesty(string arg1, string[] arg2)
-    {
-        TextureAssetGroup textureAssetGroup = TextureAssetGroup.FromSourceDir("wallpaper");
-        WallpaperFlooringAsset wallpaperFlooringAsset = new();
-        wallpaperFlooringAsset.SetData(
-            DataLoader.AdditionalWallpaperFlooring(Game1.content).DeepClone().ToDictionary(v => v.Id, v => (object)v)
-        );
-
-        EditorMenuManager.ShowWallpaperAndFlooring(textureAssetGroup, wallpaperFlooringAsset, () => { });
-    }
-#endif
 
     private void ConsoleShowWorkspace(string cmd, string[] args)
     {

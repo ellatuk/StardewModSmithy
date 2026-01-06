@@ -1,5 +1,6 @@
 using Microsoft.Xna.Framework;
 using PropertyChanged.SourceGenerator;
+using StardewModdingAPI;
 using StardewModSmithy.GUI.ViewModels;
 using StardewModSmithy.Integration;
 using StardewModSmithy.Models;
@@ -15,7 +16,9 @@ public enum DragMovementMode
 
 public partial class DraggableTextureContext(
     TextureAssetGroup textureAssetGroup,
+    Func<TextureAsset, bool>? textureFilter,
     bool canDrag = true,
+    bool enableFront = false,
     int tileUnit = Consts.DRAW_TILE
 )
 {
@@ -25,7 +28,10 @@ public partial class DraggableTextureContext(
     public bool CanDrag => tileUnit > 0 && canDrag;
 
     [Notify]
-    public TextureAsset selected = textureAssetGroup.GatheredTextures.First().Value;
+    public TextureAsset selected =
+        textureFilter == null
+            ? textureAssetGroup.GatheredTextures.Values.First()
+            : textureAssetGroup.GatheredTextures.Values.First(textureFilter);
 
     public TextureAsset? SelectedFront
     {
@@ -60,7 +66,7 @@ public partial class DraggableTextureContext(
     public float SheetOpacityFront => SheetOpacity * 0.5f;
 
     [Notify]
-    public SDUIEdges boundsPadding = new(2 * tileUnit, 2 * tileUnit, 0, 0);
+    public SDUIEdges boundsPadding = canDrag ? new(2 * tileUnit, 2 * tileUnit, 0, 0) : new(0);
 
     [Notify]
     private IBoundsProvider? boundsProvider = null;
@@ -71,7 +77,10 @@ public partial class DraggableTextureContext(
     [Notify]
     private bool showingTextureSelector = false;
 
-    public IEnumerable<TextureAsset> Textures => textureAssetGroup.GatheredTextures.Values;
+    public IEnumerable<TextureAsset> Textures =>
+        textureFilter == null
+            ? textureAssetGroup.GatheredTextures.Values
+            : textureAssetGroup.GatheredTextures.Values.Where(textureFilter);
 
     public void SelectTextureAsset(TextureAsset selectedAsset)
     {
@@ -87,7 +96,7 @@ public partial class DraggableTextureContext(
 
     public void SelectTextureAssetFront(TextureAsset selectedAsset)
     {
-        if (!textureAssetGroup.EnableFront)
+        if (!enableFront)
             return;
         if (selectedAsset.IsSelected)
             return;

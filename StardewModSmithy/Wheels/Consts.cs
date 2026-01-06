@@ -30,14 +30,15 @@ internal static class Consts
         return $"{TilesheetSize.X * DRAW_TILE}px {TilesheetSize.Y * DRAW_TILE}px";
     }
 
-    internal static IEnumerable<SDUIEdges> Basic_GUI_BoundingSquares(Point TilesheetSize, Point BoundingBoxSize)
+    internal static (int, string) GetSeq(Func<string, bool> contains)
     {
-        for (int x = 0; x < BoundingBoxSize.X; x++)
+        int seq = 0;
+        string seqId = seq.ToString();
+        while (contains(seqId))
         {
-            for (int y = 0; y < BoundingBoxSize.Y; y++)
-            {
-                yield return new(x * Consts.DRAW_TILE, (TilesheetSize.Y - 1 - y) * Consts.DRAW_TILE);
-            }
+            seq++;
+            seqId = seq.ToString();
         }
+        return new(seq, seqId);
     }
 }

@@ -1,6 +1,7 @@
 <panel layout="100% 100%" horizontal-content-alignment="end">
   <include name="mushymato.StardewModSmithy/views/includes/draggable-texture-sheet" *context={:TextureContext}/>
   <lane layout="500px content" orientation="vertical" *context={:EditableContext}>
+    <!-- General Controls -->
     <frame layout="stretch content" padding="30,20" border={@Mods/StardewUI/Sprites/ControlBorder}>
       <lane orientation="vertical">
         <panel *if={TextureHasAtlas} layout="stretch content" horizontal-content-alignment="start">
@@ -11,63 +12,7 @@
             left-click=|PopulateFromAtlas()|
           />
         </panel>
-       <lane *context={:BoundsProviderSelector}
-          orientation="vertical"
-          layout="stretch content[..1000]"
-          vertical-content-alignment="middle"
-          margin="4,4">
-          <lane orientation="horizontal" vertical-content-alignment="middle" padding="0,16">
-            <image sprite={@Mods/StardewUI/Sprites/CaretLeft} focusable="true"
-              left-click=|Decrease()|
-              +hover:scale="1.2"
-              +transition:scale="100ms EaseOutCubic"/>
-            <label text={ValueLabel}
-              font="dialogue"
-              layout="stretch content"
-              padding="20,0"
-              focusable="true"
-              horizontal-alignment="middle"
-              shadow-alpha="0.8"
-              shadow-color="#4448"
-              shadow-offset="-2, 2"
-              max-lines="1"
-              wheel=|Wheel($Direction)|
-              left-click=|ToggleViewingBoundsProviderList()|/>
-            <image sprite={@Mods/StardewUI/Sprites/CaretRight} focusable="true"
-              left-click=|Increase()|
-              +hover:scale="1.2"
-              +transition:scale="100ms EaseOutCubic"/>
-          </lane>
-          <textinput *if={ViewingBoundsProviderList}
-            text={<>BoundsProviderSearchTerm}
-            placeholder={#gui.placeholder.search}
-            font="dialogue" layout="content 64px" margin="-4,0,0,0"/>
-          <scrollable *if={ViewingBoundsProviderList} peeking="128" scrollbar-margin="8,0,0,0">
-            <lane orientation="vertical" layout="content content">
-              <frame *repeat={FilteredBoundsProviderList}
-                border={@Mods/StardewUI/Sprites/MenuSlotTransparent}
-                border-thickness="4"
-                layout="stretch content"
-                margin="2"
-                padding="8"
-                background={@Mods/StardewUI/Sprites/White}
-                background-tint="Transparent"
-                +state:selected={:IsSelected}
-                +state:selected:background-tint="#39d"
-                +hover:background-tint="Wheat"
-                left-click=|^SelectBoundsProvider(this)|>
-                <label text={:UILabel}
-                  font="dialogue"
-                  focusable="true"
-                  horizontal-alignment="start"
-                  shadow-alpha="0.8"
-                  shadow-color="#4448"
-                  shadow-offset="-2, 2"
-                  max-lines="1"/>
-              </frame>
-            </lane>
-          </scrollable>
-        </lane>
+        <include name="mushymato.StardewModSmithy/views/includes/bounds-provider-selector" *context={:BoundsProviderSelector}/>
         <grid layout="stretch content" item-layout="count: 2" item-spacing="4,4" >
           <button hover-background={@Mods/StardewUI/Sprites/ButtonLight}
             layout="stretch 56px"
@@ -93,8 +38,9 @@
         <label layout="stretch content" opacity="0.6" text={LastSavedMessage}/>
       </lane>
     </frame>
+    <!-- Furniture Edit -->
     <frame layout="stretch content" padding="32,16,32,32" border={@Mods/StardewUI/Sprites/ControlBorder} *if={HasBoundsProvider}>
-      <lane orientation="vertical" *context={SelectedFurniture}>
+      <lane orientation="vertical" *context={Selected}>
         <form-row title={#gui.label.name}>
           <textinput text={<>DisplayName} font="dialogue" layout="content 64px" margin="-8,12" />
         </form-row>

@@ -1,5 +1,7 @@
+using PropertyChanged.SourceGenerator;
 using StardewModSmithy.GUI.ViewModels;
 using StardewModSmithy.Models;
+using StardewModSmithy.Wheels;
 
 namespace StardewModSmithy.GUI.EditorContext;
 
@@ -8,6 +10,9 @@ public partial class WallpaperFlooringAssetContext : AbstractEditableAssetContex
     private readonly WallpaperFlooringAsset wallpaperFlooringAsset;
 
     public List<EditableWallpaperOrFlooring> WallpaperFlooringDataList;
+
+    [DependsOn(nameof(BoundsProvider))]
+    public EditableWallpaperOrFlooring? Selected => (EditableWallpaperOrFlooring?)BoundsProvider;
 
     public readonly IBoundsProviderSpinBoxViewModel BoundsProviderSelector;
 
@@ -24,5 +29,38 @@ public partial class WallpaperFlooringAssetContext : AbstractEditableAssetContex
         {
             BoundsProviderList = this.WallpaperFlooringDataList,
         };
+    }
+
+    private void UpdateDataList()
+    {
+        this.WallpaperFlooringDataList = wallpaperFlooringAsset.Editing.Values.ToList();
+        this.BoundsProviderSelector.BoundsProviderList = this.WallpaperFlooringDataList;
+    }
+
+    public override void SetTexture(object? sender, TextureAsset textureAsset)
+    {
+        base.SetTexture(sender, textureAsset);
+        Selected?.TextureAssetName = textureAsset.AssetName;
+    }
+
+    public override void Create()
+    {
+        EditableWallpaperOrFlooring wallfloor = wallpaperFlooringAsset.AddNewDefault(SelectedTextureAsset.AssetName);
+        UpdateDataList();
+        this.BoundsProviderSelector.Value = wallfloor;
+        this.BoundsProviderSelector.SeekIndex();
+        AutoSaveChanges(AutosaveFrequencyMode.OnAdd);
+    }
+
+    public override void Delete()
+    {
+        if (Selected == null)
+            return;
+        if (wallpaperFlooringAsset.Delete(Selected))
+        {
+            UpdateDataList();
+            this.BoundsProviderSelector.ClampIndex();
+            BoundsProvider = this.BoundsProviderSelector.Value;
+        }
     }
 }
