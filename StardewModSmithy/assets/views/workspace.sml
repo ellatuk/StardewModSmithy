@@ -41,7 +41,7 @@
               header-background-tint="#99c"
               is-expanded={<>IsExpanded}>
               <lane *outlet="header" vertical-content-alignment="middle" orientation="horizontal">
-                <label layout="stretch content" font="dialogue" text={:PackTitle} />
+                <label layout="stretch content" font="dialogue" text={PackTitle} />
                 <image *if={:IsLoaded} sprite={@mushymato.StardewModSmithy/sprites/emojis:checkmark} layout="36px 36px" margin="12"/>
                 <button hover-background={@Mods/StardewUI/Sprites/ButtonLight}
                   layout="content[150..] content"
@@ -51,28 +51,49 @@
                 />
               </lane>
               <lane orientation="vertical"  *if={IsExpanded}>
-                <lane vertical-content-alignment="middle" layout="content content">
+                <form-row title={#gui.label.author}>
+                  <textinput font="dialogue" layout="stretch 54px" text={<>PackAuthor} />
+                  <label text={#gui.label.nexus-id}
+                    margin="32,8,8,8" font="dialogue"
+                    shadow-alpha="0.8"
+                    shadow-color="#4448"
+                    shadow-offset="-2, 2" />
+                  <textinput font="dialogue" layout="content[..120] 54px" text={<>NexusID} />
+                </form-row>
+                <form-row title={#gui.label.mod-name}>
+                  <textinput font="dialogue" layout="content 54px" text={<>PackName} />
+                </form-row>
+                <form-row title={#gui.label.mod-desc}>
+                  <textinput font="dialogue" layout="content 54px" text={<>PackDescription} />
+                </form-row>
+                <!-- <lane vertical-content-alignment="middle" layout="content content">
+                  <label text={#gui.label.author}
+                    margin="8" font="small"
+                    shadow-alpha="0.8"
+                    shadow-color="#4448"
+                    shadow-offset="-2, 2" />
+                  <textinput margin="8" layout="30% 54px" text={<>PackAuthor} />
                   <label text={#gui.label.mod-name}
                     margin="8" font="small"
                     shadow-alpha="0.8"
                     shadow-color="#4448"
                     shadow-offset="-2, 2" />
                   <textinput margin="8" layout="stretch 54px" text={<>PackName} />
+                </lane>
+                <lane vertical-content-alignment="middle" layout="content content">
                   <label text={#gui.label.nexus-id}
                     margin="8" font="small"
                     shadow-alpha="0.8"
                     shadow-color="#4448"
                     shadow-offset="-2, 2" />
                   <textinput margin="8" layout="150px 54px" text={<>NexusID} />
-                </lane>
-                <lane vertical-content-alignment="middle" layout="content content">
                   <label text={#gui.label.mod-desc}
                     margin="8" font="small"
                     shadow-alpha="0.8"
                     shadow-color="#4448"
                     shadow-offset="-2, 2" />
                   <textinput margin="8" layout="stretch 54px" text={<>PackDescription} />
-                </lane>
+                </lane> -->
               </lane>
             </expander>
           </frame>
@@ -88,7 +109,7 @@
               <button hover-background={@Mods/StardewUI/Sprites/ButtonLight}
                   layout="content[150..] content"
                   font="dialogue"
-                  text={#gui.button.create}
+                  text={CreateButtonText}
                   left-click=|CreateAndEdit()|
                   opacity={NewModErrorOpacity}
                   tooltip={NewModErrorMessage}
@@ -112,7 +133,7 @@
                 keybind-list={<>ShowWorkspaceKey} />
           </form-row>
           <form-row title={#gui.label.author} tooltip={#gui.tooltip.author-name}>
-            <textinput layout="stretch 64px" margin="16,0" font="dialogue" placeholder={#gui.placeholder.author-name} text={<>AuthorName} />
+            <textinput layout="50% 64px" margin="16,0" font="dialogue" placeholder={#gui.placeholder.author-name} text={<>AuthorName} />
           </form-row>
           <form-row title={#gui.label.autosave} tooltip={#gui.tooltip.autosave-frequency}>
             <frame *context={:AutosaveFrequency}

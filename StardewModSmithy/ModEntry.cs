@@ -183,7 +183,7 @@ public sealed class ModEntry : Mod
         {
             string symlinkPath = Path.Combine(StagingDirectoryPath, Path.GetFileName(targetPath));
             FileInfo symlinkPathInfo = new(symlinkPath);
-            if (!symlinkPathInfo.Exists)
+            if (symlinkPathInfo.LinkTarget is null && !symlinkPathInfo.Exists)
             {
                 Directory.CreateSymbolicLink(symlinkPath, targetPath);
                 LogOnce($"Restart the game to enable automatic patch reload on '{uniqueId}'", LogLevel.Info);

@@ -28,12 +28,13 @@ public sealed class TranslationStore
         return store;
     }
 
-    internal void SetDataKeyValue(string key, string v)
+    internal void SetDataKeyValue(string key, string value, bool overwrite = true)
     {
-        Data[key] = v;
+        if (overwrite || !Data.ContainsKey(key))
+            Data[key] = value;
         if (!DefaultData.ContainsKey(key))
         {
-            DefaultData[key] = v;
+            DefaultData[key] = value;
         }
     }
 }

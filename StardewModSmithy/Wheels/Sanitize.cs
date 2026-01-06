@@ -16,7 +16,7 @@ internal static class Sanitize
         return string.Join(replacement.Value, value.Split(illegal));
     }
 
-    public static Regex UniqueIDPattern = new(@"^[^a-zA-Z0-9_.-]+$");
+    public static Regex UniqueIDExclusionPattern = new(@"[^a-zA-Z0-9_.-]+");
 
     public static readonly char[] IllegalKeyChars = ['{', '}', '[', ']', '(', ')', ':', '/', ',', ' '];
 
@@ -32,12 +32,7 @@ internal static class Sanitize
 
     public static string UniqueID(string id)
     {
-        string result = UniqueIDPattern.Replace(id, string.Empty);
-        if (string.IsNullOrEmpty(result))
-        {
-            return Convert.ToBase64String(Encoding.UTF8.GetBytes(id));
-        }
-        return result;
+        return UniqueIDExclusionPattern.Replace(id, string.Empty);
     }
 
     public static string AssetName(IAssetName assetName)

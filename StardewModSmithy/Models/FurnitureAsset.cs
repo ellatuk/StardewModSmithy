@@ -8,9 +8,6 @@ using StardewModSmithy.Models.Interfaces;
 using StardewModSmithy.Models.ValueKinds;
 using StardewModSmithy.Wheels;
 using StardewValley.Extensions;
-using StardewValley.GameData.Buildings;
-using StardewValley.GameData.Shops;
-using xTile.Layers;
 
 namespace StardewModSmithy.Models;
 
@@ -441,7 +438,8 @@ public sealed class FurnitureAsset : IEditableAsset
             {
                 translations.SetDataKeyValue(
                     string.Concat(furniDelim.DisplayNameImpl.Key, ".description"),
-                    I18n.Description_FurnitureCatalogue(modName)
+                    I18n.Description_FurnitureCatalogue(modName),
+                    overwrite: false
                 );
             }
         }

@@ -31,7 +31,7 @@ internal sealed record ModConfigContext : INotifyPropertyChanged
         get => config.AuthorName;
         set
         {
-            config.AuthorName = value;
+            config.AuthorName = Sanitize.UniqueIDExclusionPattern.Replace(value, string.Empty);
             config.WriteConfig();
             PropertyChanged?.Invoke(this, new(nameof(AuthorName)));
         }

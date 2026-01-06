@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using PropertyChanged.SourceGenerator;
 using StardewModdingAPI;
 using StardewModSmithy.Models;
@@ -7,9 +8,19 @@ using StardewValley;
 
 namespace StardewModSmithy.GUI.EditorContext;
 
-internal partial record PackDisplayEntry(IOutputPack Pack)
+internal record PackDisplayEntry(IOutputPack Pack) : INotifyPropertyChanged
 {
     public string PackTitle => $"{Pack.Manifest.Name} ({Pack.Manifest.UniqueID})";
+
+    public string PackAuthor
+    {
+        get => Pack.Manifest.Author;
+        set
+        {
+            Pack.Manifest.Author = value;
+            OnPropertyChanged(new(nameof(PackAuthor)));
+        }
+    }
 
     public string PackName
     {
@@ -31,9 +42,6 @@ internal partial record PackDisplayEntry(IOutputPack Pack)
         }
     }
 
-    [Notify]
-    public bool isExpanded = false;
-
     public string NexusID
     {
         get => Pack.Manifest.NexusID;
@@ -42,6 +50,29 @@ internal partial record PackDisplayEntry(IOutputPack Pack)
             Pack.Manifest.NexusID = value;
             OnPropertyChanged(new(nameof(NexusID)));
         }
+    }
+
+    private bool isExpanded = false;
+    public bool IsExpanded
+    {
+        get => isExpanded;
+        set
+        {
+            if (isExpanded && !value)
+            {
+                Pack.Save();
+                OnPropertyChanged(new(nameof(PackTitle)));
+            }
+            isExpanded = value;
+            OnPropertyChanged(new(nameof(IsExpanded)));
+        }
+    }
+
+    public event PropertyChangedEventHandler? PropertyChanged;
+
+    private void OnPropertyChanged(PropertyChangedEventArgs value)
+    {
+        PropertyChanged?.Invoke(this, value);
     }
 
     public bool IsLoaded => ModEntry.ModRegistry.IsLoaded(Pack.Manifest.UniqueID);
@@ -78,15 +109,18 @@ internal partial record PackListingContext(TextureAssetGroup TextureAssetGroup, 
     [Notify]
     private string newModName = string.Empty;
 
+    [DependsOn(nameof(NewModName))]
+    public string NewModId => MakeUniqueID(ModEntry.Config.GetAuthorName());
+
     public string NewModErrorMessage
     {
         get
         {
-            if (string.IsNullOrEmpty(NewModName))
+            if (string.IsNullOrEmpty(Sanitize.UniqueID(NewModName)))
             {
                 return I18n.Message_CreateMod_NeedName();
             }
-            string uniqueID = MakeUniqueID(ModEntry.Config.GetAuthorName());
+            string uniqueID = NewModId;
             if (!IsValidUniqueID(uniqueID))
             {
                 return I18n.Message_CreateMod_IdNotUnique(uniqueID);
@@ -96,6 +130,9 @@ internal partial record PackListingContext(TextureAssetGroup TextureAssetGroup, 
     }
 
     public float NewModErrorOpacity => string.IsNullOrEmpty(NewModErrorMessage) ? 1f : 0.5f;
+
+    [DependsOn(nameof(NewModName))]
+    public string CreateButtonText => I18n.Gui_Button_Create_Mod(NewModId);
 
     internal static PackListingContext? Initialize()
     {
