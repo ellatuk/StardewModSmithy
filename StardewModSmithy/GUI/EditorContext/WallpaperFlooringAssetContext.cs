@@ -40,7 +40,18 @@ public partial class WallpaperFlooringAssetContext : AbstractEditableAssetContex
     public override void SetTexture(object? sender, TextureAsset textureAsset)
     {
         base.SetTexture(sender, textureAsset);
-        Selected?.TextureAssetName = textureAsset.AssetName;
+        if (
+            WallpaperFlooringDataList.FirstOrDefault(v => v.TextureAssetName == textureAsset.AssetName)
+            is EditableWallpaperOrFlooring matching
+        )
+        {
+            this.BoundsProviderSelector.Value = matching;
+            this.BoundsProviderSelector.SeekIndex();
+        }
+        else
+        {
+            Create();
+        }
     }
 
     public override void Create()
