@@ -1,6 +1,7 @@
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewModSmithy.Integration;
+using StardewModSmithy.Wheels;
 
 namespace StardewModSmithy.GUI.ViewModels;
 

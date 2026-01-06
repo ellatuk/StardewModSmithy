@@ -166,7 +166,7 @@ public sealed partial class FurnitureDelimString(string id) : IBoundsProvider
 
     #endregion
 
-    public string UILabel => $"{Id}:{DisplayName}";
+    public string UILabel => FromDeserialize ? $"{Id}:{DisplayName}" : I18n.Gui_Placeholder_New(Id);
 
     public string BoundsLabel => SpriteIndex.ToString();
 

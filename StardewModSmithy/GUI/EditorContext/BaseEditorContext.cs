@@ -20,7 +20,7 @@ public sealed class BaseEditorContext
         TextureContext.TextureChanged += EditableContext.SetTexture;
         EditableContext.BoundsProviderChanged += TextureContext.OnEditorBoundsProviderChanged;
 
-        EditableContext.SetTexture(TextureContext, TextureContext.Selected);
         TextureContext.OnEditorBoundsProviderChanged(null, EditableContext.BoundsProvider);
+        EditableContext.SetTexture(TextureContext, TextureContext.Selected);
     }
 }

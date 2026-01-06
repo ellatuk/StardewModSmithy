@@ -25,7 +25,7 @@ public partial class WallpaperFlooringAssetContext : AbstractEditableAssetContex
         {
             BoundsProvider = this.WallpaperFlooringDataList[0];
         }
-        this.BoundsProviderSelector = new(() => BoundsProvider, (value) => BoundsProvider = value)
+        this.BoundsProviderSelector = new(() => BoundsProvider, (value) => BoundsProvider = value, AutoSaveChanges)
         {
             BoundsProviderList = this.WallpaperFlooringDataList,
         };
@@ -45,11 +45,14 @@ public partial class WallpaperFlooringAssetContext : AbstractEditableAssetContex
 
     public override void Create()
     {
-        EditableWallpaperOrFlooring wallfloor = wallpaperFlooringAsset.AddNewDefault(SelectedTextureAsset.AssetName);
+        if (
+            wallpaperFlooringAsset.AddNewDefault(SelectedTextureAsset.AssetName)
+            is not EditableWallpaperOrFlooring wallfloor
+        )
+            return;
         UpdateDataList();
         this.BoundsProviderSelector.Value = wallfloor;
         this.BoundsProviderSelector.SeekIndex();
-        AutoSaveChanges(AutosaveFrequencyMode.OnAdd);
     }
 
     public override void Delete()

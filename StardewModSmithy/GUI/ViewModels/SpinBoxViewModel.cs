@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using StardewModSmithy.Integration;
+using StardewModSmithy.Wheels;
 
 namespace StardewModSmithy.GUI.ViewModels;
 
@@ -65,7 +66,8 @@ public class IntSpinBoxViewModel(Func<int> backingGetter, Action<int> backingSet
 
 public class IBoundsProviderSpinBoxViewModel(
     Func<IBoundsProvider?> backingGetter,
-    Action<IBoundsProvider?> backingSetter
+    Action<IBoundsProvider?> backingSetter,
+    Action<AutosaveFrequencyMode> SaveDelegate
 ) : AbstractSpinBoxViewModel<IBoundsProvider?>(backingGetter, backingSetter)
 {
     public record BoundsProviderSelectEntry(IBoundsProvider BoundsProvider, bool IsSelected)
@@ -127,12 +129,14 @@ public class IBoundsProviderSpinBoxViewModel(
     {
         currentIdx = currentIdx <= 0 ? MaxIdx : currentIdx - 1;
         SetValueToCurrentIndex();
+        SaveDelegate(AutosaveFrequencyMode.OnSwitch);
     }
 
     public override void Increase()
     {
         currentIdx = currentIdx >= MaxIdx ? 0 : currentIdx + 1;
         SetValueToCurrentIndex();
+        SaveDelegate(AutosaveFrequencyMode.OnSwitch);
     }
 
     public override string ValueLabelGetter() => Value?.UILabel ?? "NULL";
@@ -164,6 +168,7 @@ public class IBoundsProviderSpinBoxViewModel(
     {
         Value = entry.BoundsProvider;
         SeekIndex();
+        SaveDelegate(AutosaveFrequencyMode.OnSwitch);
     }
 
     private string boundsProviderSearchTerm = string.Empty;

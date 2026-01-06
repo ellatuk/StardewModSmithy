@@ -42,7 +42,7 @@ public abstract partial class AbstractEditableAssetContext
 
     public void AutoSaveChanges(AutosaveFrequencyMode saveReason)
     {
-        if (ModEntry.Config.AutosaveFrequency == saveReason)
+        if (ModEntry.Config.AutosaveFrequencyEnumValue == saveReason)
         {
             Save();
         }

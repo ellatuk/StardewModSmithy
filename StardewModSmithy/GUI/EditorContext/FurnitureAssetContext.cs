@@ -13,9 +13,6 @@ public partial class FurnitureAssetContext : AbstractEditableAssetContext
 
     public readonly IBoundsProviderSpinBoxViewModel BoundsProviderSelector;
 
-    public Func<FurnitureDelimString, string> FurnitureDataName = (delimStr) =>
-        delimStr.FromDeserialize ? delimStr.DisplayName : I18n.Gui_Placeholder_New(delimStr.Id);
-
     [DependsOn(nameof(BoundsProvider))]
     public FurnitureDelimString? Selected => (FurnitureDelimString?)BoundsProvider;
 
@@ -31,7 +28,7 @@ public partial class FurnitureAssetContext : AbstractEditableAssetContext
         {
             BoundsProvider = this.FurnitureDataList[0];
         }
-        this.BoundsProviderSelector = new(() => BoundsProvider, (value) => BoundsProvider = value)
+        this.BoundsProviderSelector = new(() => BoundsProvider, (value) => BoundsProvider = value, AutoSaveChanges)
         {
             BoundsProviderList = this.FurnitureDataList,
         };
@@ -66,7 +63,6 @@ public partial class FurnitureAssetContext : AbstractEditableAssetContext
         UpdateDataList();
         this.BoundsProviderSelector.Value = furni;
         this.BoundsProviderSelector.SeekIndex();
-        AutoSaveChanges(AutosaveFrequencyMode.OnAdd);
     }
 
     public override void Delete()
@@ -101,6 +97,5 @@ public partial class FurnitureAssetContext : AbstractEditableAssetContext
         UpdateDataList();
         this.BoundsProviderSelector.Value = firstFurni;
         this.BoundsProviderSelector.SeekIndex();
-        AutoSaveChanges(AutosaveFrequencyMode.OnAdd);
     }
 }

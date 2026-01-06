@@ -165,11 +165,14 @@ public sealed class WallpaperFlooringAsset : IEditableAsset
         return asset.Texture.Width == 256;
     }
 
-    public EditableWallpaperOrFlooring AddNewDefault(IAssetName assetName)
+    public EditableWallpaperOrFlooring? AddNewDefault(IAssetName assetName)
     {
+        string id = Sanitize.Key(Path.GetFileNameWithoutExtension(assetName.BaseName));
+        if (Editing.ContainsKey(id))
+            return null;
         ModWallpaperOrFlooring newWallFloor = new()
         {
-            Id = Sanitize.Key(Path.GetFileNameWithoutExtension(assetName.BaseName)),
+            Id = id,
             Texture = assetName.BaseName,
             IsFlooring = false,
             Count = 1,

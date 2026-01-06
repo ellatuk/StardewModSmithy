@@ -14,13 +14,13 @@ internal sealed record ModConfigContext : INotifyPropertyChanged
     public ModConfigContext(ModConfig Config)
     {
         config = Config;
-        AutosaveFrequency.SelectedValue = config.AutosaveFrequency;
+        AutosaveFrequency.SelectedValue = config.AutosaveFrequencyEnumValue;
         AutosaveFrequency.ValueChanged += OnAutosaveFrequencyChange;
     }
 
     private void OnAutosaveFrequencyChange(object? sender, EventArgs e)
     {
-        config.AutosaveFrequency = AutosaveFrequency.SelectedValue;
+        config.AutosaveFrequencyEnumValue = AutosaveFrequency.SelectedValue;
         config.WriteConfig();
     }
 
