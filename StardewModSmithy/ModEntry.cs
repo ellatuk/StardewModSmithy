@@ -82,7 +82,7 @@ public sealed class ModEntry : Mod
 
         Directory.CreateDirectory(Path.Combine(DirectoryPath, Consts.EDITING_INPUT));
         Directory.CreateDirectory(Path.Combine(DirectoryPath, Consts.EDITING_OUTPUT));
-        Directory.CreateDirectory(StagingDirectoryPath);
+        UpdateStagingSymlink();
 
         helper.ConsoleCommands.Add("sms-show", "show smithy menu to edit your mods.", ConsoleShowWorkspace);
         helper.ConsoleCommands.Add("sms-pack", "pack a folder of loose textures", ConsolePackTexture);
@@ -91,6 +91,20 @@ public sealed class ModEntry : Mod
         helper.Events.Input.ButtonsChanged += OnButtonsChanged;
         helper.Events.Display.RenderedActiveMenu += OnRenderedActiveMenu;
         helper.Events.Input.CursorMoved += OnCursorMoved;
+    }
+
+    private static void UpdateStagingSymlink()
+    {
+        string outputDir = Path.Combine(DirectoryPath, Consts.EDITING_OUTPUT);
+        if (Directory.Exists(StagingDirectoryPath))
+        {
+            Directory.Delete(StagingDirectoryPath, true);
+        }
+        else if (File.Exists(StagingDirectoryPath))
+        {
+            File.Delete(StagingDirectoryPath);
+        }
+        Directory.CreateSymbolicLink(StagingDirectoryPath, outputDir);
     }
 
     private void OnRenderedActiveMenu(object? sender, RenderedActiveMenuEventArgs e)
@@ -179,27 +193,7 @@ public sealed class ModEntry : Mod
         }
         else
         {
-            string symlinkPath = Path.Combine(StagingDirectoryPath, Path.GetFileName(targetPath));
-            FileInfo symlinkPathInfo = new(symlinkPath);
-            if (symlinkPathInfo.LinkTarget is null && !symlinkPathInfo.Exists)
-            {
-                Directory.CreateSymbolicLink(symlinkPath, targetPath);
-                LogOnce($"Restart the game to enable automatic patch reload on '{uniqueId}'", LogLevel.Info);
-            }
-            else if (symlinkPathInfo.LinkTarget == targetPath)
-            {
-                LogOnce(
-                    $"'{symlinkPath}' exists but '{uniqueId}' is not loaded, please restart the game to allow automatic patch reload",
-                    LogLevel.Warn
-                );
-            }
-            else
-            {
-                LogOnce(
-                    $"'{symlinkPath}' exists and does not link to '{targetPath}', please remove the folder, save again, then restart the game to allow automatic patch reload",
-                    LogLevel.Error
-                );
-            }
+            LogOnce($"Restart the game to enable automatic patch reload on '{uniqueId}'", LogLevel.Info);
         }
     }
 

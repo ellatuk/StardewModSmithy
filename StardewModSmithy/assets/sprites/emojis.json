@@ -4,6 +4,10 @@
     "checkmark": {
       "SourceRect": "117,81,9,9",
       "Scale": 4
+    },
+    "cross": {
+      "SourceRect": "45,81,9,9",
+      "Scale": 4
     }
   }
 }

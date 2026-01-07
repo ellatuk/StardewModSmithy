@@ -1,7 +1,6 @@
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewModSmithy.GUI.ViewModels;
-using StardewModSmithy.Integration;
 
 namespace StardewModSmithy.Wheels;
 
@@ -13,6 +12,10 @@ internal static class Consts
     internal const string EDITING_OUTPUT = "editing/output";
     internal const string MANIFEST_FILE = "manifest.json";
     internal const string ATLAS_SUFFIX = ".atlas.json";
+    internal const string TL_DIR = "i18n";
+    internal const string ASSETS_DIR = "assets";
+    internal const string DATA_DIR = "data";
+    internal const string CUSTOM_DIR = "custom";
 
     internal static IEnumerable<IAssetName> GetRequiredAssetsFromIBoundsProvider(
         this IEnumerable<IBoundsProvider> boundsProviders

@@ -12,6 +12,7 @@
           background={@Mods/StardewUI/Sprites/White}
           background-tint="Transparent"
           focusable="true"
+          padding="4"
           left-click=|^SelectTextureAsset(this)|
           right-click=|^SelectTextureAssetFront(this)|
           +transition:background-tint="100ms EaseOutCubic"
@@ -21,10 +22,7 @@
           +state:selected-front={IsSelectedFront}
           +state:selected-front:background-tint="#3344DE"
           >
-          <image
-            layout="192px content"
-            sprite={UISpriteSmall}
-            fit="Contain"/>
+          <image layout="192px content[128..]" sprite={UISpriteSmall} fit="Contain" vertical-alignment="middle"/>
         </frame>
       </lane>
     </scrollable>
