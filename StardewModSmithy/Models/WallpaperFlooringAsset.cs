@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using Force.DeepCloner;
 using Microsoft.Xna.Framework;
 using Newtonsoft.Json.Linq;
 using StardewModdingAPI;
@@ -156,6 +157,7 @@ public sealed class WallpaperFlooringAsset : IEditableAsset
             if (JToken.FromObject(value).ToObject<ModWallpaperOrFlooring>() is not ModWallpaperOrFlooring wallfloor)
                 return;
             string baseKey = Sanitize.ModIdPrefix(key);
+            wallfloor.Id = baseKey;
             Editing[baseKey] = new(baseKey, wallfloor);
         }
     }

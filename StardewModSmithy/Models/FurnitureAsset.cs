@@ -494,7 +494,6 @@ public sealed class FurnitureAsset : IEditableAsset
 
     public void SetTranslations(TranslationStore? translations)
     {
-        ModEntry.Log($"SetTranslations {translations}");
         if (translations == null)
             return;
         foreach (FurnitureDelimString furniDelim in Editing.Values)

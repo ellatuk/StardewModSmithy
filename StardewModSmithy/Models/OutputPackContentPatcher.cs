@@ -86,9 +86,8 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
 
         manifest.PackFor = PackFor;
 
-        string dataDir = Path.Combine(targetPath, "data");
-        string assetsDir = Path.Combine(targetPath, "assets");
-        string translationsDir = manifest.TranslationFolder;
+        string dataDir = Path.Combine(targetPath, Consts.DATA_DIR);
+        string assetsDir = Path.Combine(targetPath, Consts.ASSETS_DIR);
 
         if (Directory.Exists(dataDir))
             Directory.Delete(dataDir, true);
@@ -98,9 +97,11 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
         Directory.CreateDirectory(assetsDir);
 
         List<IMockPatch> changes = [];
+        List<string> translationFiles = [];
         // translations
         if (Translations != null)
         {
+            string translationsDir = manifest.TranslationFolder;
             Directory.CreateDirectory(translationsDir);
             bool translationRequiresLoad = false;
             foreach (IEditableAsset editable in EditableAssets)
@@ -111,13 +112,16 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
             if (translationRequiresLoad)
             {
                 changes.Add(
-                    new MockLoad(TranslationString.I18N_Asset, Path.Combine("i18n", TranslationStore.DefaultFilename))
+                    new MockLoad(
+                        TranslationString.I18N_Asset,
+                        Path.Combine(Consts.TL_DIR, TranslationStore.DefaultFilename)
+                    )
                     {
                         Priority = AssetLoadPriority.Low.ToString(),
                     }
                 );
                 changes.Add(
-                    new MockLoad(TranslationString.I18N_Asset, "i18n/{{Language}}.json")
+                    new MockLoad(TranslationString.I18N_Asset, string.Concat(Consts.TL_DIR, "{{Language}}.json"))
                     {
                         When = new() { ["HasFile:{{FromFile}}"] = true },
                     }
@@ -126,6 +130,30 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
             // i18n/{langaugecode}.json and i18n/default.json
             ModEntry.WriteJson(translationsDir, Translations.LocaleFilename, Translations.Data);
             ModEntry.WriteJson(translationsDir, TranslationStore.DefaultFilename, Translations.DefaultData);
+            translationFiles.Add(Translations.LocaleFilename);
+            translationFiles.Add(TranslationStore.DefaultFilename);
+            // fill in any missing keys
+            foreach (string file in Directory.GetFiles(translationsDir))
+            {
+                string fileName = Path.GetFileName(file);
+                if (translationFiles.Contains(fileName))
+                    continue;
+                translationFiles.Add(fileName);
+                if (ModEntry.ReadJson<Dictionary<string, string>>(file) is Dictionary<string, string> otherTl)
+                {
+                    translationFiles.Add(fileName);
+                    bool needWrite = false;
+                    foreach ((string key, string value) in Translations.DefaultData)
+                    {
+                        if (otherTl.ContainsKey(key))
+                            continue;
+                        needWrite = true;
+                        otherTl[key] = value;
+                    }
+                    if (needWrite)
+                        ModEntry.WriteJson(file, otherTl);
+                }
+            }
         }
         // edits
         HashSet<IAssetName> requiredAssets = [];
@@ -137,7 +165,7 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
                 File.Delete(Path.Combine(dataDir, editable.IncludeName));
                 continue;
             }
-            changes.Add(new MockInclude(Path.Combine("data", editable.IncludeName)));
+            changes.Add(new MockInclude(Path.Combine(Consts.DATA_DIR, editable.IncludeName)));
             ModEntry.WriteJson(dataDir, editable.IncludeName, new MockContent(patches));
             requiredAssets.AddRange(editable.GetRequiredAssets());
         }
@@ -149,7 +177,7 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
                 is ValueTuple<string, string> result
             )
             {
-                changes.Add(new MockLoad(result.Item1, Path.Join("assets", result.Item2)));
+                changes.Add(new MockLoad(result.Item1, Path.Join(Consts.ASSETS_DIR, result.Item2)));
             }
         }
 
@@ -165,7 +193,30 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
                 includeList.Add(inc.FromFile);
             }
         }
-        manifest.StardewModSmithyInfo = new([Consts.MANIFEST_FILE, "i18n/*.json", "content.json", .. includeList]);
+        manifest.StardewModSmithyInfo.Generated = [Consts.MANIFEST_FILE, "content.json", .. includeList];
+        manifest.StardewModSmithyInfo.Custom = [];
+        manifest.StardewModSmithyInfo.I18N = translationFiles;
+        string customDir = Path.Combine(targetPath, Consts.CUSTOM_DIR);
+        if (Directory.Exists(customDir))
+        {
+            foreach (string file in Directory.GetFiles(customDir))
+            {
+                if (!file.EndsWith(".json"))
+                    continue;
+                string fileName = Path.GetFileName(file);
+                changes.Add(new MockInclude(Path.Combine(Consts.CUSTOM_DIR, fileName)));
+                manifest.StardewModSmithyInfo.Custom.Add(fileName);
+            }
+        }
+        else
+        {
+            Directory.CreateDirectory(customDir);
+        }
+        if (changes.Count == 0)
+        {
+            // ensure that content patcher will try to load this as pack
+            changes.Add(new MockInclude("StardewModSmithy PLACEHOLDER"));
+        }
 
         // content.json
         ModEntry.WriteJson(targetPath, "content.json", new MockContentMain(changes));
@@ -179,7 +230,7 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
     {
         string targetPath = manifest.OutputFolder;
 
-        string dataDir = Path.Combine(targetPath, "data");
+        string dataDir = Path.Combine(targetPath, Consts.DATA_DIR);
         if (!Directory.Exists(dataDir))
             return;
 

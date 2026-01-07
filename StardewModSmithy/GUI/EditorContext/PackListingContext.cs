@@ -5,12 +5,13 @@ using StardewModSmithy.Models;
 using StardewModSmithy.Models.Interfaces;
 using StardewModSmithy.Wheels;
 using StardewValley;
+using StardewValley.Extensions;
 
 namespace StardewModSmithy.GUI.EditorContext;
 
-internal record PackDisplayEntry(IOutputPack Pack) : INotifyPropertyChanged
+public record PackDisplayEntry(IOutputPack Pack) : INotifyPropertyChanged
 {
-    public string PackTitle => $"{Pack.Manifest.Name} ({Pack.Manifest.UniqueID})";
+    public string PackUniqueID => Pack.Manifest.UniqueID;
 
     public string PackAuthor
     {
@@ -42,13 +43,23 @@ internal record PackDisplayEntry(IOutputPack Pack) : INotifyPropertyChanged
         }
     }
 
-    public string NexusID
+    public string PackVersion
+    {
+        get => Pack.Manifest.Version;
+        set
+        {
+            Pack.Manifest.Version = value;
+            OnPropertyChanged(new(nameof(PackVersion)));
+        }
+    }
+
+    public string PackNexusID
     {
         get => Pack.Manifest.NexusID;
         set
         {
             Pack.Manifest.NexusID = value;
-            OnPropertyChanged(new(nameof(NexusID)));
+            OnPropertyChanged(new(nameof(PackNexusID)));
         }
     }
 
@@ -61,7 +72,6 @@ internal record PackDisplayEntry(IOutputPack Pack) : INotifyPropertyChanged
             if (isExpanded && !value)
             {
                 Pack.Save();
-                OnPropertyChanged(new(nameof(PackTitle)));
             }
             isExpanded = value;
             OnPropertyChanged(new(nameof(IsExpanded)));
@@ -70,9 +80,14 @@ internal record PackDisplayEntry(IOutputPack Pack) : INotifyPropertyChanged
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    private void OnPropertyChanged(PropertyChangedEventArgs value) => PropertyChanged?.Invoke(this, value);
+    public void OnPropertyChanged(PropertyChangedEventArgs value) => PropertyChanged?.Invoke(this, value);
 
     public bool IsLoaded => ModEntry.ModRegistry.IsLoaded(Pack.Manifest.UniqueID);
+
+    public bool CanShowEdit_Furniture =>
+        Pack is OutputPackContentPatcher outputPackContentPatcher
+        && outputPackContentPatcher.TextureAssetGroup != null
+        && outputPackContentPatcher.TextureAssetGroup.GatheredTextures.Any();
 
     public void ShowEdit_Furniture()
     {
@@ -96,6 +111,11 @@ internal record PackDisplayEntry(IOutputPack Pack) : INotifyPropertyChanged
         }
     }
 
+    public bool CanShowEdit_WallFloor =>
+        Pack is OutputPackContentPatcher outputPackContentPatcher
+        && outputPackContentPatcher.TextureAssetGroup != null
+        && outputPackContentPatcher.TextureAssetGroup.GatheredTextures.Values.Any(WallpaperFlooringAsset.TextureFilter);
+
     public void ShowEdit_WallFloor()
     {
         IsExpanded = false;
@@ -114,13 +134,13 @@ internal record PackDisplayEntry(IOutputPack Pack) : INotifyPropertyChanged
     }
 }
 
-internal partial record PackListingContext(TextureAssetGroup TextureAssetGroup, List<IOutputPack> EditablePacks)
+public partial record PackListingContext(TextureAssetGroup TextureAssetGroup, List<IOutputPack> EditablePacks)
 {
     private readonly List<PackDisplayEntry> packDisplayList = EditablePacks
         .Select(pack => new PackDisplayEntry(pack))
         .ToList();
 
-    public IEnumerable<PackDisplayEntry> PackDisplayList => packDisplayList;
+    public IEnumerable<PackDisplayEntry> PackDisplayList => EditablePacks.Select(pack => new PackDisplayEntry(pack));
 
     [Notify]
     private string newModName = string.Empty;
@@ -128,7 +148,7 @@ internal partial record PackListingContext(TextureAssetGroup TextureAssetGroup, 
     [DependsOn(nameof(NewModName))]
     public string NewModId => MakeUniqueID(ModEntry.Config.GetAuthorName());
 
-    public string NewModErrorMessage
+    public string NewModTooltip
     {
         get
         {
@@ -141,18 +161,30 @@ internal partial record PackListingContext(TextureAssetGroup TextureAssetGroup, 
             {
                 return I18n.Message_CreateMod_IdNotUnique(uniqueID);
             }
-            return string.Empty;
+            return I18n.Message_CreateMod_WillCreate(uniqueID);
         }
     }
 
-    public float NewModErrorOpacity => string.IsNullOrEmpty(NewModErrorMessage) ? 1f : 0.5f;
-
-    [DependsOn(nameof(NewModName))]
-    public string CreateButtonText => I18n.Gui_Button_Create_Mod(NewModId);
+    public float NewModErrorOpacity
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(Sanitize.UniqueID(NewModName)))
+            {
+                return 0.5f;
+            }
+            string uniqueID = NewModId;
+            if (!IsValidUniqueID(uniqueID))
+            {
+                return 0.5f;
+            }
+            return 1f;
+        }
+    }
 
     internal static PackListingContext? Initialize()
     {
-        TextureAssetGroup textureAssetGroup = TextureAssetGroup.FromSourceDir("smithy");
+        TextureAssetGroup textureAssetGroup = new();
         if (textureAssetGroup.GatheredTextures.Count == 0)
         {
             Game1.addHUDMessage(HUDMessage.ForCornerTextbox(I18n.Message_PutTexture(Consts.EDITING_INPUT)));
@@ -163,16 +195,15 @@ internal partial record PackListingContext(TextureAssetGroup TextureAssetGroup, 
             return null;
         }
         List<IOutputPack> outputPacks = [];
-        foreach (OutputManifest manifest in OutputManifest.LoadAllFromOutputFolder())
+        foreach (
+            OutputManifest manifest in OutputManifest.LoadAllFromOutputFolder().OrderBy(manifest => manifest.UniqueID)
+        )
         {
             // TODO: assume content patcher for now
             OutputPackContentPatcher outputContentPatcher = new(manifest);
             outputContentPatcher.Load();
             outputContentPatcher.TextureAssetGroup = textureAssetGroup;
-            if (outputContentPatcher.EditableAssets.Any())
-            {
-                outputPacks.Add(outputContentPatcher);
-            }
+            outputPacks.Add(outputContentPatcher);
         }
         return new PackListingContext(textureAssetGroup, outputPacks);
     }
@@ -191,8 +222,10 @@ internal partial record PackListingContext(TextureAssetGroup TextureAssetGroup, 
             Name = NewModName,
             UniqueID = uniqueID,
         };
+        NewModName = string.Empty;
         OutputPackContentPatcher outputPackContentPatcher = new(manifest) { TextureAssetGroup = TextureAssetGroup };
-        outputPackContentPatcher.InitializeFurnitureAsset([]);
+        outputPackContentPatcher.Save();
+        EditablePacks.Add(outputPackContentPatcher);
         PackDisplayEntry packDisplay = new(outputPackContentPatcher);
         packDisplayList.Add(packDisplay);
         PropertyChanged?.Invoke(this, new(nameof(PackDisplayList)));
@@ -205,7 +238,7 @@ internal partial record PackListingContext(TextureAssetGroup TextureAssetGroup, 
     {
         if (
             ModEntry.ModRegistry.IsLoaded(uniqueID)
-            || EditablePacks.Any(output => output.Manifest.UniqueID.Equals(uniqueID))
+            || EditablePacks.Any(output => output.Manifest.UniqueID.EqualsIgnoreCase(uniqueID))
         )
         {
             return false;

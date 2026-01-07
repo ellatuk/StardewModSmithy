@@ -37,8 +37,6 @@ public sealed partial record TextureAsset(IAssetName AssetName, string PathOnDis
         return ModEntry.ReadJson<List<TxAtlasEntry>>(atlasPath);
     }
 
-    public void Reload() => texture = null;
-
     public SDUISprite GetUISprite(float scale) =>
         new(Texture, SourceRect: Texture.Bounds, FixedEdges: new(0), SliceSettings: new(Scale: scale))
         {
@@ -57,12 +55,35 @@ public sealed partial record TextureAsset(IAssetName AssetName, string PathOnDis
     public bool isSelectedFront = false;
 }
 
-public sealed class TextureAssetGroup(string group, Dictionary<IAssetName, TextureAsset> gatheredTextures)
-    : ILoadableAsset
+public sealed class TextureAssetGroup() : ILoadableAsset
 {
-    public string Group { get; set; } = group;
+    private Dictionary<IAssetName, TextureAsset>? gatheredTextures = null;
+    public Dictionary<IAssetName, TextureAsset> GatheredTextures => gatheredTextures ??= FormGatheredTextures();
 
-    public Dictionary<IAssetName, TextureAsset> GatheredTextures { get; set; } = gatheredTextures;
+    private static Dictionary<IAssetName, TextureAsset> FormGatheredTextures()
+    {
+        Dictionary<IAssetName, TextureAsset> newlyGathered = [];
+        string fullSourceDir = Path.Combine(ModEntry.DirectoryPath, Consts.EDITING_INPUT);
+        foreach (string dir in Directory.GetDirectories(fullSourceDir))
+        {
+            if (File.Exists(string.Concat(dir, Consts.ATLAS_SUFFIX)))
+                continue;
+            SpritePacker.Pack(dir);
+        }
+        foreach (string file in Directory.GetFiles(fullSourceDir))
+        {
+            if (!file.EndsWith(".png"))
+                continue;
+            string relFile = Path.GetRelativePath(ModEntry.DirectoryPath, file);
+            IAssetName assetName = FormAssetName(file);
+            newlyGathered[assetName] = new(assetName, relFile);
+        }
+        if (newlyGathered.Any())
+        {
+            newlyGathered.First().Value.IsSelected = true;
+        }
+        return newlyGathered;
+    }
 
     public ValueTuple<string, string>? StageAndGetTargetAndFromFile(
         string targetPath,
@@ -102,29 +123,6 @@ public sealed class TextureAssetGroup(string group, Dictionary<IAssetName, Textu
         return null;
     }
 
-    public static IAssetName FormAssetNameForGroup(string group, string fileName) =>
-        ModEntry.ParseAssetName(Path.Join(group, "{{ModId}}", Path.GetFileNameWithoutExtension(fileName)));
-
-    public static TextureAssetGroup FromSourceDir(string group)
-    {
-        Dictionary<IAssetName, TextureAsset> gatheredTextures = [];
-        string fullSourceDir = Path.Combine(ModEntry.DirectoryPath, Consts.EDITING_INPUT);
-        foreach (string dir in Directory.GetDirectories(fullSourceDir))
-        {
-            SpritePacker.Pack(dir);
-        }
-        foreach (string file in Directory.GetFiles(fullSourceDir))
-        {
-            if (!file.EndsWith(".png"))
-                continue;
-            string relFile = Path.GetRelativePath(ModEntry.DirectoryPath, file);
-            IAssetName assetName = FormAssetNameForGroup(group, file);
-            gatheredTextures[assetName] = new(assetName, relFile);
-        }
-        if (gatheredTextures.Any())
-        {
-            gatheredTextures.First().Value.IsSelected = true;
-        }
-        return new TextureAssetGroup(group, gatheredTextures);
-    }
+    public static IAssetName FormAssetName(string fileName) =>
+        ModEntry.ParseAssetName(Path.Join("{{ModId}}", Path.GetFileNameWithoutExtension(fileName)));
 }

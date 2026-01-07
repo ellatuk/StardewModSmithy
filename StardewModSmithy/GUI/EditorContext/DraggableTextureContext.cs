@@ -17,11 +17,26 @@ public enum DragMovementMode
 public partial class DraggableTextureContext(
     TextureAssetGroup textureAssetGroup,
     Func<TextureAsset, bool>? textureFilter,
-    bool canDrag = true,
-    bool enableFront = false,
-    int tileUnit = Consts.DRAW_TILE
+    bool canDrag,
+    bool enableFront,
+    int tileUnit
 )
 {
+    public static DraggableTextureContext? Initialize(
+        TextureAssetGroup textureAssetGroup,
+        Func<TextureAsset, bool>? textureFilter = null,
+        bool canDrag = true,
+        bool enableFront = false,
+        int tileUnit = Consts.DRAW_TILE
+    )
+    {
+        if (textureFilter != null && !textureAssetGroup.GatheredTextures.Values.Any(textureFilter))
+        {
+            return null;
+        }
+        return new DraggableTextureContext(textureAssetGroup, textureFilter, canDrag, enableFront, tileUnit);
+    }
+
     public event EventHandler<int>? Dragged;
     public event EventHandler<TextureAsset>? TextureChanged;
 

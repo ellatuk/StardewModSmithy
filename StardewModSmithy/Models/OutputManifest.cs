@@ -1,25 +1,24 @@
-using Newtonsoft.Json;
 using StardewModSmithy.Wheels;
 using StardewValley;
 using StardewValley.Extensions;
 
 namespace StardewModSmithy.Models;
 
-public sealed record SmithyInfo(List<string> GeneratedFileList)
+public sealed record SmithyInfo()
 {
+    public List<string> Generated { get; set; } = [];
+    public List<string> I18N { get; set; } = [];
+    public List<string> Custom { get; set; } = [];
     public string Exported =>
         string.Concat(ModEntry.ModCreditString, DateTime.Now.ToString(Game1.content.CurrentCulture));
 };
 
 public sealed class OutputManifest()
 {
-    [JsonProperty("$schema")]
-    public string JsonSchema => "https://smapi.io/schemas/manifest.json";
-
     internal string PackFor { get; set; } = "???";
     internal string OutputFolder =>
         Path.Combine(ModEntry.DirectoryPath, Consts.EDITING_OUTPUT, Sanitize.Path(UniqueID));
-    internal string TranslationFolder => Path.Combine(OutputFolder, "i18n");
+    internal string TranslationFolder => Path.Combine(OutputFolder, Consts.TL_DIR);
     internal HashSet<string> OptionalDependencies = [];
     internal string NexusID { get; set; } = string.Empty;
 
@@ -27,7 +26,7 @@ public sealed class OutputManifest()
     public string Name { get; set; } = "";
     public string Version { get; set; } = "1.0.0";
     public string UniqueID { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
+    public string Description { get; set; } = "New mod made with StardewModSmithy";
     public object ContentPackFor => new { UniqueID = PackFor };
     public List<object>? Dependencies
     {
@@ -71,7 +70,7 @@ public sealed class OutputManifest()
             }
         }
     }
-    public SmithyInfo? StardewModSmithyInfo;
+    public SmithyInfo StardewModSmithyInfo { get; set; } = new();
 
     public static IEnumerable<OutputManifest> LoadAllFromOutputFolder()
     {

@@ -16,7 +16,6 @@ internal static class EditorMenuManager
     private const string VIEW_WORKSPACE = $"{VIEW_ASSET_PREFIX}/workspace";
     private const string VIEW_EDIT_FURNITURE = $"{VIEW_ASSET_PREFIX}/edit-furniture";
     private const string VIEW_EDIT_WALLFLOOR = $"{VIEW_ASSET_PREFIX}/edit-wallfloor";
-    private static readonly PerScreen<PackListingContext?> packListingContext = new();
     private static readonly PerScreen<BaseEditorContext?> editorContext = new();
     internal static readonly PerScreen<bool> showWorkspaceNextTick = new();
     private static IModHelper helper = null!;
@@ -38,8 +37,17 @@ internal static class EditorMenuManager
     private static void OnUpdateTicked(object? sender, UpdateTickedEventArgs e)
     {
         if (Context.IsWorldReady)
-            return;
-        if (showWorkspaceNextTick.Value && TitleMenu.subMenu == null)
+        {
+            if (Game1.activeClickableMenu != null)
+                return;
+        }
+        else
+        {
+            if (TitleMenu.subMenu != null)
+                return;
+        }
+
+        if (showWorkspaceNextTick.Value)
         {
             showWorkspaceNextTick.Value = false;
             ShowWorkspace();
@@ -59,7 +67,7 @@ internal static class EditorMenuManager
         if (Context.IsWorldReady)
             Game1.exitActiveMenu();
 
-        if ((packListingContext.Value ??= PackListingContext.Initialize()) is not PackListingContext packListing)
+        if (PackListingContext.Initialize() is not PackListingContext packListing)
             return;
 
         BaseWorkspaceContext ctx = new(packListing, new(ModEntry.Config));
@@ -107,14 +115,7 @@ internal static class EditorMenuManager
             editorContext.Value = null;
             helper.Events.Input.ButtonsChanged -= OnButtonsChanged_DragSheet;
         }
-        if (Context.IsWorldReady)
-        {
-            DelayedAction.functionAfterDelay(ShowWorkspace, 0);
-        }
-        else
-        {
-            showWorkspaceNextTick.Value = true;
-        }
+        showWorkspaceNextTick.Value = true;
     }
 
     #region furniture
@@ -124,7 +125,11 @@ internal static class EditorMenuManager
         Action? saveChanges
     )
     {
-        DraggableTextureContext draggableTextureContext = new(textureAssetGroup, null, enableFront: false);
+        if (
+            DraggableTextureContext.Initialize(textureAssetGroup, enableFront: true)
+            is not DraggableTextureContext draggableTextureContext
+        )
+            return;
         FurnitureAssetContext furnitureAssetContext = new(furnitureAsset);
         ShowEditor(saveChanges, draggableTextureContext, furnitureAssetContext, VIEW_EDIT_FURNITURE);
     }
@@ -137,11 +142,15 @@ internal static class EditorMenuManager
         Action? saveChanges
     )
     {
-        DraggableTextureContext draggableTextureContext = new(
-            textureAssetGroup,
-            WallpaperFlooringAsset.TextureFilter,
-            canDrag: false
-        );
+        if (
+            DraggableTextureContext.Initialize(
+                textureAssetGroup,
+                textureFilter: WallpaperFlooringAsset.TextureFilter,
+                canDrag: false
+            )
+            is not DraggableTextureContext draggableTextureContext
+        )
+            return;
         WallpaperFlooringAssetContext wallpaperFlooringAssetContext = new(wallpaperFlooringAsset);
         ShowEditor(saveChanges, draggableTextureContext, wallpaperFlooringAssetContext, VIEW_EDIT_WALLFLOOR);
     }
