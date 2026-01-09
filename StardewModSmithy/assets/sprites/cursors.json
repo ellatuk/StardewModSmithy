@@ -12,6 +12,10 @@
     },
     "okButton": {
       "SourceRect": "128,256,64,64"
+    },
+    "hammerButton": {
+      "SourceRect": "366,373,16,16",
+      "Scale": 4
     }
   }
 }

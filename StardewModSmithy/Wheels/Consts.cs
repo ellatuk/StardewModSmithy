@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Microsoft.Xna.Framework;
 using StardewModdingAPI;
 using StardewModSmithy.GUI.ViewModels;
@@ -43,5 +44,33 @@ internal static class Consts
             seqId = seq.ToString();
         }
         return new(seq, seqId);
+    }
+
+    public static void BrowseFolder(string path, bool createIfNotExist = true)
+    {
+        if (Directory.Exists(ModEntry.OutputDirectoryPath))
+        {
+            if (!Directory.Exists(path))
+            {
+                if (!createIfNotExist)
+                    return;
+                Directory.CreateDirectory(path);
+            }
+            try
+            {
+                Process.Start(
+                    new ProcessStartInfo
+                    {
+                        FileName = path,
+                        UseShellExecute = true,
+                        Verb = "open",
+                    }
+                );
+            }
+            catch (Exception err)
+            {
+                ModEntry.Log($"Failed to open '{path}'\n{err}", LogLevel.Error);
+            }
+        }
     }
 }

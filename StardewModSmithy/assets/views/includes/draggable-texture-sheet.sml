@@ -13,6 +13,7 @@
           background-tint="Transparent"
           focusable="true"
           padding="4"
+          tooltip={:UITooltip}
           left-click=|^SelectTextureAsset(this)|
           right-click=|^SelectTextureAssetFront(this)|
           +transition:background-tint="100ms EaseOutCubic"
@@ -22,7 +23,7 @@
           +state:selected-front={IsSelectedFront}
           +state:selected-front:background-tint="#3344DE"
           >
-          <image layout="192px content[128..]" sprite={UISpriteSmall} fit="Contain" vertical-alignment="middle"/>
+          <image layout="192px 192px" sprite={:UISpriteSmall} fit="Cover" vertical-alignment="middle"/>
         </frame>
       </lane>
     </scrollable>
@@ -33,7 +34,9 @@
     margin="8,-4,8,8"
     focusable="true"
     +hover:scale="1.1"
+    +transition:scale="100ms EaseOutCubic"
     left-click=|ToggleTextureSelector()|
+    tooltip={#gui.tooltip.select-texture}
     z-index="2"/>
 
   <panel layout="stretch stretch"

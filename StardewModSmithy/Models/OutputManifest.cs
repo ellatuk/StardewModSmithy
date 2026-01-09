@@ -16,8 +16,7 @@ public sealed record SmithyInfo()
 public sealed class OutputManifest()
 {
     internal string PackFor { get; set; } = "???";
-    internal string OutputFolder =>
-        Path.Combine(ModEntry.DirectoryPath, Consts.EDITING_OUTPUT, Sanitize.Path(UniqueID));
+    internal string OutputFolder => Path.Combine(ModEntry.OutputDirectoryPath, Sanitize.Path(UniqueID));
     internal string TranslationFolder => Path.Combine(OutputFolder, Consts.TL_DIR);
     internal HashSet<string> OptionalDependencies = [];
     internal string NexusID { get; set; } = string.Empty;
@@ -74,7 +73,7 @@ public sealed class OutputManifest()
 
     public static IEnumerable<OutputManifest> LoadAllFromOutputFolder()
     {
-        foreach (string subdir in Directory.GetDirectories(Path.Combine(ModEntry.DirectoryPath, Consts.EDITING_OUTPUT)))
+        foreach (string subdir in Directory.GetDirectories(ModEntry.OutputDirectoryPath))
         {
             string manifestPath = Path.Combine(subdir, Consts.MANIFEST_FILE);
             if (!File.Exists(manifestPath))

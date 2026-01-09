@@ -16,6 +16,7 @@ internal static class EditorMenuManager
     private const string VIEW_WORKSPACE = $"{VIEW_ASSET_PREFIX}/workspace";
     private const string VIEW_EDIT_FURNITURE = $"{VIEW_ASSET_PREFIX}/edit-furniture";
     private const string VIEW_EDIT_WALLFLOOR = $"{VIEW_ASSET_PREFIX}/edit-wallfloor";
+    private static readonly PerScreen<PackListingContext?> listingContext = new();
     private static readonly PerScreen<BaseEditorContext?> editorContext = new();
     internal static readonly PerScreen<bool> showWorkspaceNextTick = new();
     private static IModHelper helper = null!;
@@ -67,10 +68,7 @@ internal static class EditorMenuManager
         if (Context.IsWorldReady)
             Game1.exitActiveMenu();
 
-        if (PackListingContext.Initialize() is not PackListingContext packListing)
-            return;
-
-        BaseWorkspaceContext ctx = new(packListing, new(ModEntry.Config));
+        BaseWorkspaceContext ctx = new(listingContext.Value ??= PackListingContext.Initialize(), new(ModEntry.Config));
 
         IClickableMenu menu = viewEngine.CreateMenuFromAsset(VIEW_WORKSPACE, ctx);
         if (Context.IsWorldReady)

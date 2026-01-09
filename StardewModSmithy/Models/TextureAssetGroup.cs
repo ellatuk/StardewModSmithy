@@ -47,6 +47,20 @@ public sealed partial record TextureAsset(IAssetName AssetName, string PathOnDis
 
     public SDUISprite UISprite => GetUISprite(4);
     public SDUISprite UISpriteSmall => GetUISprite(1);
+    public string UITooltip
+    {
+        get
+        {
+            if (TextureAtlas != null)
+            {
+                return string.Concat(
+                    Path.GetFileNameWithoutExtension(PathOnDisk),
+                    I18n.Gui_Tooltip_Atlas(TextureAtlas.Count)
+                );
+            }
+            return Path.GetFileName(PathOnDisk);
+        }
+    }
 
     [Notify]
     public bool isSelected = false;
@@ -63,14 +77,13 @@ public sealed class TextureAssetGroup() : ILoadableAsset
     private static Dictionary<IAssetName, TextureAsset> FormGatheredTextures()
     {
         Dictionary<IAssetName, TextureAsset> newlyGathered = [];
-        string fullSourceDir = Path.Combine(ModEntry.DirectoryPath, Consts.EDITING_INPUT);
-        foreach (string dir in Directory.GetDirectories(fullSourceDir))
+        foreach (string dir in Directory.GetDirectories(ModEntry.InputDirectoryPath))
         {
             if (File.Exists(string.Concat(dir, Consts.ATLAS_SUFFIX)))
                 continue;
             SpritePacker.Pack(dir);
         }
-        foreach (string file in Directory.GetFiles(fullSourceDir))
+        foreach (string file in Directory.GetFiles(ModEntry.InputDirectoryPath))
         {
             if (!file.EndsWith(".png"))
                 continue;
@@ -83,6 +96,11 @@ public sealed class TextureAssetGroup() : ILoadableAsset
             newlyGathered.First().Value.IsSelected = true;
         }
         return newlyGathered;
+    }
+
+    public void Invalidate()
+    {
+        gatheredTextures = null;
     }
 
     public ValueTuple<string, string>? StageAndGetTargetAndFromFile(

@@ -1,14 +1,12 @@
 using System.Diagnostics;
 using System.Reflection;
 using System.Reflection.Emit;
-using Force.DeepCloner;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Newtonsoft.Json;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModSmithy.GUI;
-using StardewModSmithy.Models;
 using StardewModSmithy.Wheels;
 using StardewValley;
 using StardewValley.Menus;
@@ -24,10 +22,14 @@ public sealed class ModEntry : Mod
 #endif
 
     public const string ModId = "mushymato.StardewModSmithy";
+    private const string IconTexture = $"{ModId}/Icon";
+
     private static IMonitor? mon;
     internal static Func<string, IAssetName> ParseAssetName = null!;
     internal static string DirectoryPath = null!;
     internal static string StagingDirectoryPath = null!;
+    internal static string InputDirectoryPath = null!;
+    internal static string OutputDirectoryPath = null!;
     internal static string ModCreditString = null!;
     internal static IModContentHelper ModContent = null!;
     internal static ModConfig Config = null!;
@@ -63,7 +65,7 @@ public sealed class ModEntry : Mod
     public static bool IsContentPatcherLoaded { get; private set; } = false;
     public static string ContentPatcherVersion { get; internal set; } = "2.1.0";
 
-    private Rectangle titleMenuButtonBounds = new Rectangle(64, 64, 60, 80);
+    private Rectangle titleMenuButtonBounds = new(64, 64, 104, 104);
     private float titleMenuButtonScale = 1f;
 
     public override void Entry(IModHelper helper)
@@ -78,10 +80,12 @@ public sealed class ModEntry : Mod
         ParseAssetName = helper.GameContent.ParseAssetName;
         DirectoryPath = helper.DirectoryPath;
         StagingDirectoryPath = string.Concat(DirectoryPath, ".Staging");
+        InputDirectoryPath = Path.Combine(DirectoryPath, Consts.EDITING_INPUT);
+        OutputDirectoryPath = Path.Combine(DirectoryPath, Consts.EDITING_OUTPUT);
         ModContent = helper.ModContent;
 
-        Directory.CreateDirectory(Path.Combine(DirectoryPath, Consts.EDITING_INPUT));
-        Directory.CreateDirectory(Path.Combine(DirectoryPath, Consts.EDITING_OUTPUT));
+        Directory.CreateDirectory(InputDirectoryPath);
+        Directory.CreateDirectory(OutputDirectoryPath);
         UpdateStagingSymlink();
 
         helper.ConsoleCommands.Add("sms-show", "show smithy menu to edit your mods.", ConsoleShowWorkspace);
@@ -91,6 +95,15 @@ public sealed class ModEntry : Mod
         helper.Events.Input.ButtonsChanged += OnButtonsChanged;
         helper.Events.Display.RenderedActiveMenu += OnRenderedActiveMenu;
         helper.Events.Input.CursorMoved += OnCursorMoved;
+        helper.Events.Content.AssetRequested += OnAssetRequested;
+    }
+
+    private void OnAssetRequested(object? sender, AssetRequestedEventArgs e)
+    {
+        if (e.NameWithoutLocale.IsEquivalentTo(IconTexture))
+        {
+            e.LoadFromModFile<Texture2D>("assets/icon.png", AssetLoadPriority.Low);
+        }
     }
 
     private static void UpdateStagingSymlink()
@@ -111,17 +124,33 @@ public sealed class ModEntry : Mod
     {
         if (!IsTitleMenuButtonActive())
             return;
-        e.SpriteBatch.Draw(
-            Game1.mouseCursors,
-            titleMenuButtonBounds.Center.ToVector2(),
-            new Rectangle(631, 1968, 15, 20),
-            Color.White,
-            0f,
-            new(7.5f, 10f),
-            titleMenuButtonScale * 4,
-            SpriteEffects.None,
-            1f
-        );
+        if (Game1.activeClickableMenu is TitleMenu titleM)
+        {
+            IClickableMenu.drawTextureBox(
+                e.SpriteBatch,
+                titleM.titleButtonsTexture,
+                titleMenuButtonScale > 1 ? new Rectangle(79, 458, 27, 25) : new Rectangle(52, 458, 27, 25),
+                titleMenuButtonBounds.X,
+                titleMenuButtonBounds.Y,
+                titleMenuButtonBounds.Width,
+                titleMenuButtonBounds.Height,
+                Color.White,
+                4,
+                false,
+                1
+            );
+            e.SpriteBatch.Draw(
+                titleM.titleButtonsTexture,
+                new Rectangle(titleMenuButtonBounds.X + 24, titleMenuButtonBounds.Y + 24, 56, 48),
+                titleMenuButtonScale > 1 ? new Rectangle(79 + 6, 458 + 6, 1, 1) : new Rectangle(52 + 6, 458 + 6, 1, 1),
+                Color.White
+            );
+            e.SpriteBatch.Draw(
+                Game1.content.Load<Texture2D>(IconTexture),
+                new Rectangle(titleMenuButtonBounds.X + 20, titleMenuButtonBounds.Y + 20, 64, 64),
+                Color.White
+            );
+        }
     }
 
     private void OnCursorMoved(object? sender, CursorMovedEventArgs e)
