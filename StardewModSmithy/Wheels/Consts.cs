@@ -17,6 +17,7 @@ internal static class Consts
     internal const string ASSETS_DIR = "assets";
     internal const string DATA_DIR = "data";
     internal const string CUSTOM_DIR = "custom";
+    internal const string DEFAULT_STR = "???";
 
     internal static IEnumerable<IAssetName> GetRequiredAssetsFromIBoundsProvider(
         this IEnumerable<IBoundsProvider> boundsProviders

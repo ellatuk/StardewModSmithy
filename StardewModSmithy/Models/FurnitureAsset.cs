@@ -144,7 +144,7 @@ public sealed partial class FurnitureDelimString(string id) : IBoundsProvider
     public TranslationString DisplayNameImpl { get; private set; } = new(string.Concat(id, ".name"));
     public string DisplayName
     {
-        get => DisplayNameImpl.Value ?? "???";
+        get => DisplayNameImpl.Value ?? Consts.DEFAULT_STR;
         set
         {
             DisplayNameImpl.Value = value;
@@ -478,7 +478,10 @@ public sealed class FurnitureAsset : IEditableAsset
         foreach (FurnitureDelimString furniDelim in Editing.Values)
         {
             furniDelim.UpdateForFirstTimeSerialize();
-            translations.SetDataKeyValue(furniDelim.DisplayNameImpl.Key, furniDelim.DisplayNameImpl.Value ?? "???");
+            translations.SetDataKeyValue(
+                furniDelim.DisplayNameImpl.Key,
+                furniDelim.DisplayNameImpl.Value ?? Consts.DEFAULT_STR
+            );
             requiresLoad = requiresLoad || furniDelim.DisplayNameImpl.Kind == TranslationStringKind.LocalizedText;
             if (furniDelim.IsCatalogue)
             {

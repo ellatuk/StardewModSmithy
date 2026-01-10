@@ -15,7 +15,7 @@ public sealed record SmithyInfo()
 
 public sealed class OutputManifest()
 {
-    internal string PackFor { get; set; } = "???";
+    internal string PackFor { get; set; } = Consts.DEFAULT_STR;
     internal string OutputFolder => Path.Combine(ModEntry.OutputDirectoryPath, Sanitize.Path(UniqueID));
     internal string TranslationFolder => Path.Combine(OutputFolder, Consts.TL_DIR);
     internal HashSet<string> OptionalDependencies = [];

@@ -121,7 +121,7 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
                     }
                 );
                 changes.Add(
-                    new MockLoad(TranslationString.I18N_Asset, string.Concat(Consts.TL_DIR, "{{Language}}.json"))
+                    new MockLoad(TranslationString.I18N_Asset, Path.Combine(Consts.TL_DIR, "{{Language}}.json"))
                     {
                         When = new() { ["HasFile:{{FromFile}}"] = true },
                     }

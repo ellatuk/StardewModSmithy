@@ -1,3 +1,5 @@
+using Force.DeepCloner;
+using StardewModSmithy.Wheels;
 using StardewValley;
 
 namespace StardewModSmithy.Models;
@@ -14,7 +16,9 @@ public sealed class TranslationStore
     {
         code = Game1.content.GetCurrentLanguage();
         DefaultData = ModEntry.ReadJson<Dictionary<string, string>>(translationsDir, DefaultFilename) ?? DefaultData;
-        Data = ModEntry.ReadJson<Dictionary<string, string>>(translationsDir, DefaultFilename) ?? Data;
+        Data =
+            ModEntry.ReadJson<Dictionary<string, string>>(translationsDir, LocaleFilename)
+            ?? DefaultData.ShallowClone();
     }
 
     public static TranslationStore? FromSourceDir(string translationsDir)
@@ -34,7 +38,7 @@ public sealed class TranslationStore
             Data[key] = value;
         if (!DefaultData.ContainsKey(key))
         {
-            DefaultData[key] = value;
+            DefaultData[key] = value.Equals(Consts.DEFAULT_STR) ? key : value;
         }
     }
 }

@@ -22,7 +22,8 @@ public sealed class ModEntry : Mod
 #endif
 
     public const string ModId = "mushymato.StardewModSmithy";
-    private const string IconTexture = $"{ModId}/Icon";
+    private const string IconTexture = $"{ModId}/icon";
+    private const string IconHoverTexture = $"{ModId}/icon_hover";
 
     private static IMonitor? mon;
     internal static Func<string, IAssetName> ParseAssetName = null!;
@@ -66,7 +67,7 @@ public sealed class ModEntry : Mod
     public static string ContentPatcherVersion { get; internal set; } = "2.1.0";
 
     private Rectangle titleMenuButtonBounds = new(64, 64, 104, 104);
-    private float titleMenuButtonScale = 1f;
+    private bool titleMenuButtonHovered = false;
 
     public override void Entry(IModHelper helper)
     {
@@ -84,10 +85,6 @@ public sealed class ModEntry : Mod
         OutputDirectoryPath = Path.Combine(DirectoryPath, Consts.EDITING_OUTPUT);
         ModContent = helper.ModContent;
 
-        Directory.CreateDirectory(InputDirectoryPath);
-        Directory.CreateDirectory(OutputDirectoryPath);
-        UpdateStagingSymlink();
-
         helper.ConsoleCommands.Add("sms-show", "show smithy menu to edit your mods.", ConsoleShowWorkspace);
         helper.ConsoleCommands.Add("sms-pack", "pack a folder of loose textures", ConsolePackTexture);
 
@@ -96,6 +93,58 @@ public sealed class ModEntry : Mod
         helper.Events.Display.RenderedActiveMenu += OnRenderedActiveMenu;
         helper.Events.Input.CursorMoved += OnCursorMoved;
         helper.Events.Content.AssetRequested += OnAssetRequested;
+
+        CreateSmithyDirectories();
+    }
+
+    private static void CreateSmithyDirectories()
+    {
+        try
+        {
+            Directory.CreateDirectory(InputDirectoryPath);
+        }
+        catch (Exception err)
+        {
+            Log($"Failed to create '{InputDirectoryPath}', please manually create this folder\n{err}", LogLevel.Error);
+        }
+        try
+        {
+            Directory.CreateDirectory(OutputDirectoryPath);
+        }
+        catch (Exception err)
+        {
+            Log($"Failed to create '{OutputDirectoryPath}', please manually create this folder\n{err}", LogLevel.Error);
+        }
+        try
+        {
+            DirectoryInfo dirInfo = new(StagingDirectoryPath);
+            if (dirInfo.Exists)
+            {
+                if (dirInfo.LinkTarget != OutputDirectoryPath)
+                {
+                    Log($"DIR LINK {dirInfo.LinkTarget} {OutputDirectoryPath}");
+                    Directory.Delete(StagingDirectoryPath, true);
+                }
+                else
+                {
+                    return;
+                }
+            }
+            FileInfo fileInfo = new(StagingDirectoryPath);
+            if (fileInfo.Exists && fileInfo.LinkTarget != OutputDirectoryPath)
+            {
+                Log("FILE LINK");
+                File.Delete(StagingDirectoryPath);
+            }
+            Directory.CreateSymbolicLink(StagingDirectoryPath, OutputDirectoryPath);
+        }
+        catch (Exception err)
+        {
+            Log(
+                $"Failed to link output to '{StagingDirectoryPath}', please manually delete this folder/file then try again\n{err}",
+                LogLevel.Error
+            );
+        }
     }
 
     private void OnAssetRequested(object? sender, AssetRequestedEventArgs e)
@@ -104,20 +153,10 @@ public sealed class ModEntry : Mod
         {
             e.LoadFromModFile<Texture2D>("assets/icon.png", AssetLoadPriority.Low);
         }
-    }
-
-    private static void UpdateStagingSymlink()
-    {
-        string outputDir = Path.Combine(DirectoryPath, Consts.EDITING_OUTPUT);
-        if (Directory.Exists(StagingDirectoryPath))
+        if (e.NameWithoutLocale.IsEquivalentTo(IconHoverTexture))
         {
-            Directory.Delete(StagingDirectoryPath, true);
+            e.LoadFromModFile<Texture2D>("assets/icon_hover.png", AssetLoadPriority.Low);
         }
-        else if (File.Exists(StagingDirectoryPath))
-        {
-            File.Delete(StagingDirectoryPath);
-        }
-        Directory.CreateSymbolicLink(StagingDirectoryPath, outputDir);
     }
 
     private void OnRenderedActiveMenu(object? sender, RenderedActiveMenuEventArgs e)
@@ -129,7 +168,7 @@ public sealed class ModEntry : Mod
             IClickableMenu.drawTextureBox(
                 e.SpriteBatch,
                 titleM.titleButtonsTexture,
-                titleMenuButtonScale > 1 ? new Rectangle(79, 458, 27, 25) : new Rectangle(52, 458, 27, 25),
+                titleMenuButtonHovered ? new Rectangle(79, 458, 27, 25) : new Rectangle(52, 458, 27, 25),
                 titleMenuButtonBounds.X,
                 titleMenuButtonBounds.Y,
                 titleMenuButtonBounds.Width,
@@ -142,11 +181,11 @@ public sealed class ModEntry : Mod
             e.SpriteBatch.Draw(
                 titleM.titleButtonsTexture,
                 new Rectangle(titleMenuButtonBounds.X + 24, titleMenuButtonBounds.Y + 24, 56, 48),
-                titleMenuButtonScale > 1 ? new Rectangle(79 + 6, 458 + 6, 1, 1) : new Rectangle(52 + 6, 458 + 6, 1, 1),
+                titleMenuButtonHovered ? new Rectangle(79 + 6, 458 + 6, 1, 1) : new Rectangle(52 + 6, 458 + 6, 1, 1),
                 Color.White
             );
             e.SpriteBatch.Draw(
-                Game1.content.Load<Texture2D>(IconTexture),
+                Game1.content.Load<Texture2D>(titleMenuButtonHovered ? IconHoverTexture : IconTexture),
                 new Rectangle(titleMenuButtonBounds.X + 20, titleMenuButtonBounds.Y + 20, 64, 64),
                 Color.White
             );
@@ -159,11 +198,11 @@ public sealed class ModEntry : Mod
             return;
         if (titleMenuButtonBounds.Contains(e.NewPosition.ScreenPixels))
         {
-            titleMenuButtonScale = 1.2f;
+            titleMenuButtonHovered = true;
         }
         else
         {
-            titleMenuButtonScale = 1f;
+            titleMenuButtonHovered = false;
         }
     }
 
@@ -183,9 +222,9 @@ public sealed class ModEntry : Mod
         {
             EditorMenuManager.ShowWorkspace();
         }
-        if (IsTitleMenuButtonActive() && titleMenuButtonScale > 1f && Game1.didPlayerJustLeftClick())
+        if (IsTitleMenuButtonActive() && titleMenuButtonHovered && Game1.didPlayerJustLeftClick())
         {
-            titleMenuButtonScale = 1f;
+            titleMenuButtonHovered = false;
             EditorMenuManager.showWorkspaceNextTick.Value = true;
         }
     }

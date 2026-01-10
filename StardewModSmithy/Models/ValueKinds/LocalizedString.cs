@@ -39,6 +39,10 @@ public sealed class TranslationString(string key)
         {
             Value = value;
         }
+        else if (translations.DefaultData.TryGetValue(Key, out string? value2))
+        {
+            Value = value2;
+        }
     }
 
     public string GetToken(string? suffix = null)
