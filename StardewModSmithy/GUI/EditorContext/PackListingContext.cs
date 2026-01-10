@@ -100,6 +100,7 @@ public record PackDisplayEntry(IOutputPack Pack) : INotifyPropertyChanged
         )
         {
             outputPackContentPatcher.FurniAsset ??= new();
+            outputPackContentPatcher.FurniAsset.SetTranslations(outputPackContentPatcher.Translations);
             EditorMenuManager.ShowFurnitureEditor(
                 outputPackContentPatcher.TextureAssetGroup,
                 outputPackContentPatcher.FurniAsset,
@@ -126,6 +127,7 @@ public record PackDisplayEntry(IOutputPack Pack) : INotifyPropertyChanged
         )
         {
             outputPackContentPatcher.WallAndFloorAsset ??= new();
+            outputPackContentPatcher.WallAndFloorAsset.SetTranslations(outputPackContentPatcher.Translations);
             EditorMenuManager.ShowWallpaperAndFlooringEditor(
                 outputPackContentPatcher.TextureAssetGroup,
                 outputPackContentPatcher.WallAndFloorAsset,

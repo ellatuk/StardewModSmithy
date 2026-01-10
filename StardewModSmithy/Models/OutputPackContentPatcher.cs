@@ -77,7 +77,7 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
         }
     }
 
-    public TranslationStore? Translations = TranslationStore.FromSourceDir(manifest.TranslationFolder);
+    public TranslationStore? Translations = new(manifest.TranslationFolder);
 
     public void Save()
     {
@@ -101,8 +101,6 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
         // translations
         if (Translations != null)
         {
-            string translationsDir = manifest.TranslationFolder;
-            Directory.CreateDirectory(translationsDir);
             bool translationRequiresLoad = false;
             foreach (IEditableAsset editable in EditableAssets)
             {
@@ -127,33 +125,7 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
                     }
                 );
             }
-            // i18n/{langaugecode}.json and i18n/default.json
-            ModEntry.WriteJson(translationsDir, Translations.LocaleFilename, Translations.Data);
-            ModEntry.WriteJson(translationsDir, TranslationStore.DefaultFilename, Translations.DefaultData);
-            translationFiles.Add(Translations.LocaleFilename);
-            translationFiles.Add(TranslationStore.DefaultFilename);
-            // fill in any missing keys
-            foreach (string file in Directory.GetFiles(translationsDir))
-            {
-                string fileName = Path.GetFileName(file);
-                if (translationFiles.Contains(fileName))
-                    continue;
-                translationFiles.Add(fileName);
-                if (ModEntry.ReadJson<Dictionary<string, string>>(file) is Dictionary<string, string> otherTl)
-                {
-                    translationFiles.Add(fileName);
-                    bool needWrite = false;
-                    foreach ((string key, string value) in Translations.DefaultData)
-                    {
-                        if (otherTl.ContainsKey(key))
-                            continue;
-                        needWrite = true;
-                        otherTl[key] = value;
-                    }
-                    if (needWrite)
-                        ModEntry.WriteJson(file, otherTl);
-                }
-            }
+            Translations.WriteI18NData();
         }
         // edits
         HashSet<IAssetName> requiredAssets = [];
