@@ -71,6 +71,11 @@ public sealed class OutputManifest()
     }
     public SmithyInfo StardewModSmithyInfo { get; set; } = new();
 
+    public void Save()
+    {
+        ModEntry.WriteJson(OutputFolder, Utils.MANIFEST_FILE, this);
+    }
+
     public static IEnumerable<OutputManifest> LoadAllFromOutputFolder()
     {
         foreach (string subdir in Directory.GetDirectories(ModEntry.OutputDirectoryPath))

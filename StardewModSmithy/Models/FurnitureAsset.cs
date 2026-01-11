@@ -362,7 +362,7 @@ public sealed class FurnitureAsset : IEditableAsset
                 bool hasWall = false;
                 foreach (EditableWallpaperOrFlooring editing in wallpaperFlooringAsset.Editing.Values)
                 {
-                    if (!hasFloor && editing.IsFlooring)
+                    if (!hasFloor && editing.BaseData.IsFlooring)
                     {
                         hasFloor = true;
                         catalogueItemQueries.Add(

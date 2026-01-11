@@ -83,13 +83,13 @@ public sealed record EditableWallpaperOrFlooring(string BaseKey, ModWallpaperOrF
 
     public string UILabel => BaseKey;
 
-    public bool IsFlooring
+    public int WallOrFloor
     {
-        get => BaseData.IsFlooring;
+        get => BaseData.IsFlooring ? 1 : 0;
         set
         {
-            BaseData.IsFlooring = value;
-            OnPropertyChanged(new(nameof(IsFlooring)));
+            BaseData.IsFlooring = value == 1;
+            OnPropertyChanged(new(nameof(WallOrFloor)));
             OnPropertyChanged(new(nameof(GUI_BoundingSquares)));
             OnPropertyChanged(new(nameof(GUI_TilesheetArea)));
         }

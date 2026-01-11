@@ -8,6 +8,7 @@ using StardewValley.Extensions;
 
 namespace StardewModSmithy.Models;
 
+#pragma warning disable CA1822, CS0649
 public interface IMockPatch
 {
     public string Action { get; }
@@ -40,30 +41,49 @@ internal record MockContent(List<IMockPatch> Changes)
     public string JsonSchema => "https://smapi.io/schemas/content-patcher.json";
 }
 
-internal record MockContentEditDataInclude(List<MockEditData> Changes);
-
 internal sealed record MockContentMain(List<IMockPatch> Changes) : MockContent(Changes)
 {
-#pragma warning disable CA1822 // Mark members as static
     public string Format => ModEntry.ContentPatcherVersion;
-#pragma warning restore CA1822 // Mark members as static
+    public object? ConfigSchema { get; set; }
+    public object? DynamicTokens { get; set; }
 }
 
-public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputPack
+internal sealed class MockContentPrior
+{
+    public object? Format;
+    public object? ConfigSchema;
+    public object? DynamicTokens;
+    public object? Changes;
+}
+
+internal record MockContentEditDataInclude(List<MockEditData> Changes);
+#pragma warning restore CA1822, CS0649
+
+public sealed class OutputPackContentPatcher : IOutputPack
 {
     public const string PackFor = "Pathoschild.ContentPatcher";
-    public OutputManifest Manifest => manifest;
+    public OutputManifest Manifest { get; private set; }
+    public TranslationStore? Translations;
 
-    public TextureAssetGroup? TextureAssetGroup { get; set; } = null;
+    public OutputPackContentPatcher(OutputManifest manifest)
+    {
+        Manifest = manifest;
+        Manifest.PackFor = PackFor;
+        Translations = new TranslationStore(manifest.TranslationFolder);
+    }
+
+    public TextureAssetGroup? TxAssetGroup { get; set; } = null;
     public FurnitureAsset? FurniAsset { get; set; } = null;
     public WallpaperFlooringAsset? WallAndFloorAsset { get; set; } = null;
+
+    internal MockContentPrior? PriorContent = null;
 
     public IEnumerable<ILoadableAsset> LoadableAssets
     {
         get
         {
-            if (TextureAssetGroup is not null)
-                yield return TextureAssetGroup;
+            if (TxAssetGroup is not null)
+                yield return TxAssetGroup;
         }
     }
     public IEnumerable<IEditableAsset> EditableAssets
@@ -77,14 +97,12 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
         }
     }
 
-    public TranslationStore? Translations = new(manifest.TranslationFolder);
-
     public void Save()
     {
-        string targetPath = manifest.OutputFolder;
+        string targetPath = Manifest.OutputFolder;
         Directory.CreateDirectory(targetPath);
 
-        manifest.PackFor = PackFor;
+        Manifest.PackFor = PackFor;
 
         string dataDir = Path.Combine(targetPath, Utils.DATA_DIR);
         string assetsDir = Path.Combine(targetPath, Utils.ASSETS_DIR);
@@ -105,7 +123,7 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
             foreach (IEditableAsset editable in EditableAssets)
             {
                 translationRequiresLoad =
-                    editable.GetTranslations(ref Translations, manifest.Name) || translationRequiresLoad;
+                    editable.GetTranslations(ref Translations, Manifest.Name) || translationRequiresLoad;
             }
             if (translationRequiresLoad)
             {
@@ -158,16 +176,16 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
         {
             if ((mockPatch.When?.TryGetValue("HasMod", out object? maybeModId) ?? false) && maybeModId is string modId)
             {
-                manifest.OptionalDependencies.Add(modId);
+                Manifest.OptionalDependencies.Add(modId);
             }
             if (mockPatch is MockInclude inc)
             {
                 includeList.Add(inc.FromFile);
             }
         }
-        manifest.StardewModSmithyInfo.Generated = [Utils.MANIFEST_FILE, "content.json", .. includeList];
-        manifest.StardewModSmithyInfo.Custom = [];
-        manifest.StardewModSmithyInfo.I18N = translationFiles;
+        Manifest.StardewModSmithyInfo.Generated = [Utils.MANIFEST_FILE, Utils.CONTENT_JSON, .. includeList];
+        Manifest.StardewModSmithyInfo.Custom = [];
+        Manifest.StardewModSmithyInfo.I18N = translationFiles;
         string customDir = Path.Combine(targetPath, Utils.CUSTOM_DIR);
         if (Directory.Exists(customDir))
         {
@@ -177,7 +195,7 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
                     continue;
                 string fileName = Path.GetFileName(file);
                 changes.Add(new MockInclude(Path.Combine(Utils.CUSTOM_DIR, fileName)));
-                manifest.StardewModSmithyInfo.Custom.Add(fileName);
+                Manifest.StardewModSmithyInfo.Custom.Add(fileName);
             }
         }
         else
@@ -191,35 +209,52 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
         }
 
         // content.json
-        ModEntry.WriteJson(targetPath, "content.json", new MockContentMain(changes));
+        ModEntry.WriteJson(
+            targetPath,
+            Utils.CONTENT_JSON,
+            new MockContentMain(changes)
+            {
+                ConfigSchema = PriorContent?.ConfigSchema,
+                DynamicTokens = PriorContent?.DynamicTokens,
+            }
+        );
         // manifest.json
-        ModEntry.WriteJson(targetPath, Utils.MANIFEST_FILE, manifest);
+        Manifest.Save();
 
         if (Utils.StageByCopy)
         {
-            string stagingDir = Path.Combine(ModEntry.StagingDirectoryPath, Path.GetFileName(manifest.OutputFolder));
+            string stagingDir = Path.Combine(ModEntry.StagingDirectoryPath, Path.GetFileName(Manifest.OutputFolder));
             try
             {
                 if (Directory.Exists(stagingDir))
+                {
+                    string configFile = Path.Combine(stagingDir, Utils.CONFIG_JSON);
+                    if (File.Exists(configFile))
+                    {
+                        File.Move(configFile, Path.Combine(Manifest.OutputFolder, Utils.CONFIG_JSON), overwrite: true);
+                    }
                     Directory.Delete(stagingDir, true);
-                Utils.CopyDirectory(manifest.OutputFolder, stagingDir, true);
+                }
+                Utils.CopyDirectory(Manifest.OutputFolder, stagingDir, true);
             }
             catch (Exception err)
             {
-                ModEntry.Log($"Failed to copy '{manifest.OutputFolder}' to '{stagingDir}'\n{err}", LogLevel.Warn);
+                ModEntry.Log($"Failed to copy '{Manifest.OutputFolder}' to '{stagingDir}'\n{err}", LogLevel.Warn);
             }
         }
 
-        ModEntry.PatchReload(targetPath, manifest.UniqueID);
+        ModEntry.PatchReload(targetPath, Manifest.UniqueID);
     }
 
     public void Load()
     {
-        string targetPath = manifest.OutputFolder;
+        string targetPath = Manifest.OutputFolder;
 
         string dataDir = Path.Combine(targetPath, Utils.DATA_DIR);
         if (!Directory.Exists(dataDir))
             return;
+
+        PriorContent = ModEntry.ReadJson<MockContentPrior>(Path.Combine(targetPath, Utils.CONTENT_JSON));
 
         foreach (string file in Directory.GetFiles(dataDir))
         {

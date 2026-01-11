@@ -55,10 +55,16 @@ public sealed partial record TextureAsset(IAssetName AssetName, string PathOnDis
             {
                 return string.Concat(
                     Path.GetFileNameWithoutExtension(PathOnDisk),
-                    I18n.Gui_Tooltip_Atlas(TextureAtlas.Count)
+                    I18n.Gui_Tooltip_Atlas(TextureAtlas.Count),
+                    '\n',
+                    I18n.Gui_Tooltip_TxSize(Texture.Width, Texture.Height)
                 );
             }
-            return Path.GetFileName(PathOnDisk);
+            return string.Concat(
+                Path.GetFileName(PathOnDisk),
+                '\n',
+                I18n.Gui_Tooltip_TxSize(Texture.Width, Texture.Height)
+            );
         }
     }
 

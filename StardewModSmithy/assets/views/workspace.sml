@@ -48,7 +48,16 @@
                 <lane layout="220px content" margin="8,0" orientation="vertical">
                   <button hover-background={@Mods/StardewUI/Sprites/ButtonLight}
                     layout="stretch content"
+                    font="small"
                     margin="0,8"
+                    text={#gui.button.edit-furniture}
+                    opacity="0.5"
+                    +state:canshow={:CanShowEdit_Furniture}
+                    +state:canshow:opacity="1.0"
+                    left-click=|ShowEdit_Furniture()|
+                  />
+                  <button hover-background={@Mods/StardewUI/Sprites/ButtonLight}
+                    layout="stretch content"
                     font="small"
                     text={#gui.button.edit-wallfloor}
                     opacity="0.5"
@@ -57,15 +66,6 @@
                     +state:canshow:opacity="1.0"
                     +state:canshow:tooltip=""
                     left-click=|ShowEdit_WallFloor()|
-                  />
-                  <button hover-background={@Mods/StardewUI/Sprites/ButtonLight}
-                    layout="stretch content"
-                    font="small"
-                    text={#gui.button.edit-furniture}
-                    opacity="0.5"
-                    +state:canshow={:CanShowEdit_Furniture}
-                    +state:canshow:opacity="1.0"
-                    left-click=|ShowEdit_Furniture()|
                   />
                 </lane>
                 <image sprite={@mushymato.StardewModSmithy/sprites/cursors:hammerButton}
@@ -203,13 +203,30 @@
       </scrollable>
     </lane>
     <!-- About -->
-    <lane *case="about" *context={:ModConfig} orientation="vertical">
-      <banner margin="8" text={#gui.label.about} layout="content content"/>
-      <about-label text={#gui.paragraph.about.0} />
-      <about-label text={#gui.paragraph.about.1} />
-      <about-label text={#gui.paragraph.about.2} />
-      <about-label text={#gui.paragraph.about.3} />
-    </lane>
+    <scrollable *case="about" peeking="128" scrollbar-margin="8,0,0,0">
+      <lane orientation="vertical">
+        <about-banner text={#gui.label.about} />
+        <about-label text={#gui.paragraph.about.0} />
+        <about-label text={#gui.paragraph.about.1} />
+        <about-label text={#gui.paragraph.about.2} />
+        <about-banner text={#gui.paragraph.faq.0.q} />
+        <about-label text={#gui.paragraph.faq.0.a.0} />
+        <about-label text={#gui.paragraph.faq.0.a.1} />
+        <about-banner text={#gui.paragraph.faq.1.q} />
+        <about-label text={#gui.paragraph.faq.1.a} />
+        <about-banner text={#gui.paragraph.faq.2.q} />
+        <about-label text={#gui.paragraph.faq.2.a.0} />
+        <about-label text={#gui.paragraph.faq.2.a.1} />
+        <about-label text={#gui.paragraph.faq.2.a.2} />
+        <about-label text={#gui.paragraph.faq.2.a.3} />
+        <about-label text={#gui.paragraph.faq.2.a.4} />
+        <about-banner text={#gui.paragraph.faq.3.q} />
+        <about-label text={#gui.paragraph.faq.3.a} />
+        <about-banner text={#gui.paragraph.faq.4.q} />
+        <about-label text={#gui.paragraph.faq.4.a.0} />
+        <about-label text={#gui.paragraph.faq.4.a.1} />
+      </lane>
+    </scrollable>
   </frame>
 </lane>
 
@@ -237,6 +254,10 @@
             text={&title}/>
     <outlet />
   </lane>
+</template>
+
+<template name="about-banner">
+  <banner text={&text} margin="8" layout="content content"/>
 </template>
 
 <template name="about-label">

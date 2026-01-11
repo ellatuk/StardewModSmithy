@@ -12,6 +12,8 @@ internal static class Utils
     internal const string EDITING_INPUT = "editing/input";
     internal const string EDITING_OUTPUT = "editing/output";
     internal const string MANIFEST_FILE = "manifest.json";
+    internal const string CONTENT_JSON = "content.json";
+    internal const string CONFIG_JSON = "config.json";
     internal const string ATLAS_SUFFIX = ".atlas.json";
     internal const string TL_DIR = "i18n";
     internal const string ASSETS_DIR = "assets";

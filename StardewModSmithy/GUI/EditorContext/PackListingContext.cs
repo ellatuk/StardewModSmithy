@@ -70,7 +70,7 @@ public record PackDisplayEntry(IOutputPack Pack) : INotifyPropertyChanged
         {
             if (isExpanded && !value)
             {
-                Pack.Save();
+                Pack.Manifest.Save();
             }
             isExpanded = value;
             OnPropertyChanged(new(nameof(IsExpanded)));
@@ -86,23 +86,17 @@ public record PackDisplayEntry(IOutputPack Pack) : INotifyPropertyChanged
     public void BrowsePackFolder() => Utils.BrowseFolder(Pack.Manifest.OutputFolder, false);
 
     public bool CanShowEdit_Furniture =>
-        Pack is OutputPackContentPatcher outputPackContentPatcher
-        && outputPackContentPatcher.TextureAssetGroup != null
-        && outputPackContentPatcher.TextureAssetGroup.GatheredTextures.Any();
+        Pack is OutputPackContentPatcher && (Pack.TxAssetGroup?.GatheredTextures.Any() ?? false);
 
     public void ShowEdit_Furniture()
     {
         IsExpanded = false;
-
-        if (
-            Pack is OutputPackContentPatcher outputPackContentPatcher
-            && outputPackContentPatcher.TextureAssetGroup != null
-        )
+        if (Pack is OutputPackContentPatcher outputPackContentPatcher && outputPackContentPatcher.TxAssetGroup != null)
         {
             outputPackContentPatcher.FurniAsset ??= new();
             outputPackContentPatcher.FurniAsset.SetTranslations(outputPackContentPatcher.Translations);
             EditorMenuManager.ShowFurnitureEditor(
-                outputPackContentPatcher.TextureAssetGroup,
+                outputPackContentPatcher.TxAssetGroup,
                 outputPackContentPatcher.FurniAsset,
                 outputPackContentPatcher.Save
             );
@@ -114,22 +108,18 @@ public record PackDisplayEntry(IOutputPack Pack) : INotifyPropertyChanged
     }
 
     public bool CanShowEdit_WallFloor =>
-        Pack is OutputPackContentPatcher outputPackContentPatcher
-        && outputPackContentPatcher.TextureAssetGroup != null
-        && outputPackContentPatcher.TextureAssetGroup.GatheredTextures.Values.Any(WallpaperFlooringAsset.TextureFilter);
+        Pack is OutputPackContentPatcher
+        && (Pack.TxAssetGroup?.GatheredTextures.Values.Any(WallpaperFlooringAsset.TextureFilter) ?? false);
 
     public void ShowEdit_WallFloor()
     {
         IsExpanded = false;
-        if (
-            Pack is OutputPackContentPatcher outputPackContentPatcher
-            && outputPackContentPatcher.TextureAssetGroup != null
-        )
+        if (Pack is OutputPackContentPatcher outputPackContentPatcher && outputPackContentPatcher.TxAssetGroup != null)
         {
             outputPackContentPatcher.WallAndFloorAsset ??= new();
             outputPackContentPatcher.WallAndFloorAsset.SetTranslations(outputPackContentPatcher.Translations);
             EditorMenuManager.ShowWallpaperAndFlooringEditor(
-                outputPackContentPatcher.TextureAssetGroup,
+                outputPackContentPatcher.TxAssetGroup,
                 outputPackContentPatcher.WallAndFloorAsset,
                 outputPackContentPatcher.Save
             );
@@ -215,7 +205,7 @@ public partial class PackListingContext(TextureAssetGroup textureAssetGroup, Lis
             // TODO: assume content patcher for now
             OutputPackContentPatcher outputContentPatcher = new(manifest);
             outputContentPatcher.Load();
-            outputContentPatcher.TextureAssetGroup = textureAssetGroup;
+            outputContentPatcher.TxAssetGroup = textureAssetGroup;
             outputPacks.Add(outputContentPatcher);
         }
         return new PackListingContext(textureAssetGroup, outputPacks);
@@ -236,7 +226,7 @@ public partial class PackListingContext(TextureAssetGroup textureAssetGroup, Lis
             UniqueID = uniqueID,
         };
         NewModName = string.Empty;
-        OutputPackContentPatcher outputPackContentPatcher = new(manifest) { TextureAssetGroup = textureAssetGroup };
+        OutputPackContentPatcher outputPackContentPatcher = new(manifest) { TxAssetGroup = textureAssetGroup };
         outputPackContentPatcher.Save();
         editablePacks.Add(outputPackContentPatcher);
         PackDisplayEntry packDisplay = new(outputPackContentPatcher);
