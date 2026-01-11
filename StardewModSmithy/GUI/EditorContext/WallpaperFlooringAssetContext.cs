@@ -1,7 +1,6 @@
 using PropertyChanged.SourceGenerator;
 using StardewModSmithy.GUI.ViewModels;
 using StardewModSmithy.Models;
-using StardewModSmithy.Wheels;
 
 namespace StardewModSmithy.GUI.EditorContext;
 
@@ -53,6 +52,8 @@ public partial class WallpaperFlooringAssetContext : AbstractEditableAssetContex
             Create();
         }
     }
+
+    public override void SetSpriteIndex(object? sender, int spriteIndex) { }
 
     public override void Create()
     {

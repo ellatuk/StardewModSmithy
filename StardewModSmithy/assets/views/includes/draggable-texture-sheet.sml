@@ -55,7 +55,7 @@
         opacity="0.5"/>
       <label text={BoundsLabel} font="dialogue" color="White" margin="12,2,0,0" scale="1.5" shadow-alpha="1" shadow-color="#4448" shadow-offset="-4, 4"/>
     </panel>
-    <frame *if={CanDrag}
+    <frame *if={CanChangeMode}
         *context={:MovementMode}
         background={@Mods/StardewUI/Sprites/MenuSlotOutset}
         margin="0,-64,0,0"

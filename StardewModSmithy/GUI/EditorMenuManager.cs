@@ -124,7 +124,7 @@ internal static class EditorMenuManager
     )
     {
         if (
-            DraggableTextureContext.Initialize(textureAssetGroup, enableFront: true)
+            DraggableTextureContext.Initialize(textureAssetGroup, enableFront: true, dragAllow: DragAllowMode.Allowed)
             is not DraggableTextureContext draggableTextureContext
         )
             return;
@@ -144,7 +144,7 @@ internal static class EditorMenuManager
             DraggableTextureContext.Initialize(
                 textureAssetGroup,
                 textureFilter: WallpaperFlooringAsset.TextureFilter,
-                canDrag: false
+                dragAllow: DragAllowMode.SheetOnlyUncapped
             )
             is not DraggableTextureContext draggableTextureContext
         )

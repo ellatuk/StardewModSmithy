@@ -83,7 +83,7 @@ public record PackDisplayEntry(IOutputPack Pack) : INotifyPropertyChanged
 
     public bool IsLoaded => ModEntry.ModRegistry.IsLoaded(Pack.Manifest.UniqueID);
 
-    public void BrowsePackFolder() => Consts.BrowseFolder(Pack.Manifest.OutputFolder, false);
+    public void BrowsePackFolder() => Utils.BrowseFolder(Pack.Manifest.OutputFolder, false);
 
     public bool CanShowEdit_Furniture =>
         Pack is OutputPackContentPatcher outputPackContentPatcher
@@ -149,8 +149,7 @@ public partial class PackListingContext(TextureAssetGroup textureAssetGroup, Lis
 
     public bool HasTextures => Textures.Any();
 
-    public string PutTexturesMessage =>
-        I18n.Message_PutTexture(Path.Combine(ModEntry.DirectoryPath, Consts.ASSETS_DIR));
+    public string PutTexturesMessage => I18n.Message_PutTexture(Path.Combine(ModEntry.DirectoryPath, Utils.ASSETS_DIR));
 
     public void ReloadTextures()
     {
@@ -159,7 +158,7 @@ public partial class PackListingContext(TextureAssetGroup textureAssetGroup, Lis
         OnPropertyChanged(new(nameof(HasTextures)));
     }
 
-    public void BrowseTextureFolder() => Consts.BrowseFolder(ModEntry.InputDirectoryPath);
+    public void BrowseTextureFolder() => Utils.BrowseFolder(ModEntry.InputDirectoryPath);
 
     [Notify]
     private string newModName = string.Empty;
@@ -257,7 +256,6 @@ public partial class PackListingContext(TextureAssetGroup textureAssetGroup, Lis
         {
             return false;
         }
-
         return true;
     }
 }

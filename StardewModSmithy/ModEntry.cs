@@ -81,8 +81,8 @@ public sealed class ModEntry : Mod
         ParseAssetName = helper.GameContent.ParseAssetName;
         DirectoryPath = helper.DirectoryPath;
         StagingDirectoryPath = string.Concat(DirectoryPath, ".Staging");
-        InputDirectoryPath = Path.Combine(DirectoryPath, Consts.EDITING_INPUT);
-        OutputDirectoryPath = Path.Combine(DirectoryPath, Consts.EDITING_OUTPUT);
+        InputDirectoryPath = Path.Combine(DirectoryPath, Utils.EDITING_INPUT);
+        OutputDirectoryPath = Path.Combine(DirectoryPath, Utils.EDITING_OUTPUT);
         ModContent = helper.ModContent;
 
         helper.ConsoleCommands.Add("sms-show", "show smithy menu to edit your mods.", ConsoleShowWorkspace);
@@ -115,35 +115,42 @@ public sealed class ModEntry : Mod
         {
             Log($"Failed to create '{OutputDirectoryPath}', please manually create this folder\n{err}", LogLevel.Error);
         }
-        try
+
+        if (Utils.StageByCopy)
         {
-            DirectoryInfo dirInfo = new(StagingDirectoryPath);
-            if (dirInfo.Exists)
-            {
-                if (dirInfo.LinkTarget != OutputDirectoryPath)
-                {
-                    Log($"DIR LINK {dirInfo.LinkTarget} {OutputDirectoryPath}");
-                    Directory.Delete(StagingDirectoryPath, true);
-                }
-                else
-                {
-                    return;
-                }
-            }
-            FileInfo fileInfo = new(StagingDirectoryPath);
-            if (fileInfo.Exists && fileInfo.LinkTarget != OutputDirectoryPath)
-            {
-                Log("FILE LINK");
-                File.Delete(StagingDirectoryPath);
-            }
-            Directory.CreateSymbolicLink(StagingDirectoryPath, OutputDirectoryPath);
+            Directory.CreateDirectory(StagingDirectoryPath);
         }
-        catch (Exception err)
+        else
         {
-            Log(
-                $"Failed to link output to '{StagingDirectoryPath}', please manually delete this folder/file then try again\n{err}",
-                LogLevel.Error
-            );
+            try
+            {
+                DirectoryInfo dirInfo = new(StagingDirectoryPath);
+                if (dirInfo.Exists)
+                {
+                    if (dirInfo.LinkTarget != OutputDirectoryPath)
+                    {
+                        Directory.Delete(StagingDirectoryPath, true);
+                    }
+                    else
+                    {
+                        return;
+                    }
+                }
+                FileInfo fileInfo = new(StagingDirectoryPath);
+                if (fileInfo.Exists && fileInfo.LinkTarget != OutputDirectoryPath)
+                {
+                    File.Delete(StagingDirectoryPath);
+                }
+                File.CreateSymbolicLink(StagingDirectoryPath, OutputDirectoryPath);
+            }
+            catch (Exception err)
+            {
+                Log(
+                    $"Failed to create a symlink from '{OutputDirectoryPath}' to '{StagingDirectoryPath}', content packs made by this mod will not be auto-installed",
+                    LogLevel.Error
+                );
+                Log(err.ToString(), LogLevel.Trace);
+            }
         }
     }
 

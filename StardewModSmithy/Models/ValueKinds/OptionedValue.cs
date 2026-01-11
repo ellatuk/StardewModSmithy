@@ -19,6 +19,6 @@ public sealed class OptionedValue<T>(IList<T> options, T defaultValue)
 
     public override string ToString()
     {
-        return Value?.ToString() ?? Consts.DEFAULT_STR;
+        return Value?.ToString() ?? Utils.DEFAULT_STR;
     }
 }

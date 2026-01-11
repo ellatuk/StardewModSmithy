@@ -30,7 +30,7 @@ public sealed partial record TextureAsset(IAssetName AssetName, string PathOnDis
         string atlasPath = Path.Combine(
             ModEntry.DirectoryPath,
             Path.GetDirectoryName(PathOnDisk) ?? "",
-            string.Concat(Path.GetFileNameWithoutExtension(PathOnDisk), Consts.ATLAS_SUFFIX)
+            string.Concat(Path.GetFileNameWithoutExtension(PathOnDisk), Utils.ATLAS_SUFFIX)
         );
         if (!File.Exists(atlasPath))
             return null;
@@ -79,7 +79,7 @@ public sealed class TextureAssetGroup() : ILoadableAsset
         Dictionary<IAssetName, TextureAsset> newlyGathered = [];
         foreach (string dir in Directory.GetDirectories(ModEntry.InputDirectoryPath))
         {
-            if (File.Exists(string.Concat(dir, Consts.ATLAS_SUFFIX)))
+            if (File.Exists(string.Concat(dir, Utils.ATLAS_SUFFIX)))
                 continue;
             SpritePacker.Pack(dir);
         }

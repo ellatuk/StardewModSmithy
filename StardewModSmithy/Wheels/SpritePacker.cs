@@ -17,7 +17,7 @@ public record TxToPack(string RelPath, Texture2D Texture)
         CeilingByTile(Texture.Bounds.Height)
     );
 
-    private static int CeilingByTile(int value) => (int)(MathF.Ceiling(value / (float)Consts.TX_TILE) * Consts.TX_TILE);
+    private static int CeilingByTile(int value) => (int)(MathF.Ceiling(value / (float)Utils.TX_TILE) * Utils.TX_TILE);
 
     public Point TargetPos { get; set; }
 
@@ -150,7 +150,7 @@ internal static class SpritePacker
                 return a.Area.X.CompareTo(b.Area.X);
             }
         );
-        ModEntry.WriteJson(ModEntry.InputDirectoryPath, string.Concat(subdir, Consts.ATLAS_SUFFIX), txAtlasEntries);
+        ModEntry.WriteJson(ModEntry.InputDirectoryPath, string.Concat(subdir, Utils.ATLAS_SUFFIX), txAtlasEntries);
 
         ModEntry.Log($"Packed textures from '{subdir}'");
         return;

@@ -1,36 +1,10 @@
 <panel layout="100% 100%" horizontal-content-alignment="end">
   <include name="mushymato.StardewModSmithy/views/includes/draggable-texture-sheet" *context={:TextureContext}/>
   <lane layout="500px content" orientation="vertical" *context={:EditableContext}>
-    <frame layout="stretch content" padding="30,20" border={@Mods/StardewUI/Sprites/ControlBorder}>
-      <lane orientation="vertical">
-        <include name="mushymato.StardewModSmithy/views/includes/bounds-provider-selector" *context={:BoundsProviderSelector}/>
-        <grid layout="stretch content" item-layout="count: 2" item-spacing="4,4" >
-          <button hover-background={@Mods/StardewUI/Sprites/ButtonLight}
-            layout="stretch 56px"
-            text={#gui.button.create}
-            left-click=|Create()|
-          />
-          <button hover-background={@Mods/StardewUI/Sprites/ButtonLight}
-            layout="stretch 56px"
-            text={#gui.button.delete}
-            left-click=|Delete()|
-          />
-          <button hover-background={@Mods/StardewUI/Sprites/ButtonLight}
-            layout="stretch 56px"
-            text={#gui.button.save}
-            left-click=|Save()|
-          />
-          <button hover-background={@Mods/StardewUI/Sprites/ButtonLight}
-            layout="stretch 56px"
-            text={#gui.button.exit}
-            left-click=|Exit()|
-          />
-        </grid>
-        <label layout="stretch content" opacity="0.6" text={LastSavedMessage}/>
-      </lane>
-    </frame>
+    <!-- General Controls -->
+    <include name="mushymato.StardewModSmithy/views/includes/general-controls" />
     <!-- wallpaper/floor Edit -->
-    <frame layout="stretch content" padding="32,16,32,32" border={@Mods/StardewUI/Sprites/ControlBorder} *if={HasBoundsProvider}>
+    <frame layout="stretch content" padding="32,24,32,32" border={@Mods/StardewUI/Sprites/ControlBorder} *if={HasBoundsProvider}>
       <lane orientation="vertical" *context={Selected}>
         <form-row title={#gui.label.count}>
           <spin-box *context={Count} />

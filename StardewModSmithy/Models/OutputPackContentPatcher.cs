@@ -86,8 +86,8 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
 
         manifest.PackFor = PackFor;
 
-        string dataDir = Path.Combine(targetPath, Consts.DATA_DIR);
-        string assetsDir = Path.Combine(targetPath, Consts.ASSETS_DIR);
+        string dataDir = Path.Combine(targetPath, Utils.DATA_DIR);
+        string assetsDir = Path.Combine(targetPath, Utils.ASSETS_DIR);
 
         if (Directory.Exists(dataDir))
             Directory.Delete(dataDir, true);
@@ -112,14 +112,14 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
                 changes.Add(
                     new MockLoad(
                         TranslationString.I18N_Asset,
-                        Path.Combine(Consts.TL_DIR, TranslationStore.DefaultFilename)
+                        Path.Combine(Utils.TL_DIR, TranslationStore.DefaultFilename)
                     )
                     {
                         Priority = AssetLoadPriority.Low.ToString(),
                     }
                 );
                 changes.Add(
-                    new MockLoad(TranslationString.I18N_Asset, Path.Combine(Consts.TL_DIR, "{{Language}}.json"))
+                    new MockLoad(TranslationString.I18N_Asset, Path.Combine(Utils.TL_DIR, "{{Language}}.json"))
                     {
                         When = new() { ["HasFile:{{FromFile}}"] = true },
                     }
@@ -137,7 +137,7 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
                 File.Delete(Path.Combine(dataDir, editable.IncludeName));
                 continue;
             }
-            changes.Add(new MockInclude(Path.Combine(Consts.DATA_DIR, editable.IncludeName)));
+            changes.Add(new MockInclude(Path.Combine(Utils.DATA_DIR, editable.IncludeName)));
             ModEntry.WriteJson(dataDir, editable.IncludeName, new MockContent(patches));
             requiredAssets.AddRange(editable.GetRequiredAssets());
         }
@@ -149,7 +149,7 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
                 is ValueTuple<string, string> result
             )
             {
-                changes.Add(new MockLoad(result.Item1, Path.Join(Consts.ASSETS_DIR, result.Item2)));
+                changes.Add(new MockLoad(result.Item1, Path.Join(Utils.ASSETS_DIR, result.Item2)));
             }
         }
 
@@ -165,10 +165,10 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
                 includeList.Add(inc.FromFile);
             }
         }
-        manifest.StardewModSmithyInfo.Generated = [Consts.MANIFEST_FILE, "content.json", .. includeList];
+        manifest.StardewModSmithyInfo.Generated = [Utils.MANIFEST_FILE, "content.json", .. includeList];
         manifest.StardewModSmithyInfo.Custom = [];
         manifest.StardewModSmithyInfo.I18N = translationFiles;
-        string customDir = Path.Combine(targetPath, Consts.CUSTOM_DIR);
+        string customDir = Path.Combine(targetPath, Utils.CUSTOM_DIR);
         if (Directory.Exists(customDir))
         {
             foreach (string file in Directory.GetFiles(customDir))
@@ -176,7 +176,7 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
                 if (!file.EndsWith(".json"))
                     continue;
                 string fileName = Path.GetFileName(file);
-                changes.Add(new MockInclude(Path.Combine(Consts.CUSTOM_DIR, fileName)));
+                changes.Add(new MockInclude(Path.Combine(Utils.CUSTOM_DIR, fileName)));
                 manifest.StardewModSmithyInfo.Custom.Add(fileName);
             }
         }
@@ -193,7 +193,22 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
         // content.json
         ModEntry.WriteJson(targetPath, "content.json", new MockContentMain(changes));
         // manifest.json
-        ModEntry.WriteJson(targetPath, Consts.MANIFEST_FILE, manifest);
+        ModEntry.WriteJson(targetPath, Utils.MANIFEST_FILE, manifest);
+
+        if (Utils.StageByCopy)
+        {
+            string stagingDir = Path.Combine(ModEntry.StagingDirectoryPath, Path.GetFileName(manifest.OutputFolder));
+            try
+            {
+                if (Directory.Exists(stagingDir))
+                    Directory.Delete(stagingDir, true);
+                Utils.CopyDirectory(manifest.OutputFolder, stagingDir, true);
+            }
+            catch (Exception err)
+            {
+                ModEntry.Log($"Failed to copy '{manifest.OutputFolder}' to '{stagingDir}'\n{err}", LogLevel.Warn);
+            }
+        }
 
         ModEntry.PatchReload(targetPath, manifest.UniqueID);
     }
@@ -202,7 +217,7 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
     {
         string targetPath = manifest.OutputFolder;
 
-        string dataDir = Path.Combine(targetPath, Consts.DATA_DIR);
+        string dataDir = Path.Combine(targetPath, Utils.DATA_DIR);
         if (!Directory.Exists(dataDir))
             return;
 

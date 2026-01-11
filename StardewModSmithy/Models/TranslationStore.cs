@@ -31,20 +31,21 @@ public sealed class TranslationStore(string translationsDir)
 
     internal void SetDataKeyValue(string key, string value, bool overwrite = true)
     {
-        ModEntry.Log($"Code {Code}");
         if (overwrite || !Data.ContainsKey(key))
             Data[key] = value;
         if (!DefaultData.ContainsKey(key))
         {
-            DefaultData[key] = value.Equals(Consts.DEFAULT_STR) ? key : value;
+            DefaultData[key] = value.Equals(Utils.DEFAULT_STR) ? key : value;
         }
     }
 
     internal void WriteI18NData()
     {
         Directory.CreateDirectory(translationsDir);
-        // i18n/{langaugecode}.json and i18n/default.json
-        ModEntry.WriteJson(translationsDir, DefaultFilename, DefaultData);
+        // i18n/default.json
+        if (DefaultData.Any())
+            ModEntry.WriteJson(translationsDir, DefaultFilename, DefaultData);
+        // i18n/{langaugecode}.json
         foreach ((LocalizedContentManager.LanguageCode lang, Dictionary<string, string> data) in PerLang)
         {
             if (data.Any())
