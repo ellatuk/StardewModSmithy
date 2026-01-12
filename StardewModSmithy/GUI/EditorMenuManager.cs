@@ -21,8 +21,6 @@ internal static class EditorMenuManager
     internal static readonly PerScreen<bool> showWorkspaceNextTick = new();
     private static IModHelper helper = null!;
 
-    private static readonly KeybindList toggleMovingMode = new(SButton.MouseMiddle);
-
     internal static void Register(IModHelper helper)
     {
         EditorMenuManager.helper = helper;
@@ -57,9 +55,9 @@ internal static class EditorMenuManager
 
     private static void OnButtonsChanged_DragSheet(object? sender, ButtonsChangedEventArgs e)
     {
-        if (toggleMovingMode.JustPressed())
+        if (ModEntry.Config.ToggleDragModeKey.JustPressed())
         {
-            editorContext.Value?.TextureContext.ToggleMovementMode();
+            editorContext.Value?.TextureContext.ToggleDragMode();
         }
     }
 

@@ -48,6 +48,7 @@ public partial class DraggableTextureContext(
 
     public bool CanDrag => tileUnit > 0 && dragAllow != DragAllowMode.None;
     public bool CanChangeMode => tileUnit > 0 && dragAllow == DragAllowMode.Allowed;
+    public bool AlwaysSyncDrag => dragAllow == DragAllowMode.SheetOnlyUncapped;
 
     [Notify]
     public TextureAsset selected =
@@ -77,7 +78,7 @@ public partial class DraggableTextureContext(
     [DependsOn(nameof(SelectedFront))]
     public SDUISprite? SheetFront => SelectedFront?.UISprite;
 
-    public EnumSegmentsViewModel<DragMovementMode> MovementMode = new()
+    public EnumSegmentsViewModel<DragMovementMode> DragMode = new()
     {
         SelectedValue = dragAllow == DragAllowMode.SheetOnlyUncapped ? DragMovementMode.Sheet : DragMovementMode.Bounds,
     };
@@ -96,6 +97,8 @@ public partial class DraggableTextureContext(
 
     [Notify]
     private IBoundsProvider? boundsProvider = null;
+
+    public bool HasBoundsProvider => BoundsProvider != null;
 
     [Notify]
     public int spriteIndex = 0;
@@ -143,22 +146,25 @@ public partial class DraggableTextureContext(
 
         if (boundsProvider == null)
         {
-            if (MovementMode.SelectedValue == DragMovementMode.Bounds)
+            if (DragMode.SelectedValue == DragMovementMode.Bounds)
                 BoundsPadding = newBoundsPadding;
             else
                 SheetMargin = newSheetMargin;
             return;
         }
-
         int xDelta = (newBoundsPadding.Left - newSheetMargin.Left) / tileUnit;
-        if (dragAllow == DragAllowMode.Allowed)
-            xDelta = Math.Max(0, Math.Min(xDelta, Sheet.IndexColCnt - boundsProvider.TilesheetSize.X));
         int yDelta = (newBoundsPadding.Top - newSheetMargin.Top) / tileUnit;
-        if (dragAllow == DragAllowMode.Allowed)
-            yDelta = Math.Max(0, Math.Min(yDelta, Sheet.IndexRowCnt - boundsProvider.TilesheetSize.Y));
-        SpriteIndex = yDelta * Sheet.IndexColCnt + xDelta;
 
-        if (MovementMode.SelectedValue == DragMovementMode.Bounds)
+        xDelta = Math.Max(0, Math.Min(xDelta, Sheet.IndexColCnt - boundsProvider.TilesheetSize.X));
+        yDelta = Math.Max(0, Math.Min(yDelta, Sheet.IndexRowCnt - boundsProvider.TilesheetSize.Y));
+        int oldSpriteIndex = SpriteIndex;
+        SpriteIndex = yDelta * Sheet.IndexColCnt + xDelta;
+        if (oldSpriteIndex != SpriteIndex)
+        {
+            Dragged?.Invoke(this, SpriteIndex);
+        }
+
+        if (DragMode.SelectedValue == DragMovementMode.Bounds)
         {
             BoundsPadding = new(newSheetMargin.Left + xDelta * tileUnit, newSheetMargin.Top + yDelta * tileUnit, 0, 0);
         }
@@ -170,10 +176,6 @@ public partial class DraggableTextureContext(
                 0,
                 0
             );
-            if (dragAllow == DragAllowMode.SheetOnlyUncapped)
-            {
-                BoundsPadding = SheetMargin;
-            }
         }
     }
 
@@ -204,18 +206,8 @@ public partial class DraggableTextureContext(
         if (!CanDrag)
             return;
 
-        int newOffsetX;
-        int newOffsetY;
-        if (MovementMode.SelectedValue == DragMovementMode.Bounds)
-        {
-            newOffsetX = boundsPadding.Left;
-            newOffsetY = boundsPadding.Top;
-        }
-        else
-        {
-            newOffsetX = sheetMargin.Left;
-            newOffsetY = sheetMargin.Top;
-        }
+        int newOffsetX = 0;
+        int newOffsetY = 0;
 
         Vector2 dragChange = position - lastDragPos;
         int dragTileCnt;
@@ -235,9 +227,27 @@ public partial class DraggableTextureContext(
             changed = true;
         }
 
+        if (AlwaysSyncDrag || ModEntry.Config.SyncDragKey.IsDown())
+        {
+            SheetMargin = new(sheetMargin.Left + newOffsetX, sheetMargin.Top + newOffsetY, 0, 0);
+            BoundsPadding = new(boundsPadding.Left + newOffsetX, boundsPadding.Top + newOffsetY, 0, 0);
+            return;
+        }
+
+        if (DragMode.SelectedValue == DragMovementMode.Bounds)
+        {
+            newOffsetX += boundsPadding.Left;
+            newOffsetY += boundsPadding.Top;
+        }
+        else
+        {
+            newOffsetX += sheetMargin.Left;
+            newOffsetY += sheetMargin.Top;
+        }
+
         if (changed)
         {
-            if (MovementMode.SelectedValue == DragMovementMode.Bounds)
+            if (DragMode.SelectedValue == DragMovementMode.Bounds)
             {
                 UpdateSpriteIndex(sheetMargin, new(newOffsetX, newOffsetY, 0, 0));
             }
@@ -263,12 +273,12 @@ public partial class DraggableTextureContext(
         Dragged?.Invoke(this, SpriteIndex);
     }
 
-    public void ToggleMovementMode()
+    public void ToggleDragMode()
     {
-        if (dragAllow == DragAllowMode.SheetOnlyUncapped)
+        if (AlwaysSyncDrag)
             return;
-        MovementMode.SelectedValue =
-            MovementMode.SelectedValue == DragMovementMode.Sheet ? DragMovementMode.Bounds : DragMovementMode.Sheet;
+        DragMode.SelectedValue =
+            DragMode.SelectedValue == DragMovementMode.Sheet ? DragMovementMode.Bounds : DragMovementMode.Sheet;
     }
 
     public void OnEditorBoundsProviderChanged(object? sender, IBoundsProvider? e)

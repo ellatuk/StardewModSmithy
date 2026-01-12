@@ -40,7 +40,7 @@ public sealed class ModEntry : Mod
     #region execute command
     private static Action<string>? AddToRawCommandQueue = null;
 
-    private static Action<string>? Make_AddToDrawCommandQueue()
+    private static Action<string>? Make_AddToRawCommandQueue()
     {
         var scoreType = Type.GetType("StardewModdingAPI.Framework.SCore, StardewModdingAPI")!;
         var commandQueueType = Type.GetType("StardewModdingAPI.Framework.CommandQueue, StardewModdingAPI")!;
@@ -74,6 +74,7 @@ public sealed class ModEntry : Mod
         I18n.Init(helper.Translation);
         mon = Monitor;
         Config = helper.ReadConfig<ModConfig>();
+        Config.SyncDragKey = new();
         Config.doWriteConfig = helper.WriteConfig;
         ModRegistry = helper.ModRegistry;
         ModCreditString = $"by {ModManifest.Name} ({ModManifest.Version}) at ";
@@ -244,7 +245,7 @@ public sealed class ModEntry : Mod
             ContentPatcherVersion = contentPatcher.Manifest.Version.ToString();
             IsContentPatcherLoaded = true;
         }
-        AddToRawCommandQueue = Make_AddToDrawCommandQueue();
+        AddToRawCommandQueue = Make_AddToRawCommandQueue();
     }
 
     private static void ExecuteCommand(string command)

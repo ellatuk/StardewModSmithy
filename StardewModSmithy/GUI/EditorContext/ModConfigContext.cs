@@ -58,4 +58,26 @@ internal sealed record ModConfigContext : INotifyPropertyChanged
             PropertyChanged?.Invoke(this, new(nameof(ShowWorkspaceKey)));
         }
     }
+
+    public KeybindList ToggleDragModeKey
+    {
+        get => config.ToggleDragModeKey;
+        set
+        {
+            config.ToggleDragModeKey = value;
+            config.WriteConfig();
+            PropertyChanged?.Invoke(this, new(nameof(ToggleDragModeKey)));
+        }
+    }
+
+    public KeybindList SyncDragKey
+    {
+        get => config.SyncDragKey;
+        set
+        {
+            config.SyncDragKey = value;
+            config.WriteConfig();
+            PropertyChanged?.Invoke(this, new(nameof(SyncDragKey)));
+        }
+    }
 }

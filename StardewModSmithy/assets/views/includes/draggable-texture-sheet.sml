@@ -13,7 +13,7 @@
           background-tint="Transparent"
           focusable="true"
           padding="4"
-          tooltip={:UITooltip}
+          tooltip={UITooltip}
           left-click=|^SelectTextureAsset(this)|
           right-click=|^SelectTextureAssetFront(this)|
           +transition:background-tint="100ms EaseOutCubic"
@@ -23,7 +23,7 @@
           +state:selected-front={IsSelectedFront}
           +state:selected-front:background-tint="#3344DE"
           >
-          <image layout="192px 192px" sprite={:UISpriteSmall} fit="Cover" vertical-alignment="middle"/>
+          <image layout="256px 128px" sprite={:UISpriteSmall} fit="Cover" vertical-alignment="middle"/>
         </frame>
       </lane>
     </scrollable>
@@ -47,7 +47,7 @@
     drag-end=|SheetDragEnd($Position)|>
     <image sprite={Sheet} margin={SheetMargin} opacity={SheetOpacity} />
     <image *if={HasSheetFront} sprite={SheetFront} margin={SheetMargin} opacity={SheetOpacity} />
-    <panel layout="content content" padding={BoundsPadding} *context={BoundsProvider}>
+    <panel *if={HasBoundsProvider} layout="content content" padding={BoundsPadding} *context={BoundsProvider}>
       <image *repeat={GUI_BoundingSquares} margin={:this} sprite={@mushymato.StardewModSmithy/sprites/cursors:tileGreen} />
       <image sprite={@mushymato.StardewModSmithy/sprites/cursors:borderWhite}
         layout={GUI_TilesheetArea}
@@ -56,7 +56,7 @@
       <label text={BoundsLabel} font="dialogue" color="White" margin="12,2,0,0" scale="1.5" shadow-alpha="1" shadow-color="#4448" shadow-offset="-4, 4"/>
     </panel>
     <frame *if={CanChangeMode}
-        *context={:MovementMode}
+        *context={:DragMode}
         background={@Mods/StardewUI/Sprites/MenuSlotOutset}
         margin="0,-64,0,0"
         padding="4">

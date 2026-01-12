@@ -173,6 +173,22 @@
                 focusable="true"
                 keybind-list={<>ShowWorkspaceKey} />
           </form-row>
+          <form-row title={#gui.label.toggle-drag-mode-key} tooltip={#gui.tooltip.toggle-drag-mode-key}>
+            <keybind-editor button-height="64"
+                sprite-map={@Mods/StardewUI/SpriteMaps/Buttons:default-default-0.5}
+                editable-type="MultipleKeybinds"
+                add-button-text={#gui.label.toggle-drag-mode-key.add}
+                focusable="true"
+                keybind-list={<>ToggleDragModeKey} />
+          </form-row>
+          <form-row title={#gui.label.sync-drag-key} tooltip={#gui.tooltip.sync-drag-key}>
+            <keybind-editor button-height="64"
+                sprite-map={@Mods/StardewUI/SpriteMaps/Buttons:default-default-0.5}
+                editable-type="MultipleKeybinds"
+                add-button-text={#gui.label.sync-drag-key.add}
+                focusable="true"
+                keybind-list={<>SyncDragKey} />
+          </form-row>
           <form-row title={#gui.label.author} tooltip={#gui.tooltip.author-name}>
             <textinput layout="50% 64px" margin="-8,0" font="dialogue" placeholder={#gui.placeholder.author-name} text={<>AuthorName} />
           </form-row>
@@ -225,6 +241,8 @@
         <about-banner text={#gui.paragraph.faq.4.q} />
         <about-label text={#gui.paragraph.faq.4.a.0} />
         <about-label text={#gui.paragraph.faq.4.a.1} />
+        <about-banner text={#gui.paragraph.faq.5.q} />
+        <about-label text={#gui.paragraph.faq.5.a} />
       </lane>
     </scrollable>
   </frame>

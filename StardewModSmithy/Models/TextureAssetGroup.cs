@@ -47,24 +47,27 @@ public sealed partial record TextureAsset(IAssetName AssetName, string PathOnDis
 
     public SDUISprite UISprite => GetUISprite(4);
     public SDUISprite UISpriteSmall => GetUISprite(1);
+
+    public string UILabel =>
+        TextureAtlas == null
+            ? Path.GetFileName(PathOnDisk)
+            : string.Concat(Path.GetFileNameWithoutExtension(PathOnDisk), I18n.Gui_Tooltip_TxAtlas(TextureAtlas.Count));
+    private static readonly StringBuilder sb = new();
     public string UITooltip
     {
         get
         {
-            if (TextureAtlas != null)
+            sb.Append(UILabel);
+            sb.Append('\n');
+            sb.Append(I18n.Gui_Tooltip_TxSize(Texture.Width, Texture.Height));
+            if (Front != null)
             {
-                return string.Concat(
-                    Path.GetFileNameWithoutExtension(PathOnDisk),
-                    I18n.Gui_Tooltip_Atlas(TextureAtlas.Count),
-                    '\n',
-                    I18n.Gui_Tooltip_TxSize(Texture.Width, Texture.Height)
-                );
+                sb.Append('\n');
+                sb.Append(I18n.Gui_Tooltip_TxFront(Front.UILabel));
             }
-            return string.Concat(
-                Path.GetFileName(PathOnDisk),
-                '\n',
-                I18n.Gui_Tooltip_TxSize(Texture.Width, Texture.Height)
-            );
+            string tooltip = sb.ToString();
+            sb.Clear();
+            return tooltip;
         }
     }
 

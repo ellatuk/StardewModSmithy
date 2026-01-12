@@ -66,8 +66,9 @@
   "gui.tooltip.is-loaded": "此内容包已加载，并将在保存时自动重加载。",
   "gui.tooltip.not-loaded": "此内容包未被加载，需重启游戏后才可自动重加载",
   "gui.tooltip.reload-textures": "重新加载贴图",
-  "gui.tooltip.atlas": "（{{count}}个贴图）",
+  "gui.tooltip.tx-atlas": "（{{count}}个贴图）",
   "gui.tooltip.tx-size": "{{h}} x {{w}}",
+  "gui.tooltip.tx-front": "Front: {{front}}",
   "gui.tooltip.select-texture": "选择贴图",
   "gui.tooltip.open-texture-folder": "打开贴图文件夹",
   "gui.tooltip.open-pack-folder": "打开内容包文件夹",
@@ -97,4 +98,6 @@
   "gui.paragraph.faq.4.q": "用这个工具创建的内容包有什么限制吗？",
   "gui.paragraph.faq.4.a.0": "使用此工具制作的内容包没有特殊限制并可以用于任何用途。唯一要求是你必须保留manifest.json里的\"StardewModSmithyInfo\"字段。",
   "gui.paragraph.faq.4.a.1": "这个声明不适用于内容包里的其他素材，仅覆盖StardewModSmithy导出的JSON文件。\n详见\"StardewModSmithyInfo.GeneratedFileList\"。",
+  "gui.paragraph.faq.5.q": "家具里的'Front'贴图是什么意思？",
+  "gui.paragraph.faq.5.a.q": "当玩家坐在一个贴图名为'myFurni'的家具时，游戏会试图加载并绘制名为'myFurniFront'的贴图。这个功能使得椅背可以显示在玩家上方。在这个工具里你可以用右键指定对应当前选中贴图的Front。"
 }
