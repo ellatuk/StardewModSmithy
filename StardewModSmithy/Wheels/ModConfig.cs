@@ -1,6 +1,5 @@
 using StardewModdingAPI;
 using StardewModdingAPI.Utilities;
-using StardewValley;
 
 namespace StardewModSmithy.Wheels;
 
@@ -13,7 +12,11 @@ public enum AutosaveFrequencyMode
 
 public sealed class ModConfig
 {
-    public string AuthorName { get; set; } = "";
+    public string AuthorName
+    {
+        get => string.IsNullOrEmpty(field) ? "Smithy" : field;
+        set => field = value;
+    }
     public string AutosaveFrequency
     {
         get => AutosaveFrequencyEnumValue.ToString();
@@ -26,7 +29,9 @@ public sealed class ModConfig
         }
     }
     public bool AutoSymlinkAndPatchReload { get; set; } = true;
-    public KeybindList ShowWorkspaceKey { get; set; } = new();
+    public KeybindList ShowWorkspaceKey { get; set; } = KeybindList.Parse("RightShift+F12");
+    public KeybindList ToggleDragModeKey { get; set; } = new(SButton.MouseMiddle);
+    public KeybindList SyncDragKey { get; set; } = new(SButton.MouseRight);
 
     internal AutosaveFrequencyMode AutosaveFrequencyEnumValue { get; set; } = AutosaveFrequencyMode.OnSwitch;
     internal Action<ModConfig>? doWriteConfig = null;

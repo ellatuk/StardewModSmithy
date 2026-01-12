@@ -1,4 +1,3 @@
-using System.Globalization;
 using PropertyChanged.SourceGenerator;
 using StardewModSmithy.GUI.ViewModels;
 using StardewModSmithy.Models;
@@ -27,6 +26,9 @@ public abstract partial class AbstractEditableAssetContext
 
     [Notify]
     private string lastSavedMessage = string.Empty;
+
+    [Notify]
+    private bool textureHasAtlas = false;
 
     internal Action? saveChangesDelegate;
     internal TextureAsset SelectedTextureAsset = null!;

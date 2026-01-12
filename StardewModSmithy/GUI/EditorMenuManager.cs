@@ -16,11 +16,10 @@ internal static class EditorMenuManager
     private const string VIEW_WORKSPACE = $"{VIEW_ASSET_PREFIX}/workspace";
     private const string VIEW_EDIT_FURNITURE = $"{VIEW_ASSET_PREFIX}/edit-furniture";
     private const string VIEW_EDIT_WALLFLOOR = $"{VIEW_ASSET_PREFIX}/edit-wallfloor";
+    private static readonly PerScreen<PackListingContext?> listingContext = new();
     private static readonly PerScreen<BaseEditorContext?> editorContext = new();
     internal static readonly PerScreen<bool> showWorkspaceNextTick = new();
     private static IModHelper helper = null!;
-
-    private static readonly KeybindList toggleMovingMode = new(SButton.MouseMiddle);
 
     internal static void Register(IModHelper helper)
     {
@@ -56,9 +55,9 @@ internal static class EditorMenuManager
 
     private static void OnButtonsChanged_DragSheet(object? sender, ButtonsChangedEventArgs e)
     {
-        if (toggleMovingMode.JustPressed())
+        if (ModEntry.Config.ToggleDragModeKey.JustPressed())
         {
-            editorContext.Value?.TextureContext.ToggleMovementMode();
+            editorContext.Value?.TextureContext.ToggleDragMode();
         }
     }
 
@@ -67,10 +66,7 @@ internal static class EditorMenuManager
         if (Context.IsWorldReady)
             Game1.exitActiveMenu();
 
-        if (PackListingContext.Initialize() is not PackListingContext packListing)
-            return;
-
-        BaseWorkspaceContext ctx = new(packListing, new(ModEntry.Config));
+        BaseWorkspaceContext ctx = new(listingContext.Value ??= PackListingContext.Initialize(), new(ModEntry.Config));
 
         IClickableMenu menu = viewEngine.CreateMenuFromAsset(VIEW_WORKSPACE, ctx);
         if (Context.IsWorldReady)
@@ -126,7 +122,7 @@ internal static class EditorMenuManager
     )
     {
         if (
-            DraggableTextureContext.Initialize(textureAssetGroup, enableFront: true)
+            DraggableTextureContext.Initialize(textureAssetGroup, enableFront: true, dragAllow: DragAllowMode.Allowed)
             is not DraggableTextureContext draggableTextureContext
         )
             return;
@@ -146,7 +142,7 @@ internal static class EditorMenuManager
             DraggableTextureContext.Initialize(
                 textureAssetGroup,
                 textureFilter: WallpaperFlooringAsset.TextureFilter,
-                canDrag: false
+                dragAllow: DragAllowMode.SheetOnlyUncapped
             )
             is not DraggableTextureContext draggableTextureContext
         )

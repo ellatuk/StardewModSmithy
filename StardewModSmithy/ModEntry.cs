@@ -1,14 +1,12 @@
 using System.Diagnostics;
 using System.Reflection;
 using System.Reflection.Emit;
-using Force.DeepCloner;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Newtonsoft.Json;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModSmithy.GUI;
-using StardewModSmithy.Models;
 using StardewModSmithy.Wheels;
 using StardewValley;
 using StardewValley.Menus;
@@ -24,10 +22,15 @@ public sealed class ModEntry : Mod
 #endif
 
     public const string ModId = "mushymato.StardewModSmithy";
+    private const string IconTexture = $"{ModId}/icon";
+    private const string IconHoverTexture = $"{ModId}/icon_hover";
+
     private static IMonitor? mon;
     internal static Func<string, IAssetName> ParseAssetName = null!;
     internal static string DirectoryPath = null!;
     internal static string StagingDirectoryPath = null!;
+    internal static string InputDirectoryPath = null!;
+    internal static string OutputDirectoryPath = null!;
     internal static string ModCreditString = null!;
     internal static IModContentHelper ModContent = null!;
     internal static ModConfig Config = null!;
@@ -37,7 +40,7 @@ public sealed class ModEntry : Mod
     #region execute command
     private static Action<string>? AddToRawCommandQueue = null;
 
-    private static Action<string>? Make_AddToDrawCommandQueue()
+    private static Action<string>? Make_AddToRawCommandQueue()
     {
         var scoreType = Type.GetType("StardewModdingAPI.Framework.SCore, StardewModdingAPI")!;
         var commandQueueType = Type.GetType("StardewModdingAPI.Framework.CommandQueue, StardewModdingAPI")!;
@@ -63,14 +66,15 @@ public sealed class ModEntry : Mod
     public static bool IsContentPatcherLoaded { get; private set; } = false;
     public static string ContentPatcherVersion { get; internal set; } = "2.1.0";
 
-    private Rectangle titleMenuButtonBounds = new Rectangle(64, 64, 60, 80);
-    private float titleMenuButtonScale = 1f;
+    private Rectangle titleMenuButtonBounds = new(64, 64, 104, 104);
+    private bool titleMenuButtonHovered = false;
 
     public override void Entry(IModHelper helper)
     {
         I18n.Init(helper.Translation);
         mon = Monitor;
         Config = helper.ReadConfig<ModConfig>();
+        Config.SyncDragKey = new();
         Config.doWriteConfig = helper.WriteConfig;
         ModRegistry = helper.ModRegistry;
         ModCreditString = $"by {ModManifest.Name} ({ModManifest.Version}) at ";
@@ -78,11 +82,9 @@ public sealed class ModEntry : Mod
         ParseAssetName = helper.GameContent.ParseAssetName;
         DirectoryPath = helper.DirectoryPath;
         StagingDirectoryPath = string.Concat(DirectoryPath, ".Staging");
+        InputDirectoryPath = Path.Combine(DirectoryPath, Utils.EDITING_INPUT);
+        OutputDirectoryPath = Path.Combine(DirectoryPath, Utils.EDITING_OUTPUT);
         ModContent = helper.ModContent;
-
-        Directory.CreateDirectory(Path.Combine(DirectoryPath, Consts.EDITING_INPUT));
-        Directory.CreateDirectory(Path.Combine(DirectoryPath, Consts.EDITING_OUTPUT));
-        UpdateStagingSymlink();
 
         helper.ConsoleCommands.Add("sms-show", "show smithy menu to edit your mods.", ConsoleShowWorkspace);
         helper.ConsoleCommands.Add("sms-pack", "pack a folder of loose textures", ConsolePackTexture);
@@ -91,37 +93,111 @@ public sealed class ModEntry : Mod
         helper.Events.Input.ButtonsChanged += OnButtonsChanged;
         helper.Events.Display.RenderedActiveMenu += OnRenderedActiveMenu;
         helper.Events.Input.CursorMoved += OnCursorMoved;
+        helper.Events.Content.AssetRequested += OnAssetRequested;
+
+        CreateSmithyDirectories();
     }
 
-    private static void UpdateStagingSymlink()
+    private static void CreateSmithyDirectories()
     {
-        string outputDir = Path.Combine(DirectoryPath, Consts.EDITING_OUTPUT);
-        if (Directory.Exists(StagingDirectoryPath))
+        try
         {
-            Directory.Delete(StagingDirectoryPath, true);
+            Directory.CreateDirectory(InputDirectoryPath);
         }
-        else if (File.Exists(StagingDirectoryPath))
+        catch (Exception err)
         {
-            File.Delete(StagingDirectoryPath);
+            Log($"Failed to create '{InputDirectoryPath}', please manually create this folder\n{err}", LogLevel.Error);
         }
-        Directory.CreateSymbolicLink(StagingDirectoryPath, outputDir);
+        try
+        {
+            Directory.CreateDirectory(OutputDirectoryPath);
+        }
+        catch (Exception err)
+        {
+            Log($"Failed to create '{OutputDirectoryPath}', please manually create this folder\n{err}", LogLevel.Error);
+        }
+
+        if (Utils.StageByCopy)
+        {
+            Directory.CreateDirectory(StagingDirectoryPath);
+        }
+        else
+        {
+            try
+            {
+                DirectoryInfo dirInfo = new(StagingDirectoryPath);
+                if (dirInfo.Exists)
+                {
+                    if (dirInfo.LinkTarget != OutputDirectoryPath)
+                    {
+                        Directory.Delete(StagingDirectoryPath, true);
+                    }
+                    else
+                    {
+                        return;
+                    }
+                }
+                FileInfo fileInfo = new(StagingDirectoryPath);
+                if (fileInfo.Exists && fileInfo.LinkTarget != OutputDirectoryPath)
+                {
+                    File.Delete(StagingDirectoryPath);
+                }
+                File.CreateSymbolicLink(StagingDirectoryPath, OutputDirectoryPath);
+            }
+            catch (Exception err)
+            {
+                Log(
+                    $"Failed to create a symlink from '{OutputDirectoryPath}' to '{StagingDirectoryPath}', content packs made by this mod will not be auto-installed",
+                    LogLevel.Error
+                );
+                Log(err.ToString(), LogLevel.Trace);
+            }
+        }
+    }
+
+    private void OnAssetRequested(object? sender, AssetRequestedEventArgs e)
+    {
+        if (e.NameWithoutLocale.IsEquivalentTo(IconTexture))
+        {
+            e.LoadFromModFile<Texture2D>("assets/icon.png", AssetLoadPriority.Low);
+        }
+        if (e.NameWithoutLocale.IsEquivalentTo(IconHoverTexture))
+        {
+            e.LoadFromModFile<Texture2D>("assets/icon_hover.png", AssetLoadPriority.Low);
+        }
     }
 
     private void OnRenderedActiveMenu(object? sender, RenderedActiveMenuEventArgs e)
     {
         if (!IsTitleMenuButtonActive())
             return;
-        e.SpriteBatch.Draw(
-            Game1.mouseCursors,
-            titleMenuButtonBounds.Center.ToVector2(),
-            new Rectangle(631, 1968, 15, 20),
-            Color.White,
-            0f,
-            new(7.5f, 10f),
-            titleMenuButtonScale * 4,
-            SpriteEffects.None,
-            1f
-        );
+        if (Game1.activeClickableMenu is TitleMenu titleM)
+        {
+            IClickableMenu.drawTextureBox(
+                e.SpriteBatch,
+                titleM.titleButtonsTexture,
+                titleMenuButtonHovered ? new Rectangle(79, 458, 27, 25) : new Rectangle(52, 458, 27, 25),
+                titleMenuButtonBounds.X,
+                titleMenuButtonBounds.Y,
+                titleMenuButtonBounds.Width,
+                titleMenuButtonBounds.Height,
+                Color.White,
+                4,
+                false,
+                1
+            );
+            e.SpriteBatch.Draw(
+                titleM.titleButtonsTexture,
+                new Rectangle(titleMenuButtonBounds.X + 24, titleMenuButtonBounds.Y + 24, 56, 48),
+                titleMenuButtonHovered ? new Rectangle(79 + 6, 458 + 6, 1, 1) : new Rectangle(52 + 6, 458 + 6, 1, 1),
+                Color.White
+            );
+            e.SpriteBatch.Draw(
+                Game1.content.Load<Texture2D>(titleMenuButtonHovered ? IconHoverTexture : IconTexture),
+                new Rectangle(titleMenuButtonBounds.X + 20, titleMenuButtonBounds.Y + 20, 64, 64),
+                Color.White
+            );
+        }
     }
 
     private void OnCursorMoved(object? sender, CursorMovedEventArgs e)
@@ -130,11 +206,11 @@ public sealed class ModEntry : Mod
             return;
         if (titleMenuButtonBounds.Contains(e.NewPosition.ScreenPixels))
         {
-            titleMenuButtonScale = 1.2f;
+            titleMenuButtonHovered = true;
         }
         else
         {
-            titleMenuButtonScale = 1f;
+            titleMenuButtonHovered = false;
         }
     }
 
@@ -154,9 +230,9 @@ public sealed class ModEntry : Mod
         {
             EditorMenuManager.ShowWorkspace();
         }
-        if (IsTitleMenuButtonActive() && titleMenuButtonScale > 1f && Game1.didPlayerJustLeftClick())
+        if (IsTitleMenuButtonActive() && titleMenuButtonHovered && Game1.didPlayerJustLeftClick())
         {
-            titleMenuButtonScale = 1f;
+            titleMenuButtonHovered = false;
             EditorMenuManager.showWorkspaceNextTick.Value = true;
         }
     }
@@ -169,7 +245,7 @@ public sealed class ModEntry : Mod
             ContentPatcherVersion = contentPatcher.Manifest.Version.ToString();
             IsContentPatcherLoaded = true;
         }
-        AddToRawCommandQueue = Make_AddToDrawCommandQueue();
+        AddToRawCommandQueue = Make_AddToRawCommandQueue();
     }
 
     private static void ExecuteCommand(string command)

@@ -8,6 +8,7 @@ using StardewValley.Extensions;
 
 namespace StardewModSmithy.Models;
 
+#pragma warning disable CA1822, CS0649
 public interface IMockPatch
 {
     public string Action { get; }
@@ -40,30 +41,49 @@ internal record MockContent(List<IMockPatch> Changes)
     public string JsonSchema => "https://smapi.io/schemas/content-patcher.json";
 }
 
-internal record MockContentEditDataInclude(List<MockEditData> Changes);
-
 internal sealed record MockContentMain(List<IMockPatch> Changes) : MockContent(Changes)
 {
-#pragma warning disable CA1822 // Mark members as static
     public string Format => ModEntry.ContentPatcherVersion;
-#pragma warning restore CA1822 // Mark members as static
+    public object? ConfigSchema { get; set; }
+    public object? DynamicTokens { get; set; }
 }
 
-public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputPack
+internal sealed class MockContentPrior
+{
+    public object? Format;
+    public object? ConfigSchema;
+    public object? DynamicTokens;
+    public object? Changes;
+}
+
+internal record MockContentEditDataInclude(List<MockEditData> Changes);
+#pragma warning restore CA1822, CS0649
+
+public sealed class OutputPackContentPatcher : IOutputPack
 {
     public const string PackFor = "Pathoschild.ContentPatcher";
-    public OutputManifest Manifest => manifest;
+    public OutputManifest Manifest { get; private set; }
+    public TranslationStore? Translations;
 
-    public TextureAssetGroup? TextureAssetGroup { get; set; } = null;
+    public OutputPackContentPatcher(OutputManifest manifest)
+    {
+        Manifest = manifest;
+        Manifest.PackFor = PackFor;
+        Translations = new TranslationStore(manifest.TranslationFolder);
+    }
+
+    public TextureAssetGroup? TxAssetGroup { get; set; } = null;
     public FurnitureAsset? FurniAsset { get; set; } = null;
     public WallpaperFlooringAsset? WallAndFloorAsset { get; set; } = null;
+
+    internal MockContentPrior? PriorContent = null;
 
     public IEnumerable<ILoadableAsset> LoadableAssets
     {
         get
         {
-            if (TextureAssetGroup is not null)
-                yield return TextureAssetGroup;
+            if (TxAssetGroup is not null)
+                yield return TxAssetGroup;
         }
     }
     public IEnumerable<IEditableAsset> EditableAssets
@@ -77,17 +97,15 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
         }
     }
 
-    public TranslationStore? Translations = TranslationStore.FromSourceDir(manifest.TranslationFolder);
-
     public void Save()
     {
-        string targetPath = manifest.OutputFolder;
+        string targetPath = Manifest.OutputFolder;
         Directory.CreateDirectory(targetPath);
 
-        manifest.PackFor = PackFor;
+        Manifest.PackFor = PackFor;
 
-        string dataDir = Path.Combine(targetPath, Consts.DATA_DIR);
-        string assetsDir = Path.Combine(targetPath, Consts.ASSETS_DIR);
+        string dataDir = Path.Combine(targetPath, Utils.DATA_DIR);
+        string assetsDir = Path.Combine(targetPath, Utils.ASSETS_DIR);
 
         if (Directory.Exists(dataDir))
             Directory.Delete(dataDir, true);
@@ -101,59 +119,31 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
         // translations
         if (Translations != null)
         {
-            string translationsDir = manifest.TranslationFolder;
-            Directory.CreateDirectory(translationsDir);
             bool translationRequiresLoad = false;
             foreach (IEditableAsset editable in EditableAssets)
             {
                 translationRequiresLoad =
-                    editable.GetTranslations(ref Translations, manifest.Name) || translationRequiresLoad;
+                    editable.GetTranslations(ref Translations, Manifest.Name) || translationRequiresLoad;
             }
             if (translationRequiresLoad)
             {
                 changes.Add(
                     new MockLoad(
                         TranslationString.I18N_Asset,
-                        Path.Combine(Consts.TL_DIR, TranslationStore.DefaultFilename)
+                        Path.Combine(Utils.TL_DIR, TranslationStore.DefaultFilename)
                     )
                     {
                         Priority = AssetLoadPriority.Low.ToString(),
                     }
                 );
                 changes.Add(
-                    new MockLoad(TranslationString.I18N_Asset, string.Concat(Consts.TL_DIR, "{{Language}}.json"))
+                    new MockLoad(TranslationString.I18N_Asset, Path.Combine(Utils.TL_DIR, "{{Language}}.json"))
                     {
                         When = new() { ["HasFile:{{FromFile}}"] = true },
                     }
                 );
             }
-            // i18n/{langaugecode}.json and i18n/default.json
-            ModEntry.WriteJson(translationsDir, Translations.LocaleFilename, Translations.Data);
-            ModEntry.WriteJson(translationsDir, TranslationStore.DefaultFilename, Translations.DefaultData);
-            translationFiles.Add(Translations.LocaleFilename);
-            translationFiles.Add(TranslationStore.DefaultFilename);
-            // fill in any missing keys
-            foreach (string file in Directory.GetFiles(translationsDir))
-            {
-                string fileName = Path.GetFileName(file);
-                if (translationFiles.Contains(fileName))
-                    continue;
-                translationFiles.Add(fileName);
-                if (ModEntry.ReadJson<Dictionary<string, string>>(file) is Dictionary<string, string> otherTl)
-                {
-                    translationFiles.Add(fileName);
-                    bool needWrite = false;
-                    foreach ((string key, string value) in Translations.DefaultData)
-                    {
-                        if (otherTl.ContainsKey(key))
-                            continue;
-                        needWrite = true;
-                        otherTl[key] = value;
-                    }
-                    if (needWrite)
-                        ModEntry.WriteJson(file, otherTl);
-                }
-            }
+            Translations.WriteI18NData();
         }
         // edits
         HashSet<IAssetName> requiredAssets = [];
@@ -165,7 +155,7 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
                 File.Delete(Path.Combine(dataDir, editable.IncludeName));
                 continue;
             }
-            changes.Add(new MockInclude(Path.Combine(Consts.DATA_DIR, editable.IncludeName)));
+            changes.Add(new MockInclude(Path.Combine(Utils.DATA_DIR, editable.IncludeName)));
             ModEntry.WriteJson(dataDir, editable.IncludeName, new MockContent(patches));
             requiredAssets.AddRange(editable.GetRequiredAssets());
         }
@@ -177,7 +167,7 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
                 is ValueTuple<string, string> result
             )
             {
-                changes.Add(new MockLoad(result.Item1, Path.Join(Consts.ASSETS_DIR, result.Item2)));
+                changes.Add(new MockLoad(result.Item1, Path.Join(Utils.ASSETS_DIR, result.Item2)));
             }
         }
 
@@ -186,17 +176,17 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
         {
             if ((mockPatch.When?.TryGetValue("HasMod", out object? maybeModId) ?? false) && maybeModId is string modId)
             {
-                manifest.OptionalDependencies.Add(modId);
+                Manifest.OptionalDependencies.Add(modId);
             }
             if (mockPatch is MockInclude inc)
             {
                 includeList.Add(inc.FromFile);
             }
         }
-        manifest.StardewModSmithyInfo.Generated = [Consts.MANIFEST_FILE, "content.json", .. includeList];
-        manifest.StardewModSmithyInfo.Custom = [];
-        manifest.StardewModSmithyInfo.I18N = translationFiles;
-        string customDir = Path.Combine(targetPath, Consts.CUSTOM_DIR);
+        Manifest.StardewModSmithyInfo.Generated = [Utils.MANIFEST_FILE, Utils.CONTENT_JSON, .. includeList];
+        Manifest.StardewModSmithyInfo.Custom = [];
+        Manifest.StardewModSmithyInfo.I18N = translationFiles;
+        string customDir = Path.Combine(targetPath, Utils.CUSTOM_DIR);
         if (Directory.Exists(customDir))
         {
             foreach (string file in Directory.GetFiles(customDir))
@@ -204,8 +194,8 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
                 if (!file.EndsWith(".json"))
                     continue;
                 string fileName = Path.GetFileName(file);
-                changes.Add(new MockInclude(Path.Combine(Consts.CUSTOM_DIR, fileName)));
-                manifest.StardewModSmithyInfo.Custom.Add(fileName);
+                changes.Add(new MockInclude(Path.Combine(Utils.CUSTOM_DIR, fileName)));
+                Manifest.StardewModSmithyInfo.Custom.Add(fileName);
             }
         }
         else
@@ -219,20 +209,52 @@ public sealed class OutputPackContentPatcher(OutputManifest manifest) : IOutputP
         }
 
         // content.json
-        ModEntry.WriteJson(targetPath, "content.json", new MockContentMain(changes));
+        ModEntry.WriteJson(
+            targetPath,
+            Utils.CONTENT_JSON,
+            new MockContentMain(changes)
+            {
+                ConfigSchema = PriorContent?.ConfigSchema,
+                DynamicTokens = PriorContent?.DynamicTokens,
+            }
+        );
         // manifest.json
-        ModEntry.WriteJson(targetPath, Consts.MANIFEST_FILE, manifest);
+        Manifest.Save();
 
-        ModEntry.PatchReload(targetPath, manifest.UniqueID);
+        if (Utils.StageByCopy)
+        {
+            string stagingDir = Path.Combine(ModEntry.StagingDirectoryPath, Path.GetFileName(Manifest.OutputFolder));
+            try
+            {
+                if (Directory.Exists(stagingDir))
+                {
+                    string configFile = Path.Combine(stagingDir, Utils.CONFIG_JSON);
+                    if (File.Exists(configFile))
+                    {
+                        File.Move(configFile, Path.Combine(Manifest.OutputFolder, Utils.CONFIG_JSON), overwrite: true);
+                    }
+                    Directory.Delete(stagingDir, true);
+                }
+                Utils.CopyDirectory(Manifest.OutputFolder, stagingDir, true);
+            }
+            catch (Exception err)
+            {
+                ModEntry.Log($"Failed to copy '{Manifest.OutputFolder}' to '{stagingDir}'\n{err}", LogLevel.Warn);
+            }
+        }
+
+        ModEntry.PatchReload(targetPath, Manifest.UniqueID);
     }
 
     public void Load()
     {
-        string targetPath = manifest.OutputFolder;
+        string targetPath = Manifest.OutputFolder;
 
-        string dataDir = Path.Combine(targetPath, Consts.DATA_DIR);
+        string dataDir = Path.Combine(targetPath, Utils.DATA_DIR);
         if (!Directory.Exists(dataDir))
             return;
+
+        PriorContent = ModEntry.ReadJson<MockContentPrior>(Path.Combine(targetPath, Utils.CONTENT_JSON));
 
         foreach (string file in Directory.GetFiles(dataDir))
         {

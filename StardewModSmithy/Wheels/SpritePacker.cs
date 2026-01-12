@@ -17,7 +17,7 @@ public record TxToPack(string RelPath, Texture2D Texture)
         CeilingByTile(Texture.Bounds.Height)
     );
 
-    private static int CeilingByTile(int value) => (int)(MathF.Ceiling(value / (float)Consts.TX_TILE) * Consts.TX_TILE);
+    private static int CeilingByTile(int value) => (int)(MathF.Ceiling(value / (float)Utils.TX_TILE) * Utils.TX_TILE);
 
     public Point TargetPos { get; set; }
 
@@ -56,7 +56,7 @@ internal static class SpritePacker
 
     internal static void Pack(string subdir, int maxPackedWidth = 512)
     {
-        string fullSubdir = Path.Combine(ModEntry.DirectoryPath, Consts.EDITING_INPUT, subdir);
+        string fullSubdir = Path.Combine(ModEntry.InputDirectoryPath, subdir);
         List<TxToPack> txToPackList = [];
         DirectoryInfo subdirTop = new(fullSubdir);
 
@@ -138,9 +138,7 @@ internal static class SpritePacker
         ArrayPool<Color>.Shared.Return(packedData);
 
         using Texture2D forExport = UnPremultiplyTransparency(packedTx);
-        using Stream stream = File.Create(
-            Path.Combine(ModEntry.DirectoryPath, Consts.EDITING_INPUT, string.Concat(subdir, ".png"))
-        );
+        using Stream stream = File.Create(Path.Combine(ModEntry.InputDirectoryPath, string.Concat(subdir, ".png")));
         forExport.SaveAsPng(stream, forExport.Width, forExport.Height);
 
         txAtlasEntries.Sort(
@@ -152,11 +150,7 @@ internal static class SpritePacker
                 return a.Area.X.CompareTo(b.Area.X);
             }
         );
-        ModEntry.WriteJson(
-            Path.Combine(ModEntry.DirectoryPath, Consts.EDITING_INPUT),
-            string.Concat(subdir, Consts.ATLAS_SUFFIX),
-            txAtlasEntries
-        );
+        ModEntry.WriteJson(ModEntry.InputDirectoryPath, string.Concat(subdir, Utils.ATLAS_SUFFIX), txAtlasEntries);
 
         ModEntry.Log($"Packed textures from '{subdir}'");
         return;

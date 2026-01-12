@@ -1,31 +1,32 @@
+using StardewModSmithy.Wheels;
 using StardewValley;
 
 namespace StardewModSmithy.Models;
 
-public sealed class TranslationStore
+public sealed class TranslationStore(string translationsDir)
 {
     public const string DefaultFilename = "default.json";
-    public LocalizedContentManager.LanguageCode code = Game1.content.GetCurrentLanguage();
-    public string LocaleFilename => $"{code}.json";
-    public Dictionary<string, string> Data = [];
-    public Dictionary<string, string> DefaultData = [];
+    public static LocalizedContentManager.LanguageCode Code => Game1.content.GetCurrentLanguage();
+    public Dictionary<LocalizedContentManager.LanguageCode, Dictionary<string, string>> PerLang = LoadI18NData(
+        translationsDir
+    );
+    public Dictionary<string, string> Data => PerLang[Code];
+    public Dictionary<string, string> DefaultData =
+        translationsDir != null
+            ? ModEntry.ReadJson<Dictionary<string, string>>(translationsDir, DefaultFilename) ?? []
+            : [];
 
-    public void LoadForCurrentLanguage(string translationsDir)
+    public static Dictionary<LocalizedContentManager.LanguageCode, Dictionary<string, string>> LoadI18NData(
+        string translationsDir
+    )
     {
-        code = Game1.content.GetCurrentLanguage();
-        DefaultData = ModEntry.ReadJson<Dictionary<string, string>>(translationsDir, DefaultFilename) ?? DefaultData;
-        Data = ModEntry.ReadJson<Dictionary<string, string>>(translationsDir, DefaultFilename) ?? Data;
-    }
-
-    public static TranslationStore? FromSourceDir(string translationsDir)
-    {
-        if (!Directory.Exists(translationsDir))
+        Dictionary<LocalizedContentManager.LanguageCode, Dictionary<string, string>> perLang = [];
+        foreach (LocalizedContentManager.LanguageCode lang in Enum.GetValues<LocalizedContentManager.LanguageCode>())
         {
-            return new();
+            perLang[lang] =
+                ModEntry.ReadJson<Dictionary<string, string>>(translationsDir, string.Concat(lang, ".json")) ?? [];
         }
-        TranslationStore store = new();
-        store.LoadForCurrentLanguage(translationsDir);
-        return store;
+        return perLang;
     }
 
     internal void SetDataKeyValue(string key, string value, bool overwrite = true)
@@ -34,7 +35,21 @@ public sealed class TranslationStore
             Data[key] = value;
         if (!DefaultData.ContainsKey(key))
         {
-            DefaultData[key] = value;
+            DefaultData[key] = value.Equals(Utils.DEFAULT_STR) ? key : value;
+        }
+    }
+
+    internal void WriteI18NData()
+    {
+        Directory.CreateDirectory(translationsDir);
+        // i18n/default.json
+        if (DefaultData.Any())
+            ModEntry.WriteJson(translationsDir, DefaultFilename, DefaultData);
+        // i18n/{langaugecode}.json
+        foreach ((LocalizedContentManager.LanguageCode lang, Dictionary<string, string> data) in PerLang)
+        {
+            if (data.Any())
+                ModEntry.WriteJson(translationsDir, string.Concat(lang, ".json"), data);
         }
     }
 }

@@ -30,7 +30,7 @@ public sealed partial record TextureAsset(IAssetName AssetName, string PathOnDis
         string atlasPath = Path.Combine(
             ModEntry.DirectoryPath,
             Path.GetDirectoryName(PathOnDisk) ?? "",
-            string.Concat(Path.GetFileNameWithoutExtension(PathOnDisk), Consts.ATLAS_SUFFIX)
+            string.Concat(Path.GetFileNameWithoutExtension(PathOnDisk), Utils.ATLAS_SUFFIX)
         );
         if (!File.Exists(atlasPath))
             return null;
@@ -48,6 +48,29 @@ public sealed partial record TextureAsset(IAssetName AssetName, string PathOnDis
     public SDUISprite UISprite => GetUISprite(4);
     public SDUISprite UISpriteSmall => GetUISprite(1);
 
+    public string UILabel =>
+        TextureAtlas == null
+            ? Path.GetFileName(PathOnDisk)
+            : string.Concat(Path.GetFileNameWithoutExtension(PathOnDisk), I18n.Gui_Tooltip_TxAtlas(TextureAtlas.Count));
+    private static readonly StringBuilder sb = new();
+    public string UITooltip
+    {
+        get
+        {
+            sb.Append(UILabel);
+            sb.Append('\n');
+            sb.Append(I18n.Gui_Tooltip_TxSize(Texture.Width, Texture.Height));
+            if (Front != null)
+            {
+                sb.Append('\n');
+                sb.Append(I18n.Gui_Tooltip_TxFront(Front.UILabel));
+            }
+            string tooltip = sb.ToString();
+            sb.Clear();
+            return tooltip;
+        }
+    }
+
     [Notify]
     public bool isSelected = false;
 
@@ -63,14 +86,13 @@ public sealed class TextureAssetGroup() : ILoadableAsset
     private static Dictionary<IAssetName, TextureAsset> FormGatheredTextures()
     {
         Dictionary<IAssetName, TextureAsset> newlyGathered = [];
-        string fullSourceDir = Path.Combine(ModEntry.DirectoryPath, Consts.EDITING_INPUT);
-        foreach (string dir in Directory.GetDirectories(fullSourceDir))
+        foreach (string dir in Directory.GetDirectories(ModEntry.InputDirectoryPath))
         {
-            if (File.Exists(string.Concat(dir, Consts.ATLAS_SUFFIX)))
+            if (File.Exists(string.Concat(dir, Utils.ATLAS_SUFFIX)))
                 continue;
             SpritePacker.Pack(dir);
         }
-        foreach (string file in Directory.GetFiles(fullSourceDir))
+        foreach (string file in Directory.GetFiles(ModEntry.InputDirectoryPath))
         {
             if (!file.EndsWith(".png"))
                 continue;
@@ -83,6 +105,11 @@ public sealed class TextureAssetGroup() : ILoadableAsset
             newlyGathered.First().Value.IsSelected = true;
         }
         return newlyGathered;
+    }
+
+    public void Invalidate()
+    {
+        gatheredTextures = null;
     }
 
     public ValueTuple<string, string>? StageAndGetTargetAndFromFile(

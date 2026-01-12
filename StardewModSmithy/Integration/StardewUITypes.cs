@@ -52,8 +52,8 @@ public record SDUISprite(
 
     public IAssetName? AssetName { get; internal set; }
 
-    public readonly int IndexColCnt = SourceRect.Width / Consts.TX_TILE;
-    public readonly int IndexRowCnt = SourceRect.Height / Consts.TX_TILE;
+    public readonly int IndexColCnt = SourceRect.Width / Utils.TX_TILE;
+    public readonly int IndexRowCnt = SourceRect.Height / Utils.TX_TILE;
 };
 
 /// <summary>

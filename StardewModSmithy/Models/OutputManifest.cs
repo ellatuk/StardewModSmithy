@@ -15,10 +15,9 @@ public sealed record SmithyInfo()
 
 public sealed class OutputManifest()
 {
-    internal string PackFor { get; set; } = "???";
-    internal string OutputFolder =>
-        Path.Combine(ModEntry.DirectoryPath, Consts.EDITING_OUTPUT, Sanitize.Path(UniqueID));
-    internal string TranslationFolder => Path.Combine(OutputFolder, Consts.TL_DIR);
+    internal string PackFor { get; set; } = Utils.DEFAULT_STR;
+    internal string OutputFolder => Path.Combine(ModEntry.OutputDirectoryPath, Sanitize.Path(UniqueID));
+    internal string TranslationFolder => Path.Combine(OutputFolder, Utils.TL_DIR);
     internal HashSet<string> OptionalDependencies = [];
     internal string NexusID { get; set; } = string.Empty;
 
@@ -72,11 +71,16 @@ public sealed class OutputManifest()
     }
     public SmithyInfo StardewModSmithyInfo { get; set; } = new();
 
+    public void Save()
+    {
+        ModEntry.WriteJson(OutputFolder, Utils.MANIFEST_FILE, this);
+    }
+
     public static IEnumerable<OutputManifest> LoadAllFromOutputFolder()
     {
-        foreach (string subdir in Directory.GetDirectories(Path.Combine(ModEntry.DirectoryPath, Consts.EDITING_OUTPUT)))
+        foreach (string subdir in Directory.GetDirectories(ModEntry.OutputDirectoryPath))
         {
-            string manifestPath = Path.Combine(subdir, Consts.MANIFEST_FILE);
+            string manifestPath = Path.Combine(subdir, Utils.MANIFEST_FILE);
             if (!File.Exists(manifestPath))
                 continue;
             OutputManifest? manifest = ModEntry.ReadJson<OutputManifest>(manifestPath);

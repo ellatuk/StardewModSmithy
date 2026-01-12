@@ -1,3 +1,5 @@
+using StardewModSmithy.Wheels;
+
 namespace StardewModSmithy.Models.ValueKinds;
 
 public sealed class OptionedValue<T>(IList<T> options, T defaultValue)
@@ -17,6 +19,6 @@ public sealed class OptionedValue<T>(IList<T> options, T defaultValue)
 
     public override string ToString()
     {
-        return Value?.ToString() ?? "???";
+        return Value?.ToString() ?? Utils.DEFAULT_STR;
     }
 }

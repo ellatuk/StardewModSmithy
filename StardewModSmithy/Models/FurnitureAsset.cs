@@ -81,7 +81,7 @@ public sealed partial class FurnitureDelimString(string id) : IBoundsProvider
     public IntSpinBoxViewModel BoundingBoxSizeY =>
         new(() => BoundingBoxSize.Y, (value) => BoundingBoxSize = new(BoundingBoxSize.X, value), 1, int.MaxValue);
 
-    public string GUI_TilesheetArea => Consts.Basic_GUI_TilesheetSize(TilesheetSize);
+    public string GUI_TilesheetArea => Utils.Basic_GUI_TilesheetSize(TilesheetSize);
 
     public IEnumerable<SDUIEdges> GUI_BoundingSquares
     {
@@ -91,7 +91,7 @@ public sealed partial class FurnitureDelimString(string id) : IBoundsProvider
             {
                 for (int y = 0; y < BoundingBoxSize.Y; y++)
                 {
-                    yield return new(x * Consts.DRAW_TILE, (TilesheetSize.Y - 1 - y) * Consts.DRAW_TILE);
+                    yield return new(x * Utils.DRAW_TILE, (TilesheetSize.Y - 1 - y) * Utils.DRAW_TILE);
                 }
             }
         }
@@ -144,7 +144,7 @@ public sealed partial class FurnitureDelimString(string id) : IBoundsProvider
     public TranslationString DisplayNameImpl { get; private set; } = new(string.Concat(id, ".name"));
     public string DisplayName
     {
-        get => DisplayNameImpl.Value ?? "???";
+        get => DisplayNameImpl.Value ?? Utils.DEFAULT_STR;
         set
         {
             DisplayNameImpl.Value = value;
@@ -362,7 +362,7 @@ public sealed class FurnitureAsset : IEditableAsset
                 bool hasWall = false;
                 foreach (EditableWallpaperOrFlooring editing in wallpaperFlooringAsset.Editing.Values)
                 {
-                    if (!hasFloor && editing.IsFlooring)
+                    if (!hasFloor && editing.BaseData.IsFlooring)
                     {
                         hasFloor = true;
                         catalogueItemQueries.Add(
@@ -453,7 +453,7 @@ public sealed class FurnitureAsset : IEditableAsset
 
     public FurnitureDelimString AddNewDefault()
     {
-        (int seq, string seqId) = Consts.GetSeq(Editing.Keys.Contains);
+        (int seq, string seqId) = Utils.GetSeq(Editing.Keys.Contains);
         FurnitureDelimString newDefaultFurni = new(seqId)
         {
             Name = seqId,
@@ -478,7 +478,10 @@ public sealed class FurnitureAsset : IEditableAsset
         foreach (FurnitureDelimString furniDelim in Editing.Values)
         {
             furniDelim.UpdateForFirstTimeSerialize();
-            translations.SetDataKeyValue(furniDelim.DisplayNameImpl.Key, furniDelim.DisplayNameImpl.Value ?? "???");
+            translations.SetDataKeyValue(
+                furniDelim.DisplayNameImpl.Key,
+                furniDelim.DisplayNameImpl.Value ?? Utils.DEFAULT_STR
+            );
             requiresLoad = requiresLoad || furniDelim.DisplayNameImpl.Kind == TranslationStringKind.LocalizedText;
             if (furniDelim.IsCatalogue)
             {

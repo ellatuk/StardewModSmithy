@@ -16,9 +16,6 @@ public partial class FurnitureAssetContext : AbstractEditableAssetContext
     [DependsOn(nameof(BoundsProvider))]
     public FurnitureDelimString? Selected => (FurnitureDelimString?)BoundsProvider;
 
-    [Notify]
-    public bool textureHasAtlas = false;
-
     public FurnitureAssetContext(FurnitureAsset furnitureAsset)
         : base()
     {
@@ -81,14 +78,14 @@ public partial class FurnitureAssetContext : AbstractEditableAssetContext
     {
         if (SelectedTextureAsset.TextureAtlas == null)
             return;
-        int indexColCnt = SelectedTextureAsset.Texture.Bounds.Width / Consts.TX_TILE;
+        int indexColCnt = SelectedTextureAsset.Texture.Bounds.Width / Utils.TX_TILE;
         FurnitureDelimString? firstFurni = null;
         foreach (TxAtlasEntry entry in SelectedTextureAsset.TextureAtlas)
         {
             FurnitureDelimString furni = furnitureAsset.AddNewDefault();
             furni.DisplayName = Path.GetFileNameWithoutExtension(entry.RelPath);
-            furni.SpriteIndex = entry.Area.Y / Consts.TX_TILE * indexColCnt + entry.Area.X / Consts.TX_TILE;
-            furni.TilesheetSize = new(entry.Area.Width / Consts.TX_TILE, entry.Area.Height / Consts.TX_TILE);
+            furni.SpriteIndex = entry.Area.Y / Utils.TX_TILE * indexColCnt + entry.Area.X / Utils.TX_TILE;
+            furni.TilesheetSize = new(entry.Area.Width / Utils.TX_TILE, entry.Area.Height / Utils.TX_TILE);
             furni.BoundingBoxSize = new(furni.TilesheetSize.X, 1);
             furni.TextureAssetName = SelectedTextureAsset.AssetName;
             furni.UpdateForFirstTimeSerialize();

@@ -4,7 +4,6 @@ using StardewModdingAPI;
 using StardewModSmithy.Models;
 using StardewModSmithy.Models.Interfaces;
 using StardewModSmithy.Wheels;
-using StardewValley;
 using StardewValley.Extensions;
 
 namespace StardewModSmithy.GUI.EditorContext;
@@ -71,7 +70,7 @@ public record PackDisplayEntry(IOutputPack Pack) : INotifyPropertyChanged
         {
             if (isExpanded && !value)
             {
-                Pack.Save();
+                Pack.Manifest.Save();
             }
             isExpanded = value;
             OnPropertyChanged(new(nameof(IsExpanded)));
@@ -84,23 +83,20 @@ public record PackDisplayEntry(IOutputPack Pack) : INotifyPropertyChanged
 
     public bool IsLoaded => ModEntry.ModRegistry.IsLoaded(Pack.Manifest.UniqueID);
 
+    public void BrowsePackFolder() => Utils.BrowseFolder(Pack.Manifest.OutputFolder, false);
+
     public bool CanShowEdit_Furniture =>
-        Pack is OutputPackContentPatcher outputPackContentPatcher
-        && outputPackContentPatcher.TextureAssetGroup != null
-        && outputPackContentPatcher.TextureAssetGroup.GatheredTextures.Any();
+        Pack is OutputPackContentPatcher && (Pack.TxAssetGroup?.GatheredTextures.Any() ?? false);
 
     public void ShowEdit_Furniture()
     {
         IsExpanded = false;
-
-        if (
-            Pack is OutputPackContentPatcher outputPackContentPatcher
-            && outputPackContentPatcher.TextureAssetGroup != null
-        )
+        if (Pack is OutputPackContentPatcher outputPackContentPatcher && outputPackContentPatcher.TxAssetGroup != null)
         {
             outputPackContentPatcher.FurniAsset ??= new();
+            outputPackContentPatcher.FurniAsset.SetTranslations(outputPackContentPatcher.Translations);
             EditorMenuManager.ShowFurnitureEditor(
-                outputPackContentPatcher.TextureAssetGroup,
+                outputPackContentPatcher.TxAssetGroup,
                 outputPackContentPatcher.FurniAsset,
                 outputPackContentPatcher.Save
             );
@@ -112,21 +108,18 @@ public record PackDisplayEntry(IOutputPack Pack) : INotifyPropertyChanged
     }
 
     public bool CanShowEdit_WallFloor =>
-        Pack is OutputPackContentPatcher outputPackContentPatcher
-        && outputPackContentPatcher.TextureAssetGroup != null
-        && outputPackContentPatcher.TextureAssetGroup.GatheredTextures.Values.Any(WallpaperFlooringAsset.TextureFilter);
+        Pack is OutputPackContentPatcher
+        && (Pack.TxAssetGroup?.GatheredTextures.Values.Any(WallpaperFlooringAsset.TextureFilter) ?? false);
 
     public void ShowEdit_WallFloor()
     {
         IsExpanded = false;
-        if (
-            Pack is OutputPackContentPatcher outputPackContentPatcher
-            && outputPackContentPatcher.TextureAssetGroup != null
-        )
+        if (Pack is OutputPackContentPatcher outputPackContentPatcher && outputPackContentPatcher.TxAssetGroup != null)
         {
             outputPackContentPatcher.WallAndFloorAsset ??= new();
+            outputPackContentPatcher.WallAndFloorAsset.SetTranslations(outputPackContentPatcher.Translations);
             EditorMenuManager.ShowWallpaperAndFlooringEditor(
-                outputPackContentPatcher.TextureAssetGroup,
+                outputPackContentPatcher.TxAssetGroup,
                 outputPackContentPatcher.WallAndFloorAsset,
                 outputPackContentPatcher.Save
             );
@@ -134,13 +127,28 @@ public record PackDisplayEntry(IOutputPack Pack) : INotifyPropertyChanged
     }
 }
 
-public partial record PackListingContext(TextureAssetGroup TextureAssetGroup, List<IOutputPack> EditablePacks)
+public partial class PackListingContext(TextureAssetGroup textureAssetGroup, List<IOutputPack> editablePacks)
 {
-    private readonly List<PackDisplayEntry> packDisplayList = EditablePacks
+    private readonly List<PackDisplayEntry> packDisplayList = editablePacks
         .Select(pack => new PackDisplayEntry(pack))
         .ToList();
 
-    public IEnumerable<PackDisplayEntry> PackDisplayList => EditablePacks.Select(pack => new PackDisplayEntry(pack));
+    public IEnumerable<PackDisplayEntry> PackDisplayList => packDisplayList;
+
+    public IEnumerable<TextureAsset> Textures => textureAssetGroup.GatheredTextures.Values;
+
+    public bool HasTextures => Textures.Any();
+
+    public string PutTexturesMessage => I18n.Message_PutTexture(Path.Combine(ModEntry.DirectoryPath, Utils.ASSETS_DIR));
+
+    public void ReloadTextures()
+    {
+        textureAssetGroup.Invalidate();
+        OnPropertyChanged(new(nameof(Textures)));
+        OnPropertyChanged(new(nameof(HasTextures)));
+    }
+
+    public void BrowseTextureFolder() => Utils.BrowseFolder(ModEntry.InputDirectoryPath);
 
     [Notify]
     private string newModName = string.Empty;
@@ -152,6 +160,10 @@ public partial record PackListingContext(TextureAssetGroup TextureAssetGroup, Li
     {
         get
         {
+            if (textureAssetGroup.GatheredTextures.Count == 0)
+            {
+                return I18n.Message_CreateMod_NeedTextures();
+            }
             if (string.IsNullOrEmpty(Sanitize.UniqueID(NewModName)))
             {
                 return I18n.Message_CreateMod_NeedName();
@@ -169,7 +181,7 @@ public partial record PackListingContext(TextureAssetGroup TextureAssetGroup, Li
     {
         get
         {
-            if (string.IsNullOrEmpty(Sanitize.UniqueID(NewModName)))
+            if (textureAssetGroup.GatheredTextures.Count == 0 || string.IsNullOrEmpty(Sanitize.UniqueID(NewModName)))
             {
                 return 0.5f;
             }
@@ -182,18 +194,9 @@ public partial record PackListingContext(TextureAssetGroup TextureAssetGroup, Li
         }
     }
 
-    internal static PackListingContext? Initialize()
+    internal static PackListingContext Initialize()
     {
         TextureAssetGroup textureAssetGroup = new();
-        if (textureAssetGroup.GatheredTextures.Count == 0)
-        {
-            Game1.addHUDMessage(HUDMessage.ForCornerTextbox(I18n.Message_PutTexture(Consts.EDITING_INPUT)));
-            ModEntry.Log(
-                I18n.Message_PutTexture(Path.Combine(ModEntry.DirectoryPath, Consts.EDITING_INPUT)),
-                LogLevel.Warn
-            );
-            return null;
-        }
         List<IOutputPack> outputPacks = [];
         foreach (
             OutputManifest manifest in OutputManifest.LoadAllFromOutputFolder().OrderBy(manifest => manifest.UniqueID)
@@ -202,7 +205,7 @@ public partial record PackListingContext(TextureAssetGroup TextureAssetGroup, Li
             // TODO: assume content patcher for now
             OutputPackContentPatcher outputContentPatcher = new(manifest);
             outputContentPatcher.Load();
-            outputContentPatcher.TextureAssetGroup = textureAssetGroup;
+            outputContentPatcher.TxAssetGroup = textureAssetGroup;
             outputPacks.Add(outputContentPatcher);
         }
         return new PackListingContext(textureAssetGroup, outputPacks);
@@ -223,9 +226,9 @@ public partial record PackListingContext(TextureAssetGroup TextureAssetGroup, Li
             UniqueID = uniqueID,
         };
         NewModName = string.Empty;
-        OutputPackContentPatcher outputPackContentPatcher = new(manifest) { TextureAssetGroup = TextureAssetGroup };
+        OutputPackContentPatcher outputPackContentPatcher = new(manifest) { TxAssetGroup = textureAssetGroup };
         outputPackContentPatcher.Save();
-        EditablePacks.Add(outputPackContentPatcher);
+        editablePacks.Add(outputPackContentPatcher);
         PackDisplayEntry packDisplay = new(outputPackContentPatcher);
         packDisplayList.Add(packDisplay);
         PropertyChanged?.Invoke(this, new(nameof(PackDisplayList)));
@@ -238,12 +241,11 @@ public partial record PackListingContext(TextureAssetGroup TextureAssetGroup, Li
     {
         if (
             ModEntry.ModRegistry.IsLoaded(uniqueID)
-            || EditablePacks.Any(output => output.Manifest.UniqueID.EqualsIgnoreCase(uniqueID))
+            || editablePacks.Any(output => output.Manifest.UniqueID.EqualsIgnoreCase(uniqueID))
         )
         {
             return false;
         }
-
         return true;
     }
 }

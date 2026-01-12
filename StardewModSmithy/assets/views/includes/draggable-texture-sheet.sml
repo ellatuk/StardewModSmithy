@@ -13,6 +13,7 @@
           background-tint="Transparent"
           focusable="true"
           padding="4"
+          tooltip={UITooltip}
           left-click=|^SelectTextureAsset(this)|
           right-click=|^SelectTextureAssetFront(this)|
           +transition:background-tint="100ms EaseOutCubic"
@@ -22,7 +23,7 @@
           +state:selected-front={IsSelectedFront}
           +state:selected-front:background-tint="#3344DE"
           >
-          <image layout="192px content[128..]" sprite={UISpriteSmall} fit="Contain" vertical-alignment="middle"/>
+          <image layout="256px 128px" sprite={:UISpriteSmall} fit="Cover" vertical-alignment="middle"/>
         </frame>
       </lane>
     </scrollable>
@@ -33,7 +34,9 @@
     margin="8,-4,8,8"
     focusable="true"
     +hover:scale="1.1"
+    +transition:scale="100ms EaseOutCubic"
     left-click=|ToggleTextureSelector()|
+    tooltip={#gui.tooltip.select-texture}
     z-index="2"/>
 
   <panel layout="stretch stretch"
@@ -44,7 +47,7 @@
     drag-end=|SheetDragEnd($Position)|>
     <image sprite={Sheet} margin={SheetMargin} opacity={SheetOpacity} />
     <image *if={HasSheetFront} sprite={SheetFront} margin={SheetMargin} opacity={SheetOpacity} />
-    <panel layout="content content" padding={BoundsPadding} *context={BoundsProvider}>
+    <panel *if={HasBoundsProvider} layout="content content" padding={BoundsPadding} *context={BoundsProvider}>
       <image *repeat={GUI_BoundingSquares} margin={:this} sprite={@mushymato.StardewModSmithy/sprites/cursors:tileGreen} />
       <image sprite={@mushymato.StardewModSmithy/sprites/cursors:borderWhite}
         layout={GUI_TilesheetArea}
@@ -52,8 +55,8 @@
         opacity="0.5"/>
       <label text={BoundsLabel} font="dialogue" color="White" margin="12,2,0,0" scale="1.5" shadow-alpha="1" shadow-color="#4448" shadow-offset="-4, 4"/>
     </panel>
-    <frame *if={CanDrag}
-        *context={:MovementMode}
+    <frame *if={CanChangeMode}
+        *context={:DragMode}
         background={@Mods/StardewUI/Sprites/MenuSlotOutset}
         margin="0,-64,0,0"
         padding="4">

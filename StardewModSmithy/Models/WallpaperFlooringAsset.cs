@@ -55,7 +55,7 @@ public sealed record EditableWallpaperOrFlooring(string BaseKey, ModWallpaperOrF
 
     public Point BoundingBoxSize => BaseData.IsFlooring ? new(2, 2) : new(1, 3);
 
-    public string GUI_TilesheetArea => Consts.Basic_GUI_TilesheetSize(TilesheetSize);
+    public string GUI_TilesheetArea => Utils.Basic_GUI_TilesheetSize(TilesheetSize);
 
     public IEnumerable<SDUIEdges> GUI_BoundingSquares
     {
@@ -75,10 +75,7 @@ public sealed record EditableWallpaperOrFlooring(string BaseKey, ModWallpaperOrF
             {
                 for (int y = 0; y < BoundingBoxSize.Y; y++)
                 {
-                    yield return new(
-                        (perRowCount + x) * Consts.DRAW_TILE,
-                        (TilesheetSize.Y - 1 - y) * Consts.DRAW_TILE
-                    );
+                    yield return new((perRowCount + x) * Utils.DRAW_TILE, (TilesheetSize.Y - 1 - y) * Utils.DRAW_TILE);
                 }
             }
         }
@@ -86,13 +83,13 @@ public sealed record EditableWallpaperOrFlooring(string BaseKey, ModWallpaperOrF
 
     public string UILabel => BaseKey;
 
-    public bool IsFlooring
+    public int WallOrFloor
     {
-        get => BaseData.IsFlooring;
+        get => BaseData.IsFlooring ? 1 : 0;
         set
         {
-            BaseData.IsFlooring = value;
-            OnPropertyChanged(new(nameof(IsFlooring)));
+            BaseData.IsFlooring = value == 1;
+            OnPropertyChanged(new(nameof(WallOrFloor)));
             OnPropertyChanged(new(nameof(GUI_BoundingSquares)));
             OnPropertyChanged(new(nameof(GUI_TilesheetArea)));
         }

@@ -1,8 +1,16 @@
 {
   "Texture": "LooseSprites/Cursors2",
   "Sprites": {
+    "blankButton": {
+      "SourceRect": "64,208,16,16",
+      "Scale": 4
+    },
     "paintButton": {
       "SourceRect": "80,208,16,16",
+      "Scale": 4
+    },
+    "resetIcon": {
+      "SourceRect": "64,240,16,16",
       "Scale": 4
     }
   }
