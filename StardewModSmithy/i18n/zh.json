@@ -44,6 +44,10 @@
   "gui.label.about": "关于StardewModSmithy：",
   "gui.label.show-workspace-key": "显示UI快捷键：",
   "gui.label.show-workspace-key.add": "添加\"显示UI快捷键\"",
+  "gui.label.toggle-drag-mode-key": "切换拖拽模式键：",
+  "gui.label.toggle-drag-mode-key.add": "添加\"切换拖拽模式键\"",
+  "gui.label.sync-drag-key": "同步拖拽键:",
+  "gui.label.sync-drag-key.add": "添加\"同步拖拽键\"",
   "gui.label.author": "作者：",
   "gui.label.autosave": "自动保存频率：",
   "gui.label.auto-symlink-reload": "自动安装并重新加载：",
@@ -59,6 +63,8 @@
   "gui.button.save": "保存",
   "gui.button.exit": "退出",
   "gui.tooltip.show-workspace-key": "按此键显示StardewModSmithy的主UI。",
+  "gui.tooltip.toggle-drag-mode-key": "在支持单独\"贴图范围\"和\"碰撞范围\"拖拽模式的编辑UI中，按此键切换模式。",
+  "gui.tooltip.sync-drag-key": "在支持单独\"贴图范围\"和\"碰撞范围\"拖拽模式的编辑UI中，拖拽中按住此键即可同时移动贴图范围和碰撞范围。",
   "gui.tooltip.author-name": "用此工具制作模组时使用的作者名",
   "gui.tooltip.autosave-frequency": "控制何时自动保存",
   "gui.tooltip.auto-symlink-reload": "新建的内容包将自动被安装。\n重启游戏后，在保存内容包时自动重新加载。",
@@ -99,5 +105,5 @@
   "gui.paragraph.faq.4.a.0": "使用此工具制作的内容包没有特殊限制并可以用于任何用途。唯一要求是你必须保留manifest.json里的\"StardewModSmithyInfo\"字段。",
   "gui.paragraph.faq.4.a.1": "这个声明不适用于内容包里的其他素材，仅覆盖StardewModSmithy导出的JSON文件。\n详见\"StardewModSmithyInfo.GeneratedFileList\"。",
   "gui.paragraph.faq.5.q": "家具里的'Front'贴图是什么意思？",
-  "gui.paragraph.faq.5.a.q": "当玩家坐在一个贴图名为'myFurni'的家具时，游戏会试图加载并绘制名为'myFurniFront'的贴图。这个功能使得椅背可以显示在玩家上方。在这个工具里你可以用右键指定对应当前选中贴图的Front。"
+  "gui.paragraph.faq.5.a.q": "当玩家坐在一个贴图名为'myFurni'的家具时，游戏会试图加载并绘制名为'myFurniFront'的贴图。这个功能使得椅背可以显示在玩家上方。在这个工具里你可以用右键指定对应当前选中贴图的Front。",
 }

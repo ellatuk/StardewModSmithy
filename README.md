@@ -1,5 +1,36 @@
 # StardewModSmithy
 
-StardewModSmithy is a mod for creating your own mods.
+StardewModSmithy is a mod for creating content pack mods. This is designed to be intuitive and easy to use, so that one can create mods without writing any JSON.
 
-## 
+> [!TIP]
+> Some features of this mod do not work well with mod managers (yes not even Stardrop)
+> Direct install and launch is recommended
+
+## How to use
+
+This is an SMAPI mod and you have to install like a typical mod:
+1. Install SMAPI
+2. Install StardewUI
+    * note: it's recommended though not required to use the [unofficial fork here](https://github.com/Mushymato/StardewUI/releases)
+3. Install StardewModSmithy extracting the downloaded .zip file to your Mods folder
+
+Once that is done, you should see a new button on the main menu. Clicking on it opens up the main workspace UI.
+
+## What can you make?
+
+The mods you can currently make using StardewModSmithy include
+- Furniture (Content Patcher, with support for catalogues via MMAP)
+- Wallpaper & Flooring (Content Patcher)
+
+Hopefully this list expands as development continues!
+
+## Translations
+
+* English
+* 简体中文
+* Русский (by [ellatuk](https://github.com/ellatuk))
+
+
+## Credits
+
+- The title screen button is drawn by [catissocute](https://www.nexusmods.com/profile/catissocute?gameId=1303)
