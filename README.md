@@ -18,7 +18,12 @@ Once that is done, you should see a new button on the main menu. Clicking on it 
 
 ## Demo
 
+See [demo/furniture.webm] for a quick demonstration of how the furniture UI works.
 
+## Control Tips
+- On spin boxes (the values with left and right arrows), you can scroll while mouse is over the value to quickly change values.
+- You can pan, that is move around both bounds and sheet, by holding the left and right mouse buttons togther. The right mouse is a modifier key and can be changed.
+- You can switch between bounds/sheet mods with middle click, this can be changed in config.
 
 ## What can you make?
 
@@ -37,3 +42,4 @@ Hopefully this list expands as development continues.
 ## Credits
 
 - The title screen button is drawn by [catissocute](https://www.nexusmods.com/profile/catissocute?gameId=1303)
+
