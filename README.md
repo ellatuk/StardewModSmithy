@@ -16,20 +16,23 @@ This is an SMAPI mod and you have to install like a typical mod:
 
 Once that is done, you should see a new button on the main menu. Clicking on it opens up the main workspace UI.
 
+## Demo
+
+
+
 ## What can you make?
 
 The mods you can currently make using StardewModSmithy include
 - Furniture (Content Patcher, with support for catalogues via MMAP)
 - Wallpaper & Flooring (Content Patcher)
 
-Hopefully this list expands as development continues!
+Hopefully this list expands as development continues.
 
 ## Translations
 
 * English
 * 简体中文
 * Русский (by [ellatuk](https://github.com/ellatuk))
-
 
 ## Credits
 
