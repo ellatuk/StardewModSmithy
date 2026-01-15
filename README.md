@@ -21,15 +21,21 @@ Once that is done, you should see a new button on the main menu. Clicking on it 
 See [demo/furniture.webm] for a quick demonstration of how the furniture UI works.
 
 ## Control Tips
-- On spin boxes (the values with left and right arrows), you can scroll while mouse is over the value to quickly change values.
-- You can pan, that is move around both bounds and sheet, by holding the left and right mouse buttons togther. The right mouse is a modifier key and can be changed.
-- You can switch between bounds/sheet mods with middle click, this can be changed in config.
+
+* On spin boxes (the values with left and right arrows), you can scroll while mouse is over the value to quickly change values.
+* You can pan, that is move around both bounds and sheet, by holding the left and right mouse buttons togther. The right mouse is a modifier key and can be changed.
+* You can switch between bounds/sheet mods with middle click, this can be changed in config.
+
+## Automatic Reload
+
+When saving a content pack for the first time, StardewModSmithy will attempt to install the mod.
+If this is successful then upon restarting the game, saving a content pack causes it to be reloaded via patch reload, letting you see live changes.
 
 ## What can you make?
 
-The mods you can currently make using StardewModSmithy include
-- Furniture (Content Patcher, with support for catalogues via MMAP)
-- Wallpaper & Flooring (Content Patcher)
+The mods you can currently make using StardewModSmithy includes:
+* Furniture (Content Patcher, with support for catalogues via MMAP)
+* Wallpaper & Flooring (Content Patcher)
 
 Hopefully this list expands as development continues.
 
