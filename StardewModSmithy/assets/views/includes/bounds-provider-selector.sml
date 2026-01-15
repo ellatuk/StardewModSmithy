@@ -8,6 +8,7 @@
         +hover:scale="1.2"
         +transition:scale="100ms EaseOutCubic"/>
     <label text={ValueLabel}
+        tooltip={ValueLabel}
         font="dialogue"
         layout="stretch content"
         padding="20,0"
@@ -16,7 +17,6 @@
         shadow-alpha="0.8"
         shadow-color="#4448"
         shadow-offset="-2, 2"
-        max-lines="1"
         wheel=|Wheel($Direction)|
         left-click=|ToggleViewingBoundsProviderList()|/>
     <image sprite={@Mods/StardewUI/Sprites/CaretRight} focusable="true"
@@ -43,7 +43,8 @@
       +hover:background-tint="Wheat"
       left-click=|^SelectBoundsProvider(this)|>
       <label text={:UILabel}
-          font="dialogue"
+          tooltip={:UILabel}
+          font="small"
           focusable="true"
           horizontal-alignment="start"
           shadow-alpha="0.8"

@@ -83,7 +83,11 @@ public record PackDisplayEntry(IOutputPack Pack) : INotifyPropertyChanged
 
     public bool IsLoaded => ModEntry.ModRegistry.IsLoaded(Pack.Manifest.UniqueID);
 
-    public void BrowsePackFolder() => Utils.BrowseFolder(Pack.Manifest.OutputFolder, false);
+    public void BrowsePackFolder()
+    {
+        IsExpanded = false;
+        Utils.BrowseFolder(Pack.Manifest.OutputFolder, false);
+    }
 
     public bool CanShowEdit_Furniture =>
         Pack is OutputPackContentPatcher && (Pack.TxAssetGroup?.GatheredTextures.Any() ?? false);
