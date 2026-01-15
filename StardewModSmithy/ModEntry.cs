@@ -74,7 +74,6 @@ public sealed class ModEntry : Mod
         I18n.Init(helper.Translation);
         mon = Monitor;
         Config = helper.ReadConfig<ModConfig>();
-        Config.SyncDragKey = new();
         Config.doWriteConfig = helper.WriteConfig;
         ModRegistry = helper.ModRegistry;
         ModCreditString = $"by {ModManifest.Name} ({ModManifest.Version}) at ";
