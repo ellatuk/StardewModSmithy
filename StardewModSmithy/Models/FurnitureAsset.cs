@@ -451,8 +451,13 @@ public sealed class FurnitureAsset : IEditableAsset
         }
     }
 
-    public FurnitureDelimString AddNewDefault()
+    public FurnitureDelimString AddNewDefault(IBoundsProvider? previousValue)
     {
+        int spriteIndex = 0;
+        if (previousValue != null)
+        {
+            spriteIndex = previousValue.SpriteIndex + previousValue.TilesheetSize.X;
+        }
         (int seq, string seqId) = Utils.GetSeq(Editing.Keys.Contains);
         FurnitureDelimString newDefaultFurni = new(seqId)
         {
@@ -460,6 +465,7 @@ public sealed class FurnitureAsset : IEditableAsset
             Type = "decor",
             TilesheetSize = new(1, 1),
             BoundingBoxSize = new(1, 1),
+            SpriteIndex = spriteIndex,
         };
         Editing[seqId] = newDefaultFurni;
         return newDefaultFurni;
