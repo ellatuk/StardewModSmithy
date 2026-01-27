@@ -143,7 +143,8 @@ public partial class PackListingContext(TextureAssetGroup textureAssetGroup, Lis
 
     public bool HasTextures => Textures.Any();
 
-    public string PutTexturesMessage => I18n.Message_PutTexture(Path.Combine(ModEntry.DirectoryPath, Utils.ASSETS_DIR));
+    public string PutTexturesMessage =>
+        I18n.Message_PutTexture(Path.Combine(ModEntry.DirectoryPath, Utils.EDITING_INPUT));
 
     public void ReloadTextures()
     {
@@ -217,7 +218,7 @@ public partial class PackListingContext(TextureAssetGroup textureAssetGroup, Lis
 
     public void CreateAndEdit()
     {
-        string authorName = ModEntry.Config.AuthorName;
+        string authorName = ModEntry.Config.AuthorNameWithDefault;
         string uniqueID = MakeUniqueID(authorName);
         if (!IsValidUniqueID(uniqueID))
         {

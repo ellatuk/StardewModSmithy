@@ -39,14 +39,14 @@ internal static class Utils
         return $"{TilesheetSize.X * DRAW_TILE}px {TilesheetSize.Y * DRAW_TILE}px";
     }
 
-    internal static (int, string) GetSeq(Func<string, bool> contains)
+    internal static (int, string) GetSeq(Func<string, bool> contains, string prefix)
     {
         int seq = 0;
-        string seqId = seq.ToString();
+        string seqId = string.Concat(prefix, '_', seq.ToString());
         while (contains(seqId))
         {
             seq++;
-            seqId = seq.ToString();
+            seqId = string.Concat(prefix, '_', seq.ToString());
         }
         return new(seq, seqId);
     }

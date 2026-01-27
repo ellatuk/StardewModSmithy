@@ -55,7 +55,7 @@ public partial class FurnitureAssetContext : AbstractEditableAssetContext
 
     public override void Create()
     {
-        FurnitureDelimString furni = furnitureAsset.AddNewDefault(this.BoundsProviderSelector.Value);
+        FurnitureDelimString furni = furnitureAsset.AddNewDefault(SelectedTextureAsset, BoundsProviderSelector.Value);
         furni.TextureAssetName = SelectedTextureAsset.AssetName;
         UpdateDataList();
         this.BoundsProviderSelector.Value = furni;
@@ -82,7 +82,10 @@ public partial class FurnitureAssetContext : AbstractEditableAssetContext
         FurnitureDelimString? firstFurni = null;
         foreach (TxAtlasEntry entry in SelectedTextureAsset.TextureAtlas)
         {
-            FurnitureDelimString furni = furnitureAsset.AddNewDefault(this.BoundsProviderSelector.Value);
+            FurnitureDelimString furni = furnitureAsset.AddNewDefault(
+                SelectedTextureAsset,
+                BoundsProviderSelector.Value
+            );
             furni.DisplayName = Path.GetFileNameWithoutExtension(entry.RelPath);
             furni.SpriteIndex = entry.Area.Y / Utils.TX_TILE * indexColCnt + entry.Area.X / Utils.TX_TILE;
             furni.TilesheetSize = new(entry.Area.Width / Utils.TX_TILE, entry.Area.Height / Utils.TX_TILE);

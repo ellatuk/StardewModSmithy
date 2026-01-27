@@ -12,11 +12,8 @@ public enum AutosaveFrequencyMode
 
 public sealed class ModConfig
 {
-    public string AuthorName
-    {
-        get => string.IsNullOrEmpty(field) ? "Smithy" : field;
-        set => field = value;
-    }
+    public string AuthorName { get; set; } = "Smithy";
+    internal string AuthorNameWithDefault => string.IsNullOrEmpty(AuthorName) ? "Smithy" : AuthorName;
     public string AutosaveFrequency
     {
         get => AutosaveFrequencyEnumValue.ToString();

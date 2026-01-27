@@ -250,7 +250,6 @@ public sealed partial class FurnitureDelimString(string id) : IBoundsProvider
         if (TextureAssetName == null || FromDeserialize)
             return;
 
-        Id = string.Concat(Sanitize.Key(Path.GetFileName(TextureAssetName.BaseName)), '_', Id);
         Name = Id;
         DisplayNameImpl.Key = string.Concat(Id, ".name");
         FromDeserialize = true;
@@ -451,14 +450,15 @@ public sealed class FurnitureAsset : IEditableAsset
         }
     }
 
-    public FurnitureDelimString AddNewDefault(IBoundsProvider? previousValue)
+    public FurnitureDelimString AddNewDefault(TextureAsset selectedTextureAsset, IBoundsProvider? previousValue)
     {
         int spriteIndex = 0;
         if (previousValue != null)
         {
             spriteIndex = previousValue.SpriteIndex + previousValue.TilesheetSize.X;
         }
-        (int seq, string seqId) = Utils.GetSeq(Editing.Keys.Contains);
+        string prefix = Path.GetFileName(selectedTextureAsset.AssetName.BaseName);
+        (int seq, string seqId) = Utils.GetSeq(Editing.Keys.Contains, prefix);
         FurnitureDelimString newDefaultFurni = new(seqId)
         {
             Name = seqId,
