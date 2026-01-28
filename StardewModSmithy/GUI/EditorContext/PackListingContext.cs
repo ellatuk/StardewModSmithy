@@ -143,8 +143,7 @@ public partial class PackListingContext(TextureAssetGroup textureAssetGroup, Lis
 
     public bool HasTextures => Textures.Any();
 
-    public string PutTexturesMessage =>
-        I18n.Message_PutTexture(Path.Combine(ModEntry.DirectoryPath, Utils.EDITING_INPUT));
+    public string PutTexturesMessage => I18n.Message_PutTexture(ModEntry.InputDirectoryPath);
 
     public void ReloadTextures()
     {
