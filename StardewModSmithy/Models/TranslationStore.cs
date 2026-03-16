@@ -1,27 +1,32 @@
 using StardewModSmithy.Wheels;
 using StardewValley;
+#if SDV17
+using StardewValley.ContentManagement;
+#else
+using LanguageCode = StardewValley.LocalizedContentManager.LanguageCode;
+#endif
 
 namespace StardewModSmithy.Models;
 
 public sealed class TranslationStore(string translationsDir)
 {
     public const string DefaultFilename = "default.json";
-    public static LocalizedContentManager.LanguageCode Code => Game1.content.GetCurrentLanguage();
-    public Dictionary<LocalizedContentManager.LanguageCode, Dictionary<string, string>> PerLang = LoadI18NData(
-        translationsDir
-    );
+#if SDV17
+    public static LanguageCode Code => Game1.content.LanguageCode;
+#else
+    public static LanguageCode Code => Game1.content.GetCurrentLanguage();
+#endif
+    public Dictionary<LanguageCode, Dictionary<string, string>> PerLang = LoadI18NData(translationsDir);
     public Dictionary<string, string> Data => PerLang[Code];
     public Dictionary<string, string> DefaultData =
         translationsDir != null
             ? ModEntry.ReadJson<Dictionary<string, string>>(translationsDir, DefaultFilename) ?? []
             : [];
 
-    public static Dictionary<LocalizedContentManager.LanguageCode, Dictionary<string, string>> LoadI18NData(
-        string translationsDir
-    )
+    public static Dictionary<LanguageCode, Dictionary<string, string>> LoadI18NData(string translationsDir)
     {
-        Dictionary<LocalizedContentManager.LanguageCode, Dictionary<string, string>> perLang = [];
-        foreach (LocalizedContentManager.LanguageCode lang in Enum.GetValues<LocalizedContentManager.LanguageCode>())
+        Dictionary<LanguageCode, Dictionary<string, string>> perLang = [];
+        foreach (LanguageCode lang in Enum.GetValues<LanguageCode>())
         {
             perLang[lang] =
                 ModEntry.ReadJson<Dictionary<string, string>>(translationsDir, string.Concat(lang, ".json")) ?? [];
@@ -46,7 +51,7 @@ public sealed class TranslationStore(string translationsDir)
         if (DefaultData.Any())
             ModEntry.WriteJson(translationsDir, DefaultFilename, DefaultData);
         // i18n/{langaugecode}.json
-        foreach ((LocalizedContentManager.LanguageCode lang, Dictionary<string, string> data) in PerLang)
+        foreach ((LanguageCode lang, Dictionary<string, string> data) in PerLang)
         {
             if (data.Any())
                 ModEntry.WriteJson(translationsDir, string.Concat(lang, ".json"), data);

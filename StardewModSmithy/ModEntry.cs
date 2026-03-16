@@ -279,7 +279,7 @@ public sealed class ModEntry : Mod
 
     private void ConsolePackTexture(string cmd, string[] args)
     {
-        if (!ArgUtility.TryGet(args, 0, out string subdir, out string error))
+        if (!ArgUtility.TryGet(args, 0, out string? subdir, out string? error))
         {
             Log(error, LogLevel.Error);
             return;

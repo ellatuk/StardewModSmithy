@@ -1,5 +1,4 @@
 using StardewModSmithy.Wheels;
-using StardewValley;
 using StardewValley.Extensions;
 
 namespace StardewModSmithy.Models;
@@ -9,8 +8,7 @@ public sealed record SmithyInfo()
     public List<string> Generated { get; set; } = [];
     public List<string> I18N { get; set; } = [];
     public List<string> Custom { get; set; } = [];
-    public string Exported =>
-        string.Concat(ModEntry.ModCreditString, DateTime.Now.ToString(Game1.content.CurrentCulture));
+    public string Exported => string.Concat(ModEntry.ModCreditString, DateTime.Now.ToString());
 };
 
 public sealed class OutputManifest()

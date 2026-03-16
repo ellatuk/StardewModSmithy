@@ -56,7 +56,7 @@ public abstract partial class AbstractEditableAssetContext
 
     public virtual void Save()
     {
-        string now = DateTime.Now.ToString(Game1.content.CurrentCulture);
+        string now = DateTime.Now.ToString();
         LastSavedMessage = I18n.Message_LastSavedAt(time: now);
         saveChangesDelegate?.Invoke();
     }
