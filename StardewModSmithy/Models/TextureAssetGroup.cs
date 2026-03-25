@@ -97,6 +97,7 @@ public sealed class TextureAssetGroup() : ILoadableAsset
             if (!file.EndsWith(".png"))
                 continue;
             string relFile = Path.GetRelativePath(ModEntry.DirectoryPath, file);
+            SpritePacker.Normalize(relFile);
             IAssetName assetName = FormAssetName(file);
             newlyGathered[assetName] = new(assetName, relFile);
         }

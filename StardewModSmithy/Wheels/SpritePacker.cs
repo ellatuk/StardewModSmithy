@@ -39,7 +39,6 @@ internal static class SpritePacker
         {
             if (!info.Extension.EqualsIgnoreCase(".png"))
                 continue;
-            string relPath = Path.GetRelativePath(ModEntry.DirectoryPath, info.FullName);
             txToPackList.Add(
                 new(
                     Path.GetRelativePath(topDir.FullName, info.FullName),
@@ -109,8 +108,7 @@ internal static class SpritePacker
         }
         int maxHeight = packRects.Max(rect => rect.Y);
 
-        Texture2D packedTx = new(Game1.graphics.GraphicsDevice, maxPackedWidth, maxHeight);
-        Color[] packedData = ArrayPool<Color>.Shared.Rent(packedTx.GetElementCount());
+        Color[] packedData = ArrayPool<Color>.Shared.Rent(maxPackedWidth * maxHeight);
         List<TxAtlasEntry> txAtlasEntries = [];
         Array.Fill(packedData, Color.Transparent);
         foreach (TxToPack txToPack in txToPackList)
@@ -123,7 +121,7 @@ internal static class SpritePacker
                 txToPack.Texture.Width,
                 txToPack.Texture.Bounds,
                 ref packedData,
-                packedTx.Width,
+                maxPackedWidth,
                 new Rectangle(
                     txToPack.TargetPos.X,
                     txToPack.TargetPos.Y,
@@ -134,12 +132,10 @@ internal static class SpritePacker
             ArrayPool<Color>.Shared.Return(txToPackData);
             txAtlasEntries.Add(txToPack.GetTxAtlasEntry());
         }
-        packedTx.SetData(packedData, 0, packedTx.GetElementCount());
+        using Texture2D packedTx = UnPremultiplyTransparency(maxPackedWidth, maxHeight, packedData);
         ArrayPool<Color>.Shared.Return(packedData);
-
-        using Texture2D forExport = UnPremultiplyTransparency(packedTx);
         using Stream stream = File.Create(Path.Combine(ModEntry.InputDirectoryPath, string.Concat(subdir, ".png")));
-        forExport.SaveAsPng(stream, forExport.Width, forExport.Height);
+        packedTx.SaveAsPng(stream, packedTx.Width, packedTx.Height);
 
         txAtlasEntries.Sort(
             (a, b) =>
@@ -152,8 +148,53 @@ internal static class SpritePacker
         );
         ModEntry.WriteJson(ModEntry.InputDirectoryPath, string.Concat(subdir, Utils.ATLAS_SUFFIX), txAtlasEntries);
 
-        ModEntry.Log($"Packed textures from '{subdir}'");
+        ModEntry.Log($"Packed textures from '{subdir}'", LogLevel.Info);
         return;
+    }
+
+    /// <summary>Ensure texture width and height is multiple of grid size</summary>
+    internal static bool Normalize(string relFile, int gridSize = 16)
+    {
+        try
+        {
+            Texture2D texture = ModEntry.ModContent.Load<Texture2D>(relFile);
+            int extraW = texture.Width % gridSize;
+            int extraH = texture.Height % gridSize;
+            if (extraW > 0 || extraH > 0)
+            {
+                int expandedWidth = texture.Width + extraW;
+                int expandedHeight = texture.Height + extraH;
+                Color[] originalData = ArrayPool<Color>.Shared.Rent(texture.GetElementCount());
+                texture.GetData(originalData, 0, texture.GetElementCount());
+                Color[] expandedData = ArrayPool<Color>.Shared.Rent(expandedWidth * expandedHeight);
+                Array.Fill(expandedData, Color.Transparent);
+                CopySourceSpriteToTarget(
+                    ref originalData,
+                    texture.Width,
+                    texture.Bounds,
+                    ref expandedData,
+                    expandedWidth,
+                    texture.Bounds
+                );
+
+                using Texture2D normalizedTexture = UnPremultiplyTransparency(
+                    expandedWidth,
+                    expandedHeight,
+                    expandedData
+                );
+                using Stream stream = File.Create(Path.Combine(ModEntry.DirectoryPath, relFile));
+                normalizedTexture.SaveAsPng(stream, normalizedTexture.Width, normalizedTexture.Height);
+                ModEntry.Log(
+                    $"Normalized texture '{relFile}' from {texture.Width}x{texture.Height} to {expandedWidth}x{expandedHeight}", LogLevel.Info
+                );
+            }
+            return true;
+        }
+        catch (Exception ex)
+        {
+            ModEntry.Log($"Failed to read texture '{relFile}':\n{ex}", LogLevel.Error);
+            return false;
+        }
     }
 
     internal static void CopySourceSpriteToTarget(
@@ -182,18 +223,16 @@ internal static class SpritePacker
 
     /// <summary>Reverse premultiplication applied to an image asset by the XNA content pipeline.</summary>
     /// <param name="texture">The texture to adjust.</param>
-    private static Texture2D UnPremultiplyTransparency(Texture2D texture)
+    private static Texture2D UnPremultiplyTransparency(int width, int height, Color[] colorData)
     {
-        Color[] data = new Color[texture.Width * texture.Height];
-        texture.GetData(data);
-
-        for (int i = 0; i < data.Length; i++)
+        int elementCount = width * height;
+        for (int i = 0; i < elementCount; i++)
         {
-            Color pixel = data[i];
+            Color pixel = colorData[i];
             if (pixel.A == 0)
                 continue;
 
-            data[i] = new Color(
+            colorData[i] = new Color(
                 (byte)(pixel.R * 255 / pixel.A),
                 (byte)(pixel.G * 255 / pixel.A),
                 (byte)(pixel.B * 255 / pixel.A),
@@ -201,8 +240,8 @@ internal static class SpritePacker
             ); // don't use named parameters, which are inconsistent between MonoGame (e.g. 'alpha') and XNA (e.g. 'a')
         }
 
-        Texture2D result = new(texture.GraphicsDevice ?? Game1.graphics.GraphicsDevice, texture.Width, texture.Height);
-        result.SetData(data);
+        Texture2D result = new(Game1.graphics.GraphicsDevice ?? Game1.graphics.GraphicsDevice, width, height);
+        result.SetData(colorData, 0, elementCount);
         return result;
     }
 }
