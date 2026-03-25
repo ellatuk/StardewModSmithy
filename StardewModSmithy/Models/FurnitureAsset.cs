@@ -8,6 +8,7 @@ using StardewModSmithy.Models.Interfaces;
 using StardewModSmithy.Models.ValueKinds;
 using StardewModSmithy.Wheels;
 using StardewValley.Extensions;
+using StardewValley.GameData.Buildings;
 
 namespace StardewModSmithy.Models;
 
@@ -320,6 +321,7 @@ public sealed class FurnitureAsset : IEditableAsset
     public string IncludeName => DEFAULT_INCLUDE_NAME;
 
     public Dictionary<string, FurnitureDelimString> Editing = [];
+    public Dictionary<string, BuildingData> EditingMMAPProperties = [];
 
     public IEnumerable<IMockPatch> GetPatches(IOutputPack outputPack)
     {

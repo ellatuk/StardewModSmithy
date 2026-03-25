@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using StardewModdingAPI;
 using StardewModdingAPI.Events;
 using StardewModSmithy.GUI;
+using StardewModSmithy.Models;
 using StardewModSmithy.Wheels;
 using StardewValley;
 using StardewValley.Menus;
@@ -22,8 +23,8 @@ public sealed class ModEntry : Mod
 #endif
 
     public const string ModId = "mushymato.StardewModSmithy";
-    private const string IconTexture = $"{ModId}/icon";
-    private const string IconHoverTexture = $"{ModId}/icon_hover";
+    private const string IconBaseTexture = $"{ModId}/icon/base";
+    private const string IconHoverTexture = $"{ModId}/icon/hover";
 
     private static IMonitor? mon;
     internal static Func<string, IAssetName> ParseAssetName = null!;
@@ -33,6 +34,7 @@ public sealed class ModEntry : Mod
     internal static string OutputDirectoryPath = null!;
     internal static string ModCreditString = null!;
     internal static IModContentHelper ModContent = null!;
+    internal static IGameContentHelper GameContent = null!;
     internal static ModConfig Config = null!;
     internal static IModRegistry ModRegistry = null!;
 
@@ -84,6 +86,7 @@ public sealed class ModEntry : Mod
         InputDirectoryPath = Path.Combine(DirectoryPath, Utils.EDITING_INPUT);
         OutputDirectoryPath = Path.Combine(DirectoryPath, Utils.EDITING_OUTPUT);
         ModContent = helper.ModContent;
+        GameContent = helper.GameContent;
 
         helper.ConsoleCommands.Add("sms-show", "show smithy menu to edit your mods.", ConsoleShowWorkspace);
         helper.ConsoleCommands.Add("sms-pack", "pack a folder of loose textures", ConsolePackTexture);
@@ -154,15 +157,21 @@ public sealed class ModEntry : Mod
         }
     }
 
+    internal static void ReloadAppIcons()
+    {
+        GameContent.InvalidateCache(IconBaseTexture);
+        GameContent.InvalidateCache(IconHoverTexture);
+    }
+
     private void OnAssetRequested(object? sender, AssetRequestedEventArgs e)
     {
-        if (e.NameWithoutLocale.IsEquivalentTo(IconTexture))
+        if (e.NameWithoutLocale.IsEquivalentTo(IconBaseTexture))
         {
-            e.LoadFromModFile<Texture2D>("assets/icon.png", AssetLoadPriority.Low);
+            e.LoadFromModFile<Texture2D>($"assets/icon/{Config.IconStyle}/base.png", AssetLoadPriority.Low);
         }
         if (e.NameWithoutLocale.IsEquivalentTo(IconHoverTexture))
         {
-            e.LoadFromModFile<Texture2D>("assets/icon_hover.png", AssetLoadPriority.Low);
+            e.LoadFromModFile<Texture2D>($"assets/icon/{Config.IconStyle}/hover.png", AssetLoadPriority.Low);
         }
     }
 
@@ -192,7 +201,7 @@ public sealed class ModEntry : Mod
                 Color.White
             );
             e.SpriteBatch.Draw(
-                Game1.content.Load<Texture2D>(titleMenuButtonHovered ? IconHoverTexture : IconTexture),
+                Game1.content.Load<Texture2D>(titleMenuButtonHovered ? IconHoverTexture : IconBaseTexture),
                 new Rectangle(titleMenuButtonBounds.X + 20, titleMenuButtonBounds.Y + 20, 64, 64),
                 Color.White
             );
@@ -290,6 +299,7 @@ public sealed class ModEntry : Mod
     public static readonly JsonSerializerSettings jsonSerializerSettings = new()
     {
         NullValueHandling = NullValueHandling.Ignore,
+        ContractResolver = new IgnoreDefaultOptionalPropertiesResolver(true),
     };
 
     internal static void WriteJson(string targetPath, string fileName, object content)

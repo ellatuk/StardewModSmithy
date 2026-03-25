@@ -80,4 +80,19 @@ internal sealed record ModConfigContext : INotifyPropertyChanged
             PropertyChanged?.Invoke(this, new(nameof(SyncDragKey)));
         }
     }
+
+    public List<string> IconStyleValues => config.IconStyleValues;
+    public string IconStyle
+    {
+        get => config.IconStyle;
+        set
+        {
+            if (!config.IconStyleValues.Contains(value))
+                return;
+            config.IconStyle = value;
+            config.WriteConfig();
+            PropertyChanged?.Invoke(this, new(nameof(IconStyle)));
+            ModEntry.ReloadAppIcons();
+        }
+    }
 }

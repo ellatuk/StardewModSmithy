@@ -185,7 +185,8 @@ internal static class SpritePacker
                 using Stream stream = File.Create(Path.Combine(ModEntry.DirectoryPath, relFile));
                 normalizedTexture.SaveAsPng(stream, normalizedTexture.Width, normalizedTexture.Height);
                 ModEntry.Log(
-                    $"Normalized texture '{relFile}' from {texture.Width}x{texture.Height} to {expandedWidth}x{expandedHeight}", LogLevel.Info
+                    $"Normalized texture '{relFile}' from {texture.Width}x{texture.Height} to {expandedWidth}x{expandedHeight}",
+                    LogLevel.Info
                 );
             }
             return true;

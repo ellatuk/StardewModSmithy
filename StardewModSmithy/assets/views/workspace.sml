@@ -215,6 +215,12 @@
           <form-row title={#gui.label.auto-symlink-reload} tooltip={#gui.tooltip.auto-symlink-reload}>
             <checkbox is-checked={<>AutoSymlinkAndPatchReload}/>
           </form-row>
+          <form-row title={#gui.label.app-icon-style} >
+            <dropdown layout="stretch content"
+              options={IconStyleValues}
+              option-min-width="240"
+              selected-option={<>IconStyle} />
+          </form-row>
         </lane>
       </scrollable>
     </lane>
