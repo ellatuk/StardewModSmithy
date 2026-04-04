@@ -9,6 +9,7 @@ using StardewModSmithy.Models.ValueKinds;
 using StardewModSmithy.Wheels;
 using StardewValley.Extensions;
 using StardewValley.GameData.Buildings;
+using StardewValley.GameData.Shops;
 
 namespace StardewModSmithy.Models;
 
@@ -345,9 +346,9 @@ public sealed class FurnitureAsset : IEditableAsset
         if (catalogue.Any())
         {
             Dictionary<string, object> hasMMAP = new() { ["HasMod"] = "mushymato.MMAP" };
-            List<object> catalogueItemQueries =
+            List<ShopItemData> catalogueItemQueries =
             [
-                new
+                new ShopItemData()
                 {
                     Id = "{{ModId}}_catalogue_all_furniture",
                     ItemId = "ALL_ITEMS (F)",
@@ -367,7 +368,7 @@ public sealed class FurnitureAsset : IEditableAsset
                     {
                         hasFloor = true;
                         catalogueItemQueries.Add(
-                            new
+                            new ShopItemData()
                             {
                                 Id = "{{ModId}}_catalogue_all_flooring",
                                 ItemId = "ALL_ITEMS (FL)",
@@ -379,7 +380,7 @@ public sealed class FurnitureAsset : IEditableAsset
                     {
                         hasWall = true;
                         catalogueItemQueries.Add(
-                            new
+                            new ShopItemData()
                             {
                                 Id = "{{ModId}}_catalogue_all_wallpaper",
                                 ItemId = "ALL_ITEMS (WP)",
@@ -394,7 +395,7 @@ public sealed class FurnitureAsset : IEditableAsset
                 "Data/Shops",
                 new Dictionary<string, object>()
                 {
-                    ["{{ModId}}_furniture_catalogue"] = new
+                    ["{{ModId}}_furniture_catalogue"] = new ShopData()
                     {
                         Items = catalogueItemQueries,
                         CustomFields = new Dictionary<string, string>()
@@ -412,13 +413,13 @@ public sealed class FurnitureAsset : IEditableAsset
             foreach ((string itemId, FurnitureDelimString furni) in catalogue)
             {
                 string qId = string.Concat("(F)", itemId);
-                catalogueShopItems[qId] = new { Id = qId, ItemId = qId };
-                catalogueTileProp[itemId] = new
+                catalogueShopItems[qId] = new ShopItemData() { Id = qId, ItemId = qId };
+                catalogueTileProp[itemId] = new BuildingData()
                 {
                     Description = furni.DisplayNameImpl.GetToken(".description"),
-                    TileProperties = new List<object>
-                    {
-                        new
+                    TileProperties =
+                    [
+                        new BuildingTileProperty()
                         {
                             Id = "OpenShop {{ModId}}_furniture_catalogue",
                             Name = "Action",
@@ -426,7 +427,7 @@ public sealed class FurnitureAsset : IEditableAsset
                             Layer = "Buildings",
                             TileArea = new Rectangle(Point.Zero, furni.boundingBoxSize),
                         },
-                    },
+                    ],
                 };
             }
 

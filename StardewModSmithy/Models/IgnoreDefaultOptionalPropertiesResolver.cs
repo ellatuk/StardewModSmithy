@@ -32,26 +32,18 @@ using Sickhead.Engine.Util;
 namespace StardewModSmithy.Models;
 
 /// <summary>A Json.NET contract resolver which ignores properties marked with <see cref="ContentSerializerIgnoreAttribute"/>, or (optionally) marked <see cref="ContentSerializerAttribute.Optional"/> with the default value.</summary>
-internal class IgnoreDefaultOptionalPropertiesResolver : DefaultContractResolver
+/// <remarks>Construct an instance.</remarks>
+/// <param name="omitDefaultValues">Whether to ignore members marked <see cref="ContentSerializerAttribute.Optional"/> which match the default value.</param>
+internal class IgnoreDefaultOptionalPropertiesResolver(bool omitDefaultValues) : DefaultContractResolver
 {
     /*********
     ** Fields
     *********/
     /// <summary>Whether to ignore members marked <see cref="ContentSerializerAttribute.Optional"/> which match the default value.</summary>
-    private readonly bool OmitDefaultValues;
+    private readonly bool OmitDefaultValues = omitDefaultValues;
 
     /// <summary>The default values for fields and properties marked <see cref="ContentSerializerAttribute.Optional"/>.</summary>
     private readonly Dictionary<string, Dictionary<string, object?>?> DefaultValues = [];
-
-    /*********
-    ** Public methods
-    *********/
-    /// <summary>Construct an instance.</summary>
-    /// <param name="omitDefaultValues">Whether to ignore members marked <see cref="ContentSerializerAttribute.Optional"/> which match the default value.</param>
-    public IgnoreDefaultOptionalPropertiesResolver(bool omitDefaultValues)
-    {
-        this.OmitDefaultValues = omitDefaultValues;
-    }
 
     /*********
     ** Protected methods
@@ -73,12 +65,30 @@ internal class IgnoreDefaultOptionalPropertiesResolver : DefaultContractResolver
                 property.ShouldSerialize = instance =>
                 {
                     object value = member.GetValue(instance);
+                    if (IsEmptyCollection(member, value))
+                        return false;
                     return !defaultValue?.Equals(value) ?? value is not null;
                 };
             }
         }
 
         return property;
+    }
+
+    /// <summary>check for generic type with property Count == 0</summary>
+    /// <param name="member"></param>
+    /// <param name="value"></param>
+    /// <returns></returns>
+    private static bool IsEmptyCollection(MemberInfo member, object value)
+    {
+        if (value == null)
+            return false;
+        Type dataType = member.GetDataType();
+        if (dataType == null || dataType == typeof(string) || !dataType.IsGenericType)
+            return false;
+        if ((dataType.GetProperty("Count")?.GetGetMethod()?.Invoke(value, []) as int?) == 0)
+            return true;
+        return false;
     }
 
     /// <summary>The default values for a type's fields and properties marked <see cref="ContentSerializerAttribute.Optional"/>, if any.</summary>
