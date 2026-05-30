@@ -112,7 +112,7 @@ public sealed partial class FurnitureDelimString(string id) : IBoundsProvider
     public Func<int, string> RotationName = (rot) => I18n.GetByKey($"gui.rotation.{rot}.name");
 
     [Notify]
-    public int price = 0;
+    public int price = 250;
 
     public string PriceInput
     {
@@ -292,7 +292,7 @@ public sealed partial class FurnitureDelimString(string id) : IBoundsProvider
         sb.Append(string.Concat(TextureAssetName.BaseName.Replace(DELIM, '\\')));
         sb.Append(DELIM);
 
-        sb.Append(OffLimitsForRandomSale);
+        sb.Append(OffLimitsForRandomSale.ToString().ToLower());
         sb.Append(DELIM);
 
         if (IsCatalogue)
@@ -321,8 +321,9 @@ public sealed class FurnitureAsset : IEditableAsset
     public const string DEFAULT_INCLUDE_NAME = "furniture.json";
     public string IncludeName => DEFAULT_INCLUDE_NAME;
 
-    public Dictionary<string, FurnitureDelimString> Editing = [];
-    public Dictionary<string, BuildingData> EditingMMAPProperties = [];
+    public SortedDictionary<string, FurnitureDelimString> Editing = new(new NaturalSeqComparer());
+
+    // public SortedDictionary<string, BuildingData> EditingMMAPProperties = [];
 
     public IEnumerable<IMockPatch> GetPatches(IOutputPack outputPack)
     {
@@ -460,8 +461,7 @@ public sealed class FurnitureAsset : IEditableAsset
         {
             spriteIndex = previousValue.SpriteIndex + previousValue.TilesheetSize.X;
         }
-        string prefix = Path.GetFileName(selectedTextureAsset.AssetName.BaseName);
-        (int seq, string seqId) = Utils.GetSeq(Editing.Keys.Contains, prefix);
+        string seqId = GetSeqId(selectedTextureAsset);
         FurnitureDelimString newDefaultFurni = new(seqId)
         {
             Name = seqId,
@@ -474,9 +474,40 @@ public sealed class FurnitureAsset : IEditableAsset
         return newDefaultFurni;
     }
 
+    private string GetSeqId(TextureAsset selectedTextureAsset)
+    {
+        string prefix = Path.GetFileName(selectedTextureAsset.AssetName.BaseName);
+        (int seq, string seqId) = Utils.GetSeq(Editing.Keys.Contains, prefix);
+        return seqId;
+    }
+
+    public bool AdjustId(TextureAsset selectedTextureAsset, FurnitureDelimString selectedFurni)
+    {
+        // never adjust already serialized
+        if (selectedFurni.FromDeserialize)
+            return false;
+        Editing.Remove(selectedFurni.Id);
+        string seqId = GetSeqId(selectedTextureAsset);
+        if (seqId == selectedFurni.Id)
+        {
+            Editing[seqId] = selectedFurni;
+            return false;
+        }
+        selectedFurni.Id = seqId;
+        selectedFurni.Name = seqId;
+        Editing[seqId] = selectedFurni;
+        return true;
+    }
+
     internal bool Delete(FurnitureDelimString selectedFurniture)
     {
-        return Editing.RemoveWhere(kv => kv.Value.Id == selectedFurniture.Id) > 0;
+        List<string> removeKeys = Editing
+            .Where(kv => kv.Value.Id == selectedFurniture.Id)
+            .Select(kv => kv.Key)
+            .ToList();
+        foreach (string key in removeKeys)
+            Editing.Remove(key);
+        return removeKeys.Count > 0;
     }
 
     public IEnumerable<IAssetName> GetRequiredAssets() => Editing.Values.GetRequiredAssetsFromIBoundsProvider();

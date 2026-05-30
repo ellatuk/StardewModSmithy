@@ -189,14 +189,16 @@ public sealed class OutputPackContentPatcher : IOutputPack
         string customDir = Path.Combine(targetPath, Utils.CUSTOM_DIR);
         if (Directory.Exists(customDir))
         {
+            List<string> customIncludes = [];
             foreach (string file in Directory.GetFiles(customDir))
             {
                 if (!file.EndsWith(".json"))
                     continue;
                 string fileName = Path.GetFileName(file);
-                changes.Add(new MockInclude(Path.Combine(Utils.CUSTOM_DIR, fileName)));
+                customIncludes.Add(Path.Combine(Utils.CUSTOM_DIR, fileName));
                 Manifest.StardewModSmithyInfo.Custom.Add(fileName);
             }
+            changes.Add(new MockInclude(string.Join(',', customIncludes)));
         }
         else
         {
@@ -243,7 +245,7 @@ public sealed class OutputPackContentPatcher : IOutputPack
             }
         }
 
-        ModEntry.PatchReload(targetPath, Manifest.UniqueID);
+        ModEntry.PatchReload(Manifest.UniqueID);
     }
 
     public void Load()

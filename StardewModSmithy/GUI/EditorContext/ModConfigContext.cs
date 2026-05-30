@@ -95,4 +95,29 @@ internal sealed record ModConfigContext : INotifyPropertyChanged
             ModEntry.ReloadAppIcons();
         }
     }
+
+    public KeybindList QuickPatchReloadKey
+    {
+        get => config.QuickPatchReloadKey;
+        set
+        {
+            config.QuickPatchReloadKey = value;
+            config.WriteConfig();
+            PropertyChanged?.Invoke(this, new(nameof(QuickPatchReloadKey)));
+        }
+    }
+
+    public string QuickPatchReloadModIds
+    {
+        get => config.QuickPatchReloadModIds.Count == 0 ? "" : config.QuickPatchReloadModIds[0];
+        set
+        {
+            if (config.QuickPatchReloadModIds.Count == 0)
+                config.QuickPatchReloadModIds.Add(value);
+            else
+                config.QuickPatchReloadModIds[0] = value;
+            config.WriteConfig();
+            PropertyChanged?.Invoke(this, new(nameof(QuickPatchReloadModIds)));
+        }
+    }
 }

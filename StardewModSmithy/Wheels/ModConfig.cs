@@ -29,9 +29,12 @@ public sealed class ModConfig
     public KeybindList ShowWorkspaceKey { get; set; } = KeybindList.Parse("RightShift+F12");
     public KeybindList ToggleDragModeKey { get; set; } = new(SButton.MouseMiddle);
     public KeybindList SyncDragKey { get; set; } = new(SButton.MouseRight);
+    public string IconStyle { get; set; } = "endylau";
+
+    public KeybindList QuickPatchReloadKey { get; set; } = new();
+    public List<string> QuickPatchReloadModIds { get; set; } = [];
 
     internal List<string> IconStyleValues = ["catissocute", "endylau"];
-    public string IconStyle { get; set; } = "endylau";
 
     internal AutosaveFrequencyMode AutosaveFrequencyEnumValue { get; set; } = AutosaveFrequencyMode.OnSwitch;
     internal Action<ModConfig>? doWriteConfig = null;

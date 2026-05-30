@@ -243,6 +243,13 @@ public sealed class ModEntry : Mod
             titleMenuButtonHovered = false;
             EditorMenuManager.showWorkspaceNextTick.Value = true;
         }
+        if (Config.QuickPatchReloadKey.JustPressed())
+        {
+            foreach (string modId in Config.QuickPatchReloadModIds)
+            {
+                PatchReload(modId);
+            }
+        }
     }
 
     private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
@@ -261,7 +268,7 @@ public sealed class ModEntry : Mod
         AddToRawCommandQueue?.Invoke(command);
     }
 
-    internal static void PatchReload(string targetPath, string uniqueId)
+    internal static void PatchReload(string uniqueId)
     {
         if (!IsContentPatcherLoaded)
             return;

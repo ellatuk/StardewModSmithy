@@ -221,6 +221,17 @@
               option-min-width="240"
               selected-option={<>IconStyle} />
           </form-row>
+          <form-row title={#gui.label.quick-patch-reload-key} tooltip={#gui.tooltip.quick-patch-reload-key}>
+            <keybind-editor button-height="64"
+                sprite-map={@Mods/StardewUI/SpriteMaps/Buttons:default-default-0.5}
+                editable-type="MultipleKeybinds"
+                add-button-text={#gui.label.quick-patch-reload-key.add}
+                focusable="true"
+                keybind-list={<>QuickPatchReloadKey} />
+          </form-row>
+          <form-row title={#gui.label.quick-patch-reload-modid} tooltip={#gui.tooltip.quick-patch-reload-modid}>
+            <textinput layout="50% 64px" margin="-8,0" font="dialogue" placeholder={#gui.label.quick-patch-reload-modid} text={<>QuickPatchReloadModIds} />
+          </form-row>
         </lane>
       </scrollable>
     </lane>

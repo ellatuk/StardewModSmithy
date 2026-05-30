@@ -23,7 +23,7 @@ public partial class FurnitureAssetContext : AbstractEditableAssetContext
         this.FurnitureDataList = furnitureAsset.Editing.Values.ToList();
         if (this.FurnitureDataList.Count != 0)
         {
-            BoundsProvider = this.FurnitureDataList[0];
+            BoundsProvider = this.FurnitureDataList.Last();
         }
         this.BoundsProviderSelector = new(() => BoundsProvider, (value) => BoundsProvider = value, AutoSaveChanges)
         {
@@ -49,8 +49,17 @@ public partial class FurnitureAssetContext : AbstractEditableAssetContext
     public override void SetTexture(object? sender, TextureAsset textureAsset)
     {
         base.SetTexture(sender, textureAsset);
-        Selected?.TextureAssetName = textureAsset.AssetName;
-        TextureHasAtlas = textureAsset?.TextureAtlas != null;
+        if (textureAsset == null)
+            return;
+        TextureHasAtlas = textureAsset.TextureAtlas != null;
+        if (Selected != null)
+        {
+            Selected.TextureAssetName = textureAsset.AssetName;
+            if (furnitureAsset.AdjustId(textureAsset, Selected))
+            {
+                UpdateDataList();
+            }
+        }
     }
 
     public override void Create()
